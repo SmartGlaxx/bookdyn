@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Book, CreateBookInput, BookStatus } from '@/types/book';
+import { Book, CreateBookInput, BookStatus, getDefaultControls } from '@/types/book';
 
 interface BookStore {
   books: Book[];
@@ -34,6 +34,8 @@ export const useBookStore = create<BookStore>((set, get) => ({
       updatedAt: now,
       wordCount: 0,
       tonalAnchors: [],
+      entities: [],
+      concepts: [],
     };
 
     set((state) => ({
