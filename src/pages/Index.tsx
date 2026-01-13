@@ -30,43 +30,6 @@ const Index = () => {
     toast.success("Book deleted");
   };
 
-  const handleStartGeneration = () => {
-    if (!selectedBook) return;
-    
-    // Simulate creating an outline (in real app, this would call AI)
-    const mockOutline = {
-      chapters: Array.from({ length: 8 }, (_, i) => ({
-        id: `ch-${i + 1}`,
-        chapterNumber: i + 1,
-        title: `Chapter ${i + 1}`,
-        subsections: Array.from({ length: 3 + Math.floor(Math.random() * 3) }, (_, j) => ({
-          id: `ch-${i + 1}-sub-${j + 1}`,
-          title: `Section ${j + 1}`,
-          status: "pending" as const,
-        })),
-        status: "pending" as const,
-      })),
-      openPromises: [],
-      resolvedPromises: [],
-    };
-
-    updateBook(selectedBook.id, {
-      status: "ready_to_write",
-      outline: mockOutline,
-    });
-
-    // Update local state
-    setSelectedBook({
-      ...selectedBook,
-      status: "ready_to_write",
-      outline: mockOutline,
-    });
-
-    toast.success("Outline created!", {
-      description: `${mockOutline.chapters.length} chapters ready for generation.`,
-    });
-  };
-
   // Show detail view if a book is selected
   if (selectedBook) {
     // Get fresh book data from store
@@ -75,7 +38,6 @@ const Index = () => {
       <BookDetailView
         book={currentBook}
         onBack={() => setSelectedBook(null)}
-        onStartGeneration={handleStartGeneration}
       />
     );
   }
