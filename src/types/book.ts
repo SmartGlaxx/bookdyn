@@ -104,6 +104,8 @@ export interface Subsection {
   title: string;
   content?: string;
   summary?: string;
+  goal?: string;
+  imageOpportunity?: string;
   status: "pending" | "writing" | "completed";
   imageUrl?: string;
 }
