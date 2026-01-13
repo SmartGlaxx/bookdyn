@@ -119,10 +119,21 @@ export interface Chapter {
   status: "pending" | "writing" | "completed";
 }
 
+export interface CharacterReference {
+  id: string;
+  name: string;
+  description: string;
+  visualDescription: string;
+  role: "protagonist" | "supporting" | "minor";
+  portraitUrl?: string;
+}
+
 export interface BookOutline {
   chapters: Chapter[];
   openPromises: string[];
   resolvedPromises: string[];
+  characters?: CharacterReference[];
+  visualStyleGuide?: string;
 }
 
 export interface Book {

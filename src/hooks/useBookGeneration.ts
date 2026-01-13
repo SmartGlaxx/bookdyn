@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Book, BookOutline, Chapter, Subsection } from "@/types/book";
+import { Book, BookOutline, Chapter, Subsection, CharacterReference } from "@/types/book";
 import { useBookStore } from "@/store/bookStore";
 import { toast } from "sonner";
 
@@ -8,6 +8,7 @@ export type GenerationPhase =
   | "idle" 
   | "planning" 
   | "generating-outline"
+  | "generating-characters"
   | "writing"
   | "generating-image"
   | "summarizing"
@@ -24,6 +25,8 @@ export interface GenerationState {
   streamingContent: string;
   currentImage: string | null;
   error: string | null;
+  characters: CharacterReference[];
+  characterProgress: { current: number; total: number };
 }
 
 export function useBookGeneration(book: Book) {
@@ -37,6 +40,8 @@ export function useBookGeneration(book: Book) {
     streamingContent: "",
     currentImage: null,
     error: null,
+    characters: [],
+    characterProgress: { current: 0, total: 0 },
   });
   
   const abortRef = useRef(false);
@@ -75,6 +80,52 @@ export function useBookGeneration(book: Book) {
       setState(s => ({ ...s, phase: "error", error: message }));
       toast.error(message);
       return null;
+    }
+  }, [book, updateBook]);
+
+  const generateCharacters = useCallback(async (outline: BookOutline): Promise<CharacterReference[]> => {
+    const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
+    
+    // Only generate character references for children's books and comics
+    if (!isChildrensBook) {
+      return [];
+    }
+
+    setState(s => ({ ...s, phase: "generating-characters", characterProgress: { current: 0, total: 0 } }));
+    toast.info("Generating character portraits for consistency...");
+
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-characters", {
+        body: { book, outline },
+      });
+
+      if (error) throw error;
+      if (data.error) throw new Error(data.error);
+
+      const characters = data.characters as CharacterReference[];
+      const visualStyleGuide = data.visualStyleGuide as string;
+
+      setState(s => ({ 
+        ...s, 
+        characters,
+        characterProgress: { current: characters.length, total: characters.length }
+      }));
+
+      // Update the outline with character data
+      const updatedOutline = {
+        ...outline,
+        characters,
+        visualStyleGuide,
+      };
+
+      updateBook(book.id, { outline: updatedOutline });
+      
+      toast.success(`Generated ${characters.length} character portrait(s)`);
+      return characters;
+    } catch (err) {
+      console.error("Character generation failed:", err);
+      toast.error("Character portraits could not be generated, continuing with text descriptions");
+      return [];
     }
   }, [book, updateBook]);
 
@@ -159,7 +210,9 @@ export function useBookGeneration(book: Book) {
 
   const generateImage = useCallback(async (
     content: string,
-    imageOpportunity?: string
+    imageOpportunity?: string,
+    characters?: CharacterReference[],
+    visualStyleGuide?: string
   ): Promise<string | null> => {
     if (!book.controls.imageGeneration) return null;
 
@@ -172,6 +225,9 @@ export function useBookGeneration(book: Book) {
           bookType: book.bookType,
           theme: book.theme,
           imageOpportunity,
+          characters,
+          visualStyleGuide,
+          useCharacterReferences: characters && characters.length > 0,
         },
       });
 
@@ -213,6 +269,8 @@ export function useBookGeneration(book: Book) {
 
     let currentBook = book;
     let outline = book.outline;
+    let characters: CharacterReference[] = book.outline?.characters || [];
+    let visualStyleGuide = book.outline?.visualStyleGuide || "";
 
     // Phase 1: Generate outline if needed
     if (!outline || outline.chapters.length === 0) {
@@ -225,10 +283,26 @@ export function useBookGeneration(book: Book) {
       currentBook = { ...currentBook, outline };
     }
 
+    // Phase 1.5: Generate character portraits for children's books
+    const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
+    if (isChildrensBook && (!outline.characters || outline.characters.length === 0)) {
+      characters = await generateCharacters(outline);
+      visualStyleGuide = outline.visualStyleGuide || "";
+      
+      outline = {
+        ...outline,
+        characters,
+        visualStyleGuide,
+      };
+      currentBook = { ...currentBook, outline };
+    } else if (outline.characters) {
+      characters = outline.characters;
+      visualStyleGuide = outline.visualStyleGuide || "";
+    }
+
     // Phase 2: Write content
     updateBook(book.id, { status: "writing" });
-    
-    const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
+
     let previousSummary = "";
     let tonalAnchors: string[] = [...(book.tonalAnchors || [])];
     let subsectionCounter = 0;
@@ -266,7 +340,7 @@ export function useBookGeneration(book: Book) {
           // Generate image for children's books (every section) or periodically
           let imageUrl: string | null = null;
           if (isChildrensBook || (book.controls.imageGeneration && subsectionCounter % 3 === 0)) {
-            imageUrl = await generateImage(content, subsection.imageOpportunity);
+            imageUrl = await generateImage(content, subsection.imageOpportunity, characters, visualStyleGuide);
           }
 
           // Summarize subsection
@@ -382,5 +456,6 @@ export function useBookGeneration(book: Book) {
     resumeGeneration,
     stopGeneration,
     generateOutline,
+    generateCharacters,
   };
 }

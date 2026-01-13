@@ -9,6 +9,7 @@ import {
   Loader2,
   AlertCircle,
   Pause,
+  Users,
 } from "lucide-react";
 import { GenerationPhase } from "@/hooks/useBookGeneration";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,12 @@ const phaseConfig: Record<GenerationPhase, {
     label: "Creating Outline", 
     description: "Building chapter structure...",
     color: "text-purple-500",
+  },
+  "generating-characters": { 
+    icon: Users, 
+    label: "Creating Characters", 
+    description: "Generating character portraits for consistency...",
+    color: "text-orange-500",
   },
   writing: { 
     icon: PenTool, 
@@ -92,7 +99,7 @@ export function GenerationStatus({
 }: GenerationStatusProps) {
   const config = phaseConfig[phase];
   const Icon = config.icon;
-  const isActive = phase === "writing" || phase === "generating-outline" || phase === "generating-image" || phase === "summarizing";
+  const isActive = phase === "writing" || phase === "generating-outline" || phase === "generating-image" || phase === "summarizing" || phase === "generating-characters";
 
   const progress = totalSubsections > 0 
     ? Math.round(((currentChapter * (totalSubsections / totalChapters) + currentSubsection) / totalSubsections) * 100)
