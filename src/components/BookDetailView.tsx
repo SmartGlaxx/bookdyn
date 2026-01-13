@@ -12,6 +12,9 @@ import {
   CheckCircle2,
   Circle,
   Loader2,
+  Globe,
+  Clock,
+  Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,7 +22,16 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Book, BOOK_TYPE_INFO, POV_OPTIONS, TONE_OPTIONS } from "@/types/book";
+import { 
+  Book, 
+  BOOK_TYPE_INFO, 
+  POV_OPTIONS, 
+  TONE_OPTIONS,
+  AUTOMATION_OPTIONS,
+  DEPTH_OPTIONS,
+  TEMPORAL_ERA_OPTIONS,
+  SPATIAL_SCOPE_OPTIONS,
+} from "@/types/book";
 
 interface BookDetailViewProps {
   book: Book;
@@ -40,6 +52,13 @@ const BookDetailView = ({ book, onBack, onStartGeneration }: BookDetailViewProps
   const typeInfo = BOOK_TYPE_INFO[book.bookType];
   const povOption = POV_OPTIONS.find((p) => p.value === book.pov);
   const toneOption = TONE_OPTIONS.find((t) => t.value === book.toneProfile.primary);
+  const secondaryToneOption = book.toneProfile.secondary 
+    ? TONE_OPTIONS.find((t) => t.value === book.toneProfile.secondary)
+    : null;
+  const automationOption = AUTOMATION_OPTIONS.find((a) => a.value === book.controls.automationLevel);
+  const depthOption = DEPTH_OPTIONS.find((d) => d.value === book.controls.depthLevel);
+  const eraOption = TEMPORAL_ERA_OPTIONS.find((e) => e.value === book.controls.temporalContext?.era);
+  const spatialOption = SPATIAL_SCOPE_OPTIONS.find((s) => s.value === book.controls.spatialScope);
 
   const calculateProgress = () => {
     if (!book.outline) return 0;
@@ -269,13 +288,26 @@ const BookDetailView = ({ book, onBack, onStartGeneration }: BookDetailViewProps
                 <Separator />
                 <div>
                   <label className="text-xs text-muted-foreground uppercase tracking-wide">Tone</label>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
                     <Badge variant="amber">
                       {toneOption?.emoji} {toneOption?.label}
                     </Badge>
-                    <span className="text-sm text-muted-foreground">
-                      Intensity: {book.toneProfile.intensity}/10
-                    </span>
+                    {secondaryToneOption && (
+                      <Badge variant="outline">
+                        {secondaryToneOption.emoji} {secondaryToneOption.label}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+                <Separator />
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Depth:</span>
+                    <span className="ml-1 font-medium">{depthOption?.label}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Mode:</span>
+                    <span className="ml-1 font-medium">{automationOption?.label}</span>
                   </div>
                 </div>
               </CardContent>
@@ -283,20 +315,57 @@ const BookDetailView = ({ book, onBack, onStartGeneration }: BookDetailViewProps
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Generation Controls</CardTitle>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Layers className="w-4 h-4" />
+                  Dynamism Controls
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <ControlDisplay label="Velocity" value={book.controls.velocity} />
                 <ControlDisplay label="Scope" value={book.controls.scope} />
                 <ControlDisplay label="Creativity" value={book.controls.creativity} />
+                <ControlDisplay label="Entity Complexity" value={book.controls.entityComplexity} />
+                <ControlDisplay label="Perspective Multiplexing" value={book.controls.perspectiveMultiplexing} />
                 <Separator />
                 <div className="flex items-center justify-between text-sm">
+                  <span>Divergence</span>
+                  <Badge variant={book.controls.divergenceAllowed ? "amber" : "secondary"}>
+                    {book.controls.divergenceAllowed ? "Allowed" : "Disabled"}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Context & Structure
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Era</span>
+                  <span className="font-medium">{eraOption?.label || "Contemporary"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Timeline</span>
+                  <span className="font-medium capitalize">
+                    {book.controls.temporalContext?.timelineStructure || "Linear"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Spatial Scope</span>
+                  <span className="font-medium">{spatialOption?.label || "Regional"}</span>
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
                   <span>Image Generation</span>
                   <Badge variant={book.controls.imageGeneration ? "success" : "secondary"}>
                     {book.controls.imageGeneration ? "Enabled" : "Disabled"}
                   </Badge>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between">
                   <span>Auto-Resume</span>
                   <Badge variant={book.controls.autoResume ? "success" : "secondary"}>
                     {book.controls.autoResume ? "Enabled" : "Disabled"}
