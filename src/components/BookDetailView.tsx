@@ -19,6 +19,7 @@ import {
   Tv,
   BookText,
   Scroll,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +41,7 @@ import {
 import { useBookGeneration } from "@/hooks/useBookGeneration";
 import { GenerationStatus } from "@/components/GenerationStatus";
 import { LiveContentView } from "@/components/LiveContentView";
+import { CharacterGallery } from "@/components/CharacterGallery";
 
 interface BookDetailViewProps {
   book: Book;
@@ -55,7 +57,7 @@ const statusConfig: Record<
   completed: { icon: CheckCircle2, color: "text-success" },
 };
 
-type ViewMode = "live" | "chapter" | "full";
+type ViewMode = "live" | "chapter" | "full" | "characters";
 
 const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>("live");
@@ -90,11 +92,14 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
 
   const progress = calculateProgress();
   const { phase } = generationState;
-  const isGenerating = phase === "writing" || phase === "generating-outline" || phase === "generating-image" || phase === "summarizing";
+  const isGenerating = phase === "writing" || phase === "generating-outline" || phase === "generating-image" || phase === "summarizing" || phase === "generating-characters";
   const isPaused = phase === "paused";
   const isIdle = phase === "idle";
   const isComplete = phase === "completed" || book.status === "completed";
   const canStart = book.status === "planning" || book.status === "ready_to_write" || (isIdle && !isComplete);
+  
+  const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
+  const hasCharacters = book.outline?.characters && book.outline.characters.length > 0;
 
   return (
     <motion.div
@@ -194,14 +199,29 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                   <Scroll className="w-4 h-4" />
                   Full View
                 </TabsTrigger>
+                {hasCharacters && (
+                  <TabsTrigger value="characters" className="gap-2">
+                    <Users className="w-4 h-4" />
+                    Characters
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               <div className="flex-1 min-h-0">
-                <LiveContentView 
-                  book={book}
-                  generationState={generationState}
-                  viewMode={viewMode}
-                />
+                {viewMode === "characters" && hasCharacters ? (
+                  <ScrollArea className="h-full rounded-xl border bg-card p-6">
+                    <CharacterGallery 
+                      characters={book.outline!.characters!}
+                      visualStyleGuide={book.outline!.visualStyleGuide}
+                    />
+                  </ScrollArea>
+                ) : (
+                  <LiveContentView 
+                    book={book}
+                    generationState={generationState}
+                    viewMode={viewMode === "characters" ? "live" : viewMode}
+                  />
+                )}
               </div>
             </Tabs>
           </div>
