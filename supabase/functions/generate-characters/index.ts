@@ -19,7 +19,7 @@ serve(async (req) => {
   }
 
   try {
-    const { book, outline } = await req.json();
+    const { book, outline, ieltsBand } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -27,6 +27,8 @@ serve(async (req) => {
     }
 
     const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
+    const band = ieltsBand || 7; // Default to Band 7
+    const descriptionGuidelines = getDescriptionGuidelines(band);
     
     // Step 1: Extract characters from the outline
     const extractPrompt = `Analyze this book outline and extract ALL characters/entities that will appear in the story.
@@ -34,6 +36,8 @@ serve(async (req) => {
 BOOK: "${book.title}"
 THEME: "${book.theme}"
 TYPE: ${book.bookType}
+TARGET AUDIENCE COMPLEXITY (IELTS Band ${band}):
+${descriptionGuidelines}
 
 OUTLINE:
 ${JSON.stringify(outline.chapters.map((ch: any) => ({
@@ -44,8 +48,8 @@ ${JSON.stringify(outline.chapters.map((ch: any) => ({
 
 For each character, provide:
 1. A unique ID (snake_case)
-2. Their name
-3. A brief story description (personality, role in story)
+2. Their name (appropriate complexity for the target audience)
+3. A brief story description (personality, role in story) - MATCH THE LANGUAGE COMPLEXITY LEVEL ABOVE
 4. A DETAILED visual description for consistent illustration:
    - Species/type (human, animal, creature)
    - Age appearance
@@ -54,19 +58,55 @@ For each character, provide:
    - Key identifying features (accessories, markings, expressions)
    - Style notes for ${isChildrensBook ? "children's book illustration" : "book illustration"}
 
+IMPORTANT: Write the story descriptions using vocabulary and sentence structures appropriate for IELTS Band ${band}.
+
 Return ONLY valid JSON:
 {
   "characters": [
     {
       "id": "character_id",
       "name": "Character Name",
-      "description": "Story role and personality",
+      "description": "Story role and personality (in appropriate language level)",
       "visualDescription": "Detailed visual description for consistent illustration",
       "role": "protagonist|supporting|minor"
     }
   ],
   "visualStyleGuide": "Overall art style description for the book"
 }`;
+
+function getDescriptionGuidelines(band: number): string {
+  switch (band) {
+    case 5:
+      return `- Use VERY simple words a young child would understand
+- Short, simple sentences (5-10 words)
+- Concrete descriptions only (no abstract traits)
+- Character names should be easy to say and remember
+- Personality descriptions like "kind", "brave", "funny", "shy"`;
+    case 6:
+      return `- Use simple, clear vocabulary for older children
+- Straightforward personality descriptions
+- Some basic abstract concepts allowed
+- Easy-to-understand character motivations
+- Descriptive but not complex`;
+    case 7:
+      return `- Standard vocabulary for general readers
+- Balanced personality descriptions with some nuance
+- Can include moderate character complexity
+- Clear motivations and traits`;
+    case 8:
+      return `- Sophisticated vocabulary for academic readers
+- Nuanced character descriptions
+- Complex personality traits and motivations
+- Can include psychological depth`;
+    case 9:
+      return `- Advanced, literary vocabulary
+- Complex, multi-dimensional character descriptions
+- Sophisticated psychological profiles
+- Can reference archetypes or literary traditions`;
+    default:
+      return `- Standard vocabulary appropriate for general readers`;
+  }
+}
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

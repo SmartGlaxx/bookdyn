@@ -97,9 +97,12 @@ export function useBookGeneration(book: Book) {
     setState(s => ({ ...s, phase: "generating-characters", characterProgress: { current: 0, total: 0 } }));
     toast.info("Generating character portraits for consistency...");
 
+    // Get IELTS band for language complexity
+    const ieltsBand = getIELTSBandForAudience(book.audience);
+
     try {
       const { data, error } = await supabase.functions.invoke("generate-characters", {
-        body: { book, outline },
+        body: { book, outline, ieltsBand },
       });
 
       if (error) throw error;
