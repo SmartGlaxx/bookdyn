@@ -232,15 +232,21 @@ const CreateBookWizard = ({ onClose, onCreate }: CreateBookWizardProps) => {
                   >
                     {/* Category Tabs */}
                     <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as BookCategory)}>
-                      <TabsList className="grid grid-cols-5 w-full h-auto">
-                        {(Object.entries(BOOK_CATEGORIES) as [BookCategory, typeof BOOK_CATEGORIES[BookCategory]][]).map(
-                          ([cat, info]) => (
-                            <TabsTrigger key={cat} value={cat} className="text-xs py-2 px-1">
-                              {info.label.split(" ")[0]}
-                            </TabsTrigger>
-                          )
-                        )}
-                      </TabsList>
+                      <div className="overflow-x-auto -mx-2 px-2 pb-2">
+                        <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-5 h-auto gap-1">
+                          {(Object.entries(BOOK_CATEGORIES) as [BookCategory, typeof BOOK_CATEGORIES[BookCategory]][]).map(
+                            ([cat, info]) => (
+                              <TabsTrigger 
+                                key={cat} 
+                                value={cat} 
+                                className="text-xs py-2 px-3 whitespace-nowrap flex-shrink-0"
+                              >
+                                {info.label.split(" ")[0]}
+                              </TabsTrigger>
+                            )
+                          )}
+                        </TabsList>
+                      </div>
 
                       {(Object.keys(BOOK_CATEGORIES) as BookCategory[]).map((cat) => (
                         <TabsContent key={cat} value={cat} className="mt-4">

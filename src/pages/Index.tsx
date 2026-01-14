@@ -5,29 +5,32 @@ import HeroSection from "@/components/HeroSection";
 import BookCard from "@/components/BookCard";
 import CreateBookWizard from "@/components/CreateBookWizard";
 import BookDetailView from "@/components/BookDetailView";
-import { useBookStore } from "@/store/bookStore";
+import { useBooks } from "@/hooks/useBooks";
 import { Book, CreateBookInput } from "@/types/book";
-import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 const Index = () => {
   const [showWizard, setShowWizard] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   
-  const { books, addBook, deleteBook, updateBook } = useBookStore();
+  const { books, isLoading, addBook, deleteBook, updateBook } = useBooks();
 
-  const handleCreateBook = (input: CreateBookInput) => {
-    const newBook = addBook(input);
-    setShowWizard(false);
-    toast.success("Book created!", {
-      description: `"${newBook.title}" is ready for planning.`,
-    });
-    // Auto-open the new book
-    setSelectedBook(newBook);
+  const handleCreateBook = async (input: CreateBookInput) => {
+    try {
+      const newBook = await addBook(input);
+      setShowWizard(false);
+      setSelectedBook(newBook);
+    } catch (error) {
+      console.error("Failed to create book:", error);
+    }
   };
 
-  const handleDeleteBook = (id: string) => {
-    deleteBook(id);
-    toast.success("Book deleted");
+  const handleDeleteBook = async (id: string) => {
+    try {
+      await deleteBook(id);
+    } catch (error) {
+      console.error("Failed to delete book:", error);
+    }
   };
 
   // Show detail view if a book is selected
@@ -47,7 +50,14 @@ const Index = () => {
       <Navigation onCreateBook={() => setShowWizard(true)} />
 
       <main>
-        {books.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center space-y-4">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
+              <p className="text-muted-foreground">Loading your library...</p>
+            </div>
+          </div>
+        ) : books.length === 0 ? (
           <HeroSection
             onCreateBook={() => setShowWizard(true)}
             bookCount={books.length}
