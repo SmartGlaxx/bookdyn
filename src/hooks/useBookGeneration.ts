@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Book, BookOutline, Chapter, Subsection, CharacterReference, getIELTSBandForAudience } from "@/types/book";
-import { useBookStore } from "@/store/bookStore";
 import { toast } from "sonner";
 
 export type GenerationPhase = 
@@ -29,8 +28,12 @@ export interface GenerationState {
   characterProgress: { current: number; total: number };
 }
 
-export function useBookGeneration(book: Book) {
-  const { updateBook } = useBookStore();
+interface UseBookGenerationOptions {
+  onUpdateBook: (id: string, updates: Partial<Book>) => void;
+}
+
+export function useBookGeneration(book: Book, options: UseBookGenerationOptions) {
+  const { onUpdateBook } = options;
   const [state, setState] = useState<GenerationState>({
     phase: "idle",
     currentChapter: 0,
@@ -72,7 +75,7 @@ export function useBookGeneration(book: Book) {
         totalSubsections: totalSubs,
       }));
 
-      updateBook(book.id, { 
+      onUpdateBook(book.id, { 
         outline,
         status: "ready_to_write",
       });
@@ -84,7 +87,7 @@ export function useBookGeneration(book: Book) {
       toast.error(message);
       return null;
     }
-  }, [book, updateBook]);
+  }, [book, onUpdateBook]);
 
   const generateCharacters = useCallback(async (outline: BookOutline): Promise<CharacterReference[]> => {
     const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
@@ -124,7 +127,7 @@ export function useBookGeneration(book: Book) {
         visualStyleGuide,
       };
 
-      updateBook(book.id, { outline: updatedOutline });
+      onUpdateBook(book.id, { outline: updatedOutline });
       
       toast.success(`Generated ${characters.length} character portrait(s)`);
       return characters;
@@ -133,7 +136,7 @@ export function useBookGeneration(book: Book) {
       toast.error("Character portraits could not be generated, continuing with text descriptions");
       return [];
     }
-  }, [book, updateBook]);
+  }, [book, onUpdateBook]);
 
   const streamContent = useCallback(async (
     bookData: Book,
@@ -285,7 +288,7 @@ export function useBookGeneration(book: Book) {
     // Phase 1: Generate outline if needed
     if (!outline || outline.chapters.length === 0) {
       setState(s => ({ ...s, phase: "planning" }));
-      updateBook(book.id, { status: "planning" });
+      onUpdateBook(book.id, { status: "planning" });
       
       outline = await generateOutline();
       if (!outline) return;
@@ -311,7 +314,7 @@ export function useBookGeneration(book: Book) {
     }
 
     // Phase 2: Write content
-    updateBook(book.id, { status: "writing" });
+    onUpdateBook(book.id, { status: "writing" });
 
     let previousSummary = "";
     let tonalAnchors: string[] = [...(book.tonalAnchors || [])];
@@ -394,7 +397,7 @@ export function useBookGeneration(book: Book) {
             wordCount: (currentBook.wordCount || 0) + content.split(/\s+/).length,
           };
 
-          updateBook(book.id, {
+          onUpdateBook(book.id, {
             outline: newOutline,
             tonalAnchors,
             currentChapterIndex: chIdx,
@@ -408,7 +411,7 @@ export function useBookGeneration(book: Book) {
           toast.error(message);
           
           // Save progress before stopping
-          updateBook(book.id, {
+          onUpdateBook(book.id, {
             status: "paused",
             currentChapterIndex: chIdx,
             currentSubsectionIndex: subIdx,
@@ -429,23 +432,23 @@ export function useBookGeneration(book: Book) {
         };
 
         outline = { ...outline, chapters: updatedChapters };
-        updateBook(book.id, { outline });
+        onUpdateBook(book.id, { outline });
       }
     }
 
     // All done
     if (!abortRef.current) {
       setState(s => ({ ...s, phase: "completed" }));
-      updateBook(book.id, { status: "completed" });
+      onUpdateBook(book.id, { status: "completed" });
       toast.success("Book generation completed!");
     }
-  }, [book, generateOutline, streamContent, generateImage, summarizeContent, updateBook]);
+  }, [book, generateOutline, generateCharacters, streamContent, generateImage, summarizeContent, onUpdateBook]);
 
   const pauseGeneration = useCallback(() => {
     pauseRef.current = true;
     setState(s => ({ ...s, phase: "paused" }));
-    updateBook(book.id, { status: "paused" });
-  }, [book.id, updateBook]);
+    onUpdateBook(book.id, { status: "paused" });
+  }, [book.id, onUpdateBook]);
 
   const resumeGeneration = useCallback(() => {
     pauseRef.current = false;
@@ -456,8 +459,8 @@ export function useBookGeneration(book: Book) {
     abortRef.current = true;
     pauseRef.current = false;
     setState(s => ({ ...s, phase: "idle" }));
-    updateBook(book.id, { status: "paused" });
-  }, [book.id, updateBook]);
+    onUpdateBook(book.id, { status: "paused" });
+  }, [book.id, onUpdateBook]);
 
   return {
     state,

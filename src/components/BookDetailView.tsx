@@ -39,6 +39,7 @@ import {
   SPATIAL_SCOPE_OPTIONS,
 } from "@/types/book";
 import { useBookGeneration } from "@/hooks/useBookGeneration";
+import { useBooks } from "@/hooks/useBooks";
 import { GenerationStatus } from "@/components/GenerationStatus";
 import { LiveContentView } from "@/components/LiveContentView";
 import { CharacterGallery } from "@/components/CharacterGallery";
@@ -61,13 +62,15 @@ type ViewMode = "live" | "chapter" | "full" | "characters";
 
 const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>("live");
+  const { updateBook } = useBooks();
+  
   const {
     state: generationState,
     startGeneration,
     pauseGeneration,
     resumeGeneration,
     stopGeneration,
-  } = useBookGeneration(book);
+  } = useBookGeneration(book, { onUpdateBook: updateBook });
 
   const typeInfo = BOOK_TYPE_INFO[book.bookType];
   const povOption = POV_OPTIONS.find((p) => p.value === book.pov);

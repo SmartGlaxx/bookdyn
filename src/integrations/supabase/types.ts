@@ -14,7 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      books: {
+        Row: {
+          audience: string
+          book_type: string
+          concepts: string[] | null
+          controls: Json
+          created_at: string
+          current_chapter_index: number
+          current_subsection_index: number
+          entities: string[] | null
+          genre: string | null
+          id: string
+          outline: Json | null
+          pov: string
+          status: string
+          subtitle: string | null
+          theme: string
+          title: string
+          tonal_anchors: string[] | null
+          tone_profile: Json
+          updated_at: string
+          user_id: string | null
+          word_count: number
+        }
+        Insert: {
+          audience: string
+          book_type: string
+          concepts?: string[] | null
+          controls: Json
+          created_at?: string
+          current_chapter_index?: number
+          current_subsection_index?: number
+          entities?: string[] | null
+          genre?: string | null
+          id?: string
+          outline?: Json | null
+          pov: string
+          status?: string
+          subtitle?: string | null
+          theme: string
+          title: string
+          tonal_anchors?: string[] | null
+          tone_profile: Json
+          updated_at?: string
+          user_id?: string | null
+          word_count?: number
+        }
+        Update: {
+          audience?: string
+          book_type?: string
+          concepts?: string[] | null
+          controls?: Json
+          created_at?: string
+          current_chapter_index?: number
+          current_subsection_index?: number
+          entities?: string[] | null
+          genre?: string | null
+          id?: string
+          outline?: Json | null
+          pov?: string
+          status?: string
+          subtitle?: string | null
+          theme?: string
+          title?: string
+          tonal_anchors?: string[] | null
+          tone_profile?: Json
+          updated_at?: string
+          user_id?: string | null
+          word_count?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
