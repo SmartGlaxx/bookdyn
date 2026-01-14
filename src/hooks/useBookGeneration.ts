@@ -50,9 +50,12 @@ export function useBookGeneration(book: Book) {
   const generateOutline = useCallback(async (): Promise<BookOutline | null> => {
     setState(s => ({ ...s, phase: "generating-outline", error: null }));
     
+    // Get IELTS band for language/structure complexity
+    const ieltsBand = getIELTSBandForAudience(book.audience);
+    
     try {
       const { data, error } = await supabase.functions.invoke("generate-outline", {
-        body: { book },
+        body: { book, ieltsBand },
       });
 
       if (error) throw error;

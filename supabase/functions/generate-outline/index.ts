@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { book } = await req.json();
+    const { book, ieltsBand } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -19,6 +19,9 @@ serve(async (req) => {
     }
 
     const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
+    const band = ieltsBand || 7; // Default to Band 7
+    const languageGuidelines = getLanguageGuidelines(band);
+    const structureGuidelines = getStructureGuidelines(band);
     
     const systemPrompt = `You are a professional book architect. Your task is to create a detailed, structured outline for a ${book.bookType} book.
 
@@ -30,6 +33,12 @@ BOOK DETAILS:
 - Point of View: ${book.pov}
 - Tone: ${book.toneProfile.primary} (intensity: ${book.toneProfile.intensity}/10)
 - Depth Level: ${book.controls.depthLevel}
+
+LANGUAGE COMPLEXITY (IELTS Band ${band}):
+${languageGuidelines}
+
+STRUCTURE COMPLEXITY:
+${structureGuidelines}
 
 DYNAMISM CONTROLS:
 - Narrative Velocity: ${book.controls.velocity}/10 (${book.controls.velocity > 6 ? "fast-paced" : book.controls.velocity > 3 ? "moderate" : "slow, contemplative"})
@@ -55,6 +64,8 @@ CHILDREN'S BOOK SPECIAL REQUIREMENTS:
 - Total: 5-8 short chapters maximum
 ` : ""}
 
+CRITICAL: Match ALL chapter titles, subsection titles, goals, and summaries to the IELTS Band ${band} language level specified above. The structural complexity and vocabulary in titles must be appropriate for the target audience.
+
 OUTPUT FORMAT: Return ONLY valid JSON with this structure:
 {
   "chapters": [
@@ -76,6 +87,73 @@ OUTPUT FORMAT: Return ONLY valid JSON with this structure:
   "openPromises": ["Story promise 1", "Character arc to resolve"],
   "bookGoal": "The overarching purpose/message of this book"
 }`;
+
+function getLanguageGuidelines(band: number): string {
+  switch (band) {
+    case 5:
+      return `- Use VERY simple vocabulary for young children
+- Short, clear chapter and section titles (2-4 words)
+- Goals described in basic, concrete terms
+- Avoid abstract concepts`;
+    case 6:
+      return `- Use simple, accessible vocabulary for older children/beginners
+- Straightforward chapter and section titles
+- Goals explained in clear, simple language
+- Limited abstract concepts`;
+    case 7:
+      return `- Use standard vocabulary for general readers
+- Clear, descriptive chapter titles
+- Goals articulated with moderate complexity
+- Balance concrete and abstract concepts`;
+    case 8:
+      return `- Use sophisticated vocabulary including some technical terms
+- Nuanced chapter and section titles
+- Goals can include complex concepts and analysis
+- Academic rigor where appropriate`;
+    case 9:
+      return `- Use advanced, specialized vocabulary
+- Scholarly or technical chapter titles where appropriate
+- Goals can include complex theoretical frameworks
+- Full academic or professional register`;
+    default:
+      return `- Use standard vocabulary for general readers`;
+  }
+}
+
+function getStructureGuidelines(band: number): string {
+  switch (band) {
+    case 5:
+      return `- Very short chapters (2-3 subsections each)
+- Linear, simple narrative structure
+- One main idea per chapter
+- Repetitive patterns for familiarity
+- Maximum 6-8 chapters total`;
+    case 6:
+      return `- Short chapters (3-4 subsections each)
+- Mostly linear structure with simple transitions
+- Clear beginning, middle, end per chapter
+- Maximum 8-10 chapters total`;
+    case 7:
+      return `- Moderate chapter length (4-5 subsections each)
+- Standard narrative structure
+- Some complexity in chapter organization
+- 8-12 chapters typical`;
+    case 8:
+      return `- Flexible chapter length based on content needs
+- Can include subplots or parallel threads
+- Complex chapter organization allowed
+- Analytical or thematic chapter structures permitted
+- 10-15 chapters typical`;
+    case 9:
+      return `- Complex, sophisticated structure
+- Multiple narrative threads or analytical frameworks
+- Can include recursive or non-linear organization
+- Academic chapter conventions if appropriate
+- Length determined by content complexity`;
+    default:
+      return `- Standard chapter structure`;
+  }
+}
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
