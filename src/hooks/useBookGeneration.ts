@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Book, BookOutline, Chapter, Subsection, CharacterReference } from "@/types/book";
+import { Book, BookOutline, Chapter, Subsection, CharacterReference, getIELTSBandForAudience } from "@/types/book";
 import { useBookStore } from "@/store/bookStore";
 import { toast } from "sonner";
 
@@ -143,6 +143,9 @@ export function useBookGeneration(book: Book) {
       streamingContent: "",
     }));
 
+    // Get IELTS band for language level
+    const ieltsBand = getIELTSBandForAudience(bookData.audience);
+
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-content`, {
       method: "POST",
       headers: {
@@ -155,6 +158,7 @@ export function useBookGeneration(book: Book) {
         subsectionIndex,
         previousSummary,
         tonalAnchors: bookData.tonalAnchors || [],
+        ieltsBand,
       }),
     });
 

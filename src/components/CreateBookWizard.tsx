@@ -43,7 +43,7 @@ import {
   TEMPORAL_ERA_OPTIONS,
   TIMELINE_OPTIONS,
   SPATIAL_SCOPE_OPTIONS,
-  AUDIENCE_PRESETS,
+  AUDIENCE_OPTIONS,
   GENRE_PRESETS,
   getDefaultControls,
   AutomationLevel,
@@ -342,9 +342,9 @@ const CreateBookWizard = ({ onClose, onCreate }: CreateBookWizardProps) => {
                             <SelectValue placeholder="Select audience" />
                           </SelectTrigger>
                           <SelectContent className="bg-popover z-50">
-                            {AUDIENCE_PRESETS.map((audience) => (
-                              <SelectItem key={audience} value={audience}>
-                                {audience}
+                            {AUDIENCE_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
                               </SelectItem>
                             ))}
                           </SelectContent>
