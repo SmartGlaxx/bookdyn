@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Book, CreateBookInput, BookStatus, BookOutline, BookControls, ToneProfile, POV, BookType } from "@/types/book";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
+import { useAuth } from "@/hooks/useAuth";
 
 // Transform database row to Book type
 const transformDbToBook = (row: any): Book => ({
@@ -52,24 +53,31 @@ const transformBookToDb = (book: Partial<Book> & { id?: string }) => ({
 
 export const useBooks = () => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
-  // Fetch all books
+  // Fetch all books for the current user
   const { data: books = [], isLoading, error } = useQuery({
-    queryKey: ["books"],
+    queryKey: ["books", user?.id],
     queryFn: async () => {
+      if (!user) return [];
+      
       const { data, error } = await supabase
         .from("books")
         .select("*")
+        .eq("user_id", user.id)
         .order("updated_at", { ascending: false });
 
       if (error) throw error;
       return data.map(transformDbToBook);
     },
+    enabled: !!user,
   });
 
   // Create book mutation
   const createBookMutation = useMutation({
     mutationFn: async (input: CreateBookInput) => {
+      if (!user) throw new Error("Must be logged in to create books");
+      
       const bookData = {
         title: input.title,
         subtitle: input.subtitle ?? null,
@@ -87,7 +95,7 @@ export const useBooks = () => {
         tonal_anchors: [] as string[],
         entities: [] as string[],
         concepts: [] as string[],
-        user_id: null,
+        user_id: user.id,
       };
 
       const { data, error } = await supabase
@@ -100,7 +108,7 @@ export const useBooks = () => {
       return transformDbToBook(data);
     },
     onSuccess: (newBook) => {
-      queryClient.invalidateQueries({ queryKey: ["books"] });
+      queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
       toast.success("Book created!", {
         description: `"${newBook.title}" is ready for planning.`,
       });
@@ -145,7 +153,7 @@ export const useBooks = () => {
       return transformDbToBook(data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["books"] });
+      queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
     },
     onError: (error) => {
       console.error("Failed to update book:", error);
@@ -165,7 +173,7 @@ export const useBooks = () => {
       return id;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["books"] });
+      queryClient.invalidateQueries({ queryKey: ["books", user?.id] });
       toast.success("Book deleted");
     },
     onError: (error) => {
