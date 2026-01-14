@@ -284,18 +284,47 @@ export const SPATIAL_SCOPE_OPTIONS: { value: SpatialScope; label: string; descri
   { value: "universal", label: "Universal", description: "Beyond Earth / abstract" },
 ];
 
-export const AUDIENCE_PRESETS = [
-  "General readers",
-  "Young adults (13-18)",
-  "Adults (18+)",
-  "Children (6-12)",
-  "Professionals",
-  "Academics",
-  "Industry experts",
-  "Beginners",
-  "Intermediate learners",
-  "Advanced practitioners",
+// IELTS Band mapping (implicit, not shown to users)
+export type IELTSBand = 5 | 6 | 7 | 8 | 9;
+
+export interface AudienceOption {
+  value: string;
+  label: string;
+  ieltsBand: IELTSBand;
+}
+
+// Ordered by IELTS band (lowest to highest complexity)
+export const AUDIENCE_OPTIONS: AudienceOption[] = [
+  // Band 5 (least complex)
+  { value: "children-1-9", label: "Children (1–9)", ieltsBand: 5 },
+  
+  // Band 6
+  { value: "older-children-10-15", label: "Older Children (10–15)", ieltsBand: 6 },
+  { value: "beginners", label: "Beginners", ieltsBand: 6 },
+  
+  // Band 7
+  { value: "16-plus", label: "16+ years", ieltsBand: 7 },
+  { value: "general-readers", label: "General Readers", ieltsBand: 7 },
+  { value: "intermediate-learners", label: "Intermediate Learners", ieltsBand: 7 },
+  
+  // Band 8
+  { value: "academics-undergraduate", label: "Academics (undergraduate level)", ieltsBand: 8 },
+  { value: "industry-experts", label: "Industry Experts (non-research roles)", ieltsBand: 8 },
+  { value: "professionals", label: "Professionals (general workplace)", ieltsBand: 8 },
+  
+  // Band 9 (highest complexity)
+  { value: "scholars-researchers", label: "Scholars/Researchers (academic research level)", ieltsBand: 9 },
+  { value: "specialized-experts", label: "Specialized Industry Experts (technical or research-focused)", ieltsBand: 9 },
 ];
+
+// Helper to get IELTS band from audience value
+export const getIELTSBandForAudience = (audienceValue: string): IELTSBand => {
+  const option = AUDIENCE_OPTIONS.find(opt => opt.value === audienceValue);
+  return option?.ieltsBand ?? 7; // Default to Band 7 (General Readers)
+};
+
+// Legacy array for backward compatibility
+export const AUDIENCE_PRESETS = AUDIENCE_OPTIONS.map(opt => opt.value);
 
 export const GENRE_PRESETS: Record<BookCategory, string[]> = {
   fiction: [

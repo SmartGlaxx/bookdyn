@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { book, chapterIndex, subsectionIndex, previousSummary, tonalAnchors } = await req.json();
+    const { book, chapterIndex, subsectionIndex, previousSummary, tonalAnchors, ieltsBand } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -27,6 +27,10 @@ serve(async (req) => {
 
     const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
     
+    // IELTS Band language guidelines
+    const band = ieltsBand || 7; // Default to Band 7
+    const languageGuidelines = getLanguageGuidelines(band);
+    
     const systemPrompt = `You are a master writer creating content for a ${book.bookType} book.
 
 BOOK CONTEXT:
@@ -35,6 +39,9 @@ BOOK CONTEXT:
 - Audience: ${book.audience}
 - POV: ${book.pov}
 - Tone: ${book.toneProfile.primary} (formality: ${book.toneProfile.formality}/10, emotion: ${book.toneProfile.emotionalIntensity}/10)
+
+LANGUAGE & GRAMMAR LEVEL (IELTS Band ${band}):
+${languageGuidelines}
 
 CURRENT POSITION:
 - Chapter ${chapter.chapterNumber}: "${chapter.title}"
@@ -62,7 +69,51 @@ CHILDREN'S BOOK REQUIREMENTS:
 Write 400-800 words for this subsection.
 `}
 
-Write ONLY the content for this subsection. Do not include titles or headers. Match the established tone and style. Create engaging, high-quality prose.`;
+Write ONLY the content for this subsection. Do not include titles or headers. Match the established tone and style. Strictly adhere to the language/grammar level specified above. Create engaging, high-quality prose.`;
+
+function getLanguageGuidelines(band: number): string {
+  switch (band) {
+    case 5:
+      return `- Use simple vocabulary and short sentences
+- Basic grammar structures only (simple present, past, future)
+- Avoid complex clauses and subordination
+- Concrete, everyday words children can understand
+- Repetition for emphasis and clarity is encouraged
+- Maximum sentence length: 10-12 words average`;
+    case 6:
+      return `- Moderately simple vocabulary with some descriptive words
+- Mix of simple and compound sentences
+- Limited use of complex sentences
+- Accessible language for older children and beginners
+- Clear, straightforward explanations
+- Maximum sentence length: 15-18 words average`;
+    case 7:
+      return `- Standard vocabulary appropriate for general readers
+- Varied sentence structures (simple, compound, complex)
+- Good range of connectors and transitions
+- Clear expression of ideas with some nuance
+- Balance between accessibility and sophistication
+- Average sentence length: 18-22 words`;
+    case 8:
+      return `- Wide vocabulary range including some academic/technical terms
+- Complex grammatical structures used naturally
+- Sophisticated connectors and cohesive devices
+- Nuanced expression with precise word choice
+- Can handle abstract concepts and detailed analysis
+- Varied sentence lengths for rhythm and effect`;
+    case 9:
+      return `- Extensive and precise vocabulary including specialized terminology
+- Full range of grammatical structures used with complete flexibility
+- Highly sophisticated expression and argumentation
+- Subtle nuances, implications, and academic register
+- Complex ideas expressed with clarity and elegance
+- Advanced rhetorical devices and scholarly conventions`;
+    default:
+      return `- Standard vocabulary appropriate for general readers
+- Varied sentence structures
+- Clear expression of ideas`;
+  }
+}
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
