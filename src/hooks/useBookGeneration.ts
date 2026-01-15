@@ -3,6 +3,33 @@ import { supabase } from "@/integrations/supabase/client";
 import { Book, BookOutline, Chapter, Subsection, CharacterReference, getIELTSBandForAudience } from "@/types/book";
 import { toast } from "sonner";
 
+const MAX_RETRIES = 3;
+const RETRY_BASE_DELAY = 2000; // 2 seconds
+
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  retries: number = MAX_RETRIES,
+  onRetry?: (attempt: number, error: Error) => void
+): Promise<T> {
+  let lastError: Error;
+  
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      if (attempt < retries) {
+        const delay = RETRY_BASE_DELAY * Math.pow(2, attempt - 1); // Exponential backoff
+        onRetry?.(attempt, lastError);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError!;
+}
+
 export type GenerationPhase = 
   | "idle" 
   | "planning" 
@@ -340,24 +367,56 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
         subsectionCounter++;
 
         try {
-          // Generate content with streaming
-          const content = await streamContent(
-            { ...currentBook, outline, tonalAnchors },
-            chIdx,
-            subIdx,
-            previousSummary
+          // Generate content with streaming - with retry logic
+          const content = await retryWithBackoff(
+            () => streamContent(
+              { ...currentBook, outline, tonalAnchors },
+              chIdx,
+              subIdx,
+              previousSummary
+            ),
+            MAX_RETRIES,
+            (attempt, error) => {
+              toast.warning(`Content generation failed (attempt ${attempt}/${MAX_RETRIES}), retrying...`);
+              console.warn(`Retry ${attempt} for chapter ${chIdx + 1}, subsection ${subIdx + 1}:`, error.message);
+            }
           );
 
           chapterContent += content + "\n\n";
           
           // Generate image for children's books (every section) or periodically
+          // Image generation failures are non-critical, so we don't require strict retry here
           let imageUrl: string | null = null;
           if (isChildrensBook || (book.controls.imageGeneration && subsectionCounter % 3 === 0)) {
-            imageUrl = await generateImage(content, subsection.imageOpportunity, characters, visualStyleGuide);
+            try {
+              imageUrl = await retryWithBackoff(
+                () => generateImage(content, subsection.imageOpportunity, characters, visualStyleGuide),
+                2, // Fewer retries for images since they're not critical
+                (attempt) => {
+                  console.warn(`Image retry ${attempt} for chapter ${chIdx + 1}, subsection ${subIdx + 1}`);
+                }
+              );
+            } catch (imgErr) {
+              console.warn("Image generation failed after retries, continuing without image:", imgErr);
+            }
           }
 
-          // Summarize subsection
-          const summary = await summarizeContent(content, "subsection");
+          // Summarize subsection - with retry logic
+          let summary = "";
+          try {
+            summary = await retryWithBackoff(
+              () => summarizeContent(content, "subsection"),
+              MAX_RETRIES,
+              (attempt) => {
+                console.warn(`Summary retry ${attempt} for chapter ${chIdx + 1}, subsection ${subIdx + 1}`);
+              }
+            );
+          } catch (sumErr) {
+            console.warn("Summarization failed after retries, using truncated content:", sumErr);
+            // Use first 500 chars as fallback summary
+            summary = content.slice(0, 500) + "...";
+          }
+          
           previousSummary = summary;
 
           // Random tonal anchor extraction
@@ -378,7 +437,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
             status: "completed",
           };
 
-          // Save progress
+          // Save progress - with retry logic for database persistence
           const updatedChapters = [...outline.chapters];
           updatedChapters[chIdx] = {
             ...chapter,
@@ -397,25 +456,46 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
             wordCount: (currentBook.wordCount || 0) + content.split(/\s+/).length,
           };
 
-          onUpdateBook(book.id, {
-            outline: newOutline,
-            tonalAnchors,
-            currentChapterIndex: chIdx,
-            currentSubsectionIndex: subIdx + 1,
-            wordCount: currentBook.wordCount,
-          });
+          // Persist progress with retry - this is critical to not lose work
+          await retryWithBackoff(
+            async () => {
+              onUpdateBook(book.id, {
+                outline: newOutline,
+                tonalAnchors,
+                currentChapterIndex: chIdx,
+                currentSubsectionIndex: subIdx + 1,
+                wordCount: currentBook.wordCount,
+              });
+            },
+            MAX_RETRIES,
+            (attempt) => {
+              toast.warning(`Saving progress failed (attempt ${attempt}/${MAX_RETRIES}), retrying...`);
+            }
+          );
 
         } catch (err) {
           const message = err instanceof Error ? err.message : "Generation failed";
           setState(s => ({ ...s, phase: "error", error: message }));
-          toast.error(message);
+          toast.error(`Generation stopped: ${message}. No chapters were skipped.`);
           
-          // Save progress before stopping
-          onUpdateBook(book.id, {
-            status: "paused",
-            currentChapterIndex: chIdx,
-            currentSubsectionIndex: subIdx,
-          });
+          // Save progress before stopping - try multiple times to ensure we don't lose position
+          try {
+            await retryWithBackoff(
+              async () => {
+                onUpdateBook(book.id, {
+                  status: "paused",
+                  currentChapterIndex: chIdx,
+                  currentSubsectionIndex: subIdx,
+                });
+              },
+              MAX_RETRIES
+            );
+          } catch (saveErr) {
+            console.error("Failed to save pause state:", saveErr);
+            toast.error("Could not save progress. Please check your connection and try resuming.");
+          }
+          
+          // CRITICAL: Return immediately - never continue to next chapter/subsection
           return;
         }
       }
