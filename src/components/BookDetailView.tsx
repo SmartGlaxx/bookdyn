@@ -5,17 +5,13 @@ import {
   Play,
   Pause,
   Square,
-  RotateCcw,
   Download,
   Settings,
   BookOpen,
-  Eye,
-  FileText,
   CheckCircle2,
   Circle,
   Loader2,
   Layers,
-  Clock,
   Tv,
   BookText,
   Scroll,
@@ -27,22 +23,19 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Book, 
   BOOK_TYPE_INFO, 
   POV_OPTIONS, 
   TONE_OPTIONS,
-  AUTOMATION_OPTIONS,
-  DEPTH_OPTIONS,
-  TEMPORAL_ERA_OPTIONS,
-  SPATIAL_SCOPE_OPTIONS,
 } from "@/types/book";
 import { useBookGeneration } from "@/hooks/useBookGeneration";
 import { useBooks } from "@/hooks/useBooks";
 import { GenerationStatus } from "@/components/GenerationStatus";
 import { LiveContentView } from "@/components/LiveContentView";
 import { CharacterGallery } from "@/components/CharacterGallery";
+import { ChapterView } from "@/components/ChapterView";
 
 interface BookDetailViewProps {
   book: Book;
@@ -75,13 +68,6 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   const typeInfo = BOOK_TYPE_INFO[book.bookType];
   const povOption = POV_OPTIONS.find((p) => p.value === book.pov);
   const toneOption = TONE_OPTIONS.find((t) => t.value === book.toneProfile.primary);
-  const secondaryToneOption = book.toneProfile.secondary 
-    ? TONE_OPTIONS.find((t) => t.value === book.toneProfile.secondary)
-    : null;
-  const automationOption = AUTOMATION_OPTIONS.find((a) => a.value === book.controls.automationLevel);
-  const depthOption = DEPTH_OPTIONS.find((d) => d.value === book.controls.depthLevel);
-  const eraOption = TEMPORAL_ERA_OPTIONS.find((e) => e.value === book.controls.temporalContext?.era);
-  const spatialOption = SPATIAL_SCOPE_OPTIONS.find((s) => s.value === book.controls.spatialScope);
 
   const calculateProgress = () => {
     if (!book.outline) return 0;
@@ -218,6 +204,8 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                       visualStyleGuide={book.outline!.visualStyleGuide}
                     />
                   </ScrollArea>
+                ) : viewMode === "chapter" ? (
+                  <ChapterView book={book} />
                 ) : (
                   <LiveContentView 
                     book={book}
