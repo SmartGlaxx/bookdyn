@@ -143,8 +143,8 @@ export function ChapterView({ book }: ChapterViewProps) {
   // Mobile view - accordion style
   if (isMobile) {
     return (
-      <ScrollArea className="h-full">
-        <div className="p-2 space-y-2">
+      <ScrollArea className="h-[calc(100vh-theme(spacing.32))]">
+        <div className="px-4 py-2 space-y-2">
           {chapters.map((chapter, idx) => {
             const StatusIcon = statusConfig[chapter.status].icon;
             const isExpanded = expandedChapter === idx;
@@ -205,7 +205,7 @@ export function ChapterView({ book }: ChapterViewProps) {
 
   // Desktop view
   return (
-    <div className="h-full flex gap-4 min-h-0">
+    <div className="h-[calc(100vh-theme(spacing.32))] flex gap-4 min-h-0">
       {/* Chapter Navigation Sidebar */}
       <Card className="w-64 shrink-0 flex flex-col min-h-0">
         <div className="p-4 border-b shrink-0">
@@ -218,7 +218,7 @@ export function ChapterView({ book }: ChapterViewProps) {
           </p>
         </div>
         <ScrollArea className="flex-1 min-h-0">
-          <div className="p-2 space-y-1">
+          <div className="px-3 py-2 space-y-1">
             {chapters.map((chapter, idx) => {
               const StatusIcon = statusConfig[chapter.status].icon;
               const isActive = idx === selectedChapter;
@@ -230,12 +230,9 @@ export function ChapterView({ book }: ChapterViewProps) {
                   className={cn(
                     "w-full text-left p-3 rounded-lg transition-colors",
                     isActive 
-                      ? "bg-primary/10 rounded-lg mx-1" 
-                      : "hover:bg-muted mx-1"
+                      ? "bg-primary/10" 
+                      : "hover:bg-muted"
                   )}
-                  style={{
-                    width: "calc(100% - 8px)",
-                  }}
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                 >

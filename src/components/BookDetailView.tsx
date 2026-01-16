@@ -170,7 +170,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
           </motion.div>
         )}
 
-        <div className="grid lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
+        <div className="grid lg:grid-cols-4 gap-6 h-[calc(100vh-theme(spacing.20))]">
           {/* Main content area - Live View */}
           <div className="lg:col-span-3 flex flex-col h-full min-h-0">
             {/* View Mode Tabs */}
