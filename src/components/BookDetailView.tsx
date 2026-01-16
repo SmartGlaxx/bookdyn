@@ -127,7 +127,7 @@ const BookDetailView = ({
         </div>
       </header>
 
-      <main className="flex-1 container max-w-7xl mx-auto px-4 py-6">
+      <main className="max-h-[70vh] container max-w-7xl mx-auto px-4 py-6">
         {/* Generation Status */}
         {(isGenerating || isPaused || generationState.phase !== "idle") && <motion.div className="mb-6" initial={{
         opacity: 0,
@@ -139,7 +139,7 @@ const BookDetailView = ({
             <GenerationStatus phase={generationState.phase} currentChapter={generationState.currentChapter} currentSubsection={generationState.currentSubsection} totalChapters={generationState.totalChapters} totalSubsections={generationState.totalSubsections} />
           </motion.div>}
 
-        <div className="grid lg:grid-cols-4 gap-6 h-[calc(90vh-theme(spacing.20))]">
+        <div className="grid lg:grid-cols-4 gap-6 h-[calc(100vh-theme(spacing.20))]">
           {/* Main content area - Live View */}
           <div className="lg:col-span-3 flex flex-col h-full min-h-0">
             {/* View Mode Tabs */}
