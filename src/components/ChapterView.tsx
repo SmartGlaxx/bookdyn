@@ -171,7 +171,7 @@ export function ChapterView({
           </p>
         </div>
         <ScrollArea className="flex-1 min-h-0">
-          <div className="p-3 space-y-1 grid place-items-center">
+          <div className="p-3 space-y-1 ">
             {chapters.map((chapter, idx) => {
             const StatusIcon = statusConfig[chapter.status].icon;
             const isActive = idx === selectedChapter;
