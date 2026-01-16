@@ -172,10 +172,10 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
 
         <div className="grid lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
           {/* Main content area - Live View */}
-          <div className="lg:col-span-3 flex flex-col h-full">
+          <div className="lg:col-span-3 flex flex-col h-full min-h-0">
             {/* View Mode Tabs */}
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="flex flex-col h-full">
-              <TabsList className="w-fit mb-4">
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="flex flex-col h-full min-h-0">
+              <TabsList className="w-fit mb-4 shrink-0 sticky top-0 z-10 bg-background">
                 <TabsTrigger value="live" className="gap-2">
                   <Tv className="w-4 h-4" />
                   Live View
@@ -196,7 +196,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                 )}
               </TabsList>
 
-              <div className="flex-1 min-h-0">
+              <div className="flex-1 min-h-0 overflow-hidden">
                 {viewMode === "characters" && hasCharacters ? (
                   <ScrollArea className="h-full rounded-xl border bg-card p-6">
                     <CharacterGallery 
@@ -217,8 +217,9 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
             </Tabs>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-4 overflow-y-auto">
+          {/* Sidebar - independently scrollable */}
+          <ScrollArea className="h-full hidden lg:block">
+            <div className="space-y-4 pr-2">
             {/* Progress Card */}
             <Card>
               <CardContent className="py-4">
@@ -325,7 +326,8 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                 <ControlBar label="Complexity" value={book.controls.entityComplexity} />
               </CardContent>
             </Card>
-          </div>
+            </div>
+          </ScrollArea>
         </div>
       </main>
     </motion.div>
