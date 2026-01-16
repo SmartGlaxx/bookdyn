@@ -127,7 +127,7 @@ const BookDetailView = ({
         </div>
       </header>
 
-      <main className="max-h-[70vh] container max-w-7xl mx-auto px-4 py-6">
+      <main className="flex-1 container max-w-7xl mx-auto">
         {/* Generation Status */}
         {(isGenerating || isPaused || generationState.phase !== "idle") && <motion.div className="mb-6" initial={{
         opacity: 0,
