@@ -1,22 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import {
-  ArrowLeft,
-  Play,
-  Pause,
-  Square,
-  Download,
-  Settings,
-  BookOpen,
-  CheckCircle2,
-  Circle,
-  Loader2,
-  Layers,
-  Tv,
-  BookText,
-  Scroll,
-  Users,
-} from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Download, Settings, BookOpen, CheckCircle2, Circle, Loader2, Layers, Tv, BookText, Scroll, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,78 +8,79 @@ import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Book, 
-  BOOK_TYPE_INFO, 
-  POV_OPTIONS, 
-  TONE_OPTIONS,
-} from "@/types/book";
+import { Book, BOOK_TYPE_INFO, POV_OPTIONS, TONE_OPTIONS } from "@/types/book";
 import { useBookGeneration } from "@/hooks/useBookGeneration";
 import { useBooks } from "@/hooks/useBooks";
 import { GenerationStatus } from "@/components/GenerationStatus";
 import { LiveContentView } from "@/components/LiveContentView";
 import { CharacterGallery } from "@/components/CharacterGallery";
 import { ChapterView } from "@/components/ChapterView";
-
 interface BookDetailViewProps {
   book: Book;
   onBack: () => void;
 }
-
-const statusConfig: Record<
-  "pending" | "writing" | "completed",
-  { icon: typeof Circle; color: string; animate?: boolean }
-> = {
-  pending: { icon: Circle, color: "text-muted-foreground" },
-  writing: { icon: Loader2, color: "text-primary", animate: true },
-  completed: { icon: CheckCircle2, color: "text-success" },
+const statusConfig: Record<"pending" | "writing" | "completed", {
+  icon: typeof Circle;
+  color: string;
+  animate?: boolean;
+}> = {
+  pending: {
+    icon: Circle,
+    color: "text-muted-foreground"
+  },
+  writing: {
+    icon: Loader2,
+    color: "text-primary",
+    animate: true
+  },
+  completed: {
+    icon: CheckCircle2,
+    color: "text-success"
+  }
 };
-
 type ViewMode = "live" | "chapter" | "full" | "characters";
-
-const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
+const BookDetailView = ({
+  book,
+  onBack
+}: BookDetailViewProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>("live");
-  const { updateBook } = useBooks();
-  
+  const {
+    updateBook
+  } = useBooks();
   const {
     state: generationState,
     startGeneration,
     pauseGeneration,
     resumeGeneration,
-    stopGeneration,
-  } = useBookGeneration(book, { onUpdateBook: updateBook });
-
+    stopGeneration
+  } = useBookGeneration(book, {
+    onUpdateBook: updateBook
+  });
   const typeInfo = BOOK_TYPE_INFO[book.bookType];
-  const povOption = POV_OPTIONS.find((p) => p.value === book.pov);
-  const toneOption = TONE_OPTIONS.find((t) => t.value === book.toneProfile.primary);
-
+  const povOption = POV_OPTIONS.find(p => p.value === book.pov);
+  const toneOption = TONE_OPTIONS.find(t => t.value === book.toneProfile.primary);
   const calculateProgress = () => {
     if (!book.outline) return 0;
     const total = book.outline.chapters.reduce((acc, ch) => acc + ch.subsections.length, 0);
-    const completed = book.outline.chapters.reduce(
-      (acc, ch) => acc + ch.subsections.filter((s) => s.status === "completed").length,
-      0
-    );
-    return total > 0 ? Math.round((completed / total) * 100) : 0;
+    const completed = book.outline.chapters.reduce((acc, ch) => acc + ch.subsections.filter(s => s.status === "completed").length, 0);
+    return total > 0 ? Math.round(completed / total * 100) : 0;
   };
-
   const progress = calculateProgress();
-  const { phase } = generationState;
+  const {
+    phase
+  } = generationState;
   const isGenerating = phase === "writing" || phase === "generating-outline" || phase === "generating-image" || phase === "summarizing" || phase === "generating-characters";
   const isPaused = phase === "paused";
   const isIdle = phase === "idle";
   const isComplete = phase === "completed" || book.status === "completed";
-  const canStart = book.status === "planning" || book.status === "ready_to_write" || (isIdle && !isComplete);
-  
+  const canStart = book.status === "planning" || book.status === "ready_to_write" || isIdle && !isComplete;
   const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
   const hasCharacters = book.outline?.characters && book.outline.characters.length > 0;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="min-h-screen flex flex-col"
-    >
+  return <motion.div initial={{
+    opacity: 0
+  }} animate={{
+    opacity: 1
+  }} className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-40 glass border-b">
         <div className="container max-w-7xl mx-auto px-4 py-4">
@@ -109,20 +94,15 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                   <span className="text-2xl">{typeInfo.icon}</span>
                   <h1 className="text-xl font-serif font-semibold">{book.title}</h1>
                 </div>
-                {book.subtitle && (
-                  <p className="text-sm text-muted-foreground">{book.subtitle}</p>
-                )}
+                {book.subtitle && <p className="text-sm text-muted-foreground">{book.subtitle}</p>}
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {canStart && (
-                <Button variant="hero" onClick={startGeneration}>
+              {canStart && <Button variant="hero" onClick={startGeneration}>
                   <Play className="w-4 h-4" />
                   {book.outline ? "Continue" : "Start"} Generation
-                </Button>
-              )}
-              {isGenerating && (
-                <>
+                </Button>}
+              {isGenerating && <>
                   <Button variant="outline" onClick={pauseGeneration}>
                     <Pause className="w-4 h-4" />
                     Pause
@@ -130,20 +110,15 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                   <Button variant="ghost" size="icon" onClick={stopGeneration}>
                     <Square className="w-4 h-4" />
                   </Button>
-                </>
-              )}
-              {isPaused && (
-                <Button variant="hero" onClick={resumeGeneration}>
+                </>}
+              {isPaused && <Button variant="hero" onClick={resumeGeneration}>
                   <Play className="w-4 h-4" />
                   Resume
-                </Button>
-              )}
-              {isComplete && (
-                <Button variant="hero">
+                </Button>}
+              {isComplete && <Button variant="hero">
                   <Download className="w-4 h-4" />
                   Export Book
-                </Button>
-              )}
+                </Button>}
               <Button variant="ghost" size="icon">
                 <Settings className="w-5 h-5" />
               </Button>
@@ -154,27 +129,21 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
 
       <main className="flex-1 container max-w-7xl mx-auto px-4 py-6">
         {/* Generation Status */}
-        {(isGenerating || isPaused || generationState.phase !== "idle") && (
-          <motion.div 
-            className="mb-6"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <GenerationStatus 
-              phase={generationState.phase}
-              currentChapter={generationState.currentChapter}
-              currentSubsection={generationState.currentSubsection}
-              totalChapters={generationState.totalChapters}
-              totalSubsections={generationState.totalSubsections}
-            />
-          </motion.div>
-        )}
+        {(isGenerating || isPaused || generationState.phase !== "idle") && <motion.div className="mb-6" initial={{
+        opacity: 0,
+        y: -20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }}>
+            <GenerationStatus phase={generationState.phase} currentChapter={generationState.currentChapter} currentSubsection={generationState.currentSubsection} totalChapters={generationState.totalChapters} totalSubsections={generationState.totalSubsections} />
+          </motion.div>}
 
-        <div className="grid lg:grid-cols-4 gap-6 h-[calc(100vh-theme(spacing.20))]">
+        <div className="grid lg:grid-cols-4 gap-6 h-[calc(95vh-theme(spacing.20))]">
           {/* Main content area - Live View */}
           <div className="lg:col-span-3 flex flex-col h-full min-h-0">
             {/* View Mode Tabs */}
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="flex flex-col h-full min-h-0">
+            <Tabs value={viewMode} onValueChange={v => setViewMode(v as ViewMode)} className="flex flex-col h-full min-h-0">
               <TabsList className="w-fit mb-4 shrink-0 sticky top-0 z-10 bg-background">
                 <TabsTrigger value="live" className="gap-2">
                   <Tv className="w-4 h-4" />
@@ -188,31 +157,16 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                   <Scroll className="w-4 h-4" />
                   Full View
                 </TabsTrigger>
-                {hasCharacters && (
-                  <TabsTrigger value="characters" className="gap-2">
+                {hasCharacters && <TabsTrigger value="characters" className="gap-2">
                     <Users className="w-4 h-4" />
                     Characters
-                  </TabsTrigger>
-                )}
+                  </TabsTrigger>}
               </TabsList>
 
               <div className="flex-1 min-h-0 overflow-hidden">
-                {viewMode === "characters" && hasCharacters ? (
-                  <ScrollArea className="h-full rounded-xl border bg-card p-6">
-                    <CharacterGallery 
-                      characters={book.outline!.characters!}
-                      visualStyleGuide={book.outline!.visualStyleGuide}
-                    />
-                  </ScrollArea>
-                ) : viewMode === "chapter" ? (
-                  <ChapterView book={book} />
-                ) : (
-                  <LiveContentView 
-                    book={book}
-                    generationState={generationState}
-                    viewMode={viewMode === "characters" ? "live" : viewMode}
-                  />
-                )}
+                {viewMode === "characters" && hasCharacters ? <ScrollArea className="h-full rounded-xl border bg-card p-6">
+                    <CharacterGallery characters={book.outline!.characters!} visualStyleGuide={book.outline!.visualStyleGuide} />
+                  </ScrollArea> : viewMode === "chapter" ? <ChapterView book={book} /> : <LiveContentView book={book} generationState={generationState} viewMode={viewMode === "characters" ? "live" : viewMode} />}
               </div>
             </Tabs>
           </div>
@@ -239,8 +193,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
             </Card>
 
             {/* Chapters outline */}
-            {book.outline && book.outline.chapters.length > 0 && (
-              <Card>
+            {book.outline && book.outline.chapters.length > 0 && <Card>
                 <CardHeader className="py-3 px-4">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <BookOpen className="w-4 h-4" />
@@ -251,32 +204,18 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                   <ScrollArea className="h-[200px]">
                     <div className="space-y-2">
                       {book.outline.chapters.map((chapter, idx) => {
-                        const StatusIcon = statusConfig[chapter.status].icon;
-                        return (
-                          <div 
-                            key={chapter.id}
-                            className={`flex items-center gap-2 text-sm p-2 rounded-md ${
-                              idx === generationState.currentChapter && isGenerating
-                                ? "bg-primary/10 border border-primary/30"
-                                : "hover:bg-muted"
-                            }`}
-                          >
-                            <StatusIcon
-                              className={`w-4 h-4 ${statusConfig[chapter.status].color} ${
-                                statusConfig[chapter.status].animate ? "animate-spin" : ""
-                              }`}
-                            />
+                      const StatusIcon = statusConfig[chapter.status].icon;
+                      return <div key={chapter.id} className={`flex items-center gap-2 text-sm p-2 rounded-md ${idx === generationState.currentChapter && isGenerating ? "bg-primary/10 border border-primary/30" : "hover:bg-muted"}`}>
+                            <StatusIcon className={`w-4 h-4 ${statusConfig[chapter.status].color} ${statusConfig[chapter.status].animate ? "animate-spin" : ""}`} />
                             <span className="truncate flex-1">
                               {chapter.chapterNumber}. {chapter.title}
                             </span>
-                          </div>
-                        );
-                      })}
+                          </div>;
+                    })}
                     </div>
                   </ScrollArea>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
             {/* Book Details */}
             <Card>
@@ -330,18 +269,19 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
           </ScrollArea>
         </div>
       </main>
-    </motion.div>
-  );
+    </motion.div>;
 };
-
-const ControlBar = ({ label, value }: { label: string; value: number }) => (
-  <div>
+const ControlBar = ({
+  label,
+  value
+}: {
+  label: string;
+  value: number;
+}) => <div>
     <div className="flex justify-between text-xs mb-1">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium">{value}/10</span>
     </div>
     <Progress value={value * 10} className="h-1" />
-  </div>
-);
-
+  </div>;
 export default BookDetailView;
