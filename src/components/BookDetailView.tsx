@@ -139,7 +139,7 @@ const BookDetailView = ({
             <GenerationStatus phase={generationState.phase} currentChapter={generationState.currentChapter} currentSubsection={generationState.currentSubsection} totalChapters={generationState.totalChapters} totalSubsections={generationState.totalSubsections} />
           </motion.div>}
 
-        <div className="grid lg:grid-cols-4 gap-6 h-[calc(95vh-theme(spacing.20))]">
+        <div className="grid lg:grid-cols-4 gap-6 h-[calc(90vh-theme(spacing.20))]">
           {/* Main content area - Live View */}
           <div className="lg:col-span-3 flex flex-col h-full min-h-0">
             {/* View Mode Tabs */}
