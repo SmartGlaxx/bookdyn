@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,9 +43,17 @@ export function ChapterView({
 }: ChapterViewProps) {
   const [selectedChapter, setSelectedChapter] = useState(0);
   const [expandedChapter, setExpandedChapter] = useState<number | null>(null);
+  const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 800);
   const chapters = book.outline?.chapters || [];
   const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
   const isMobile = useIsMobile();
+  const isLandscapeMobile = isMobile && windowHeight < 500;
+
+  useEffect(() => {
+    const handleResize = () => setWindowHeight(window.innerHeight);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   if (!book.outline || chapters.length === 0) {
     return <Card className="h-full flex items-center justify-center">
         <CardContent className="text-center py-12">
@@ -157,7 +165,64 @@ export function ChapterView({
       </ScrollArea>;
   }
 
-  // Desktop view
+  // Landscape mobile layout - side by side with simplified content
+  if (isLandscapeMobile) {
+    return <div className="h-[calc(100vh-theme(spacing.20))] flex min-h-0">
+      {/* Chapter list on left */}
+      <ScrollArea className="w-48 shrink-0 border-r">
+        <div className="p-2 space-y-1">
+          {chapters.map((chapter, idx) => {
+            const StatusIcon = statusConfig[chapter.status].icon;
+            const isActive = idx === selectedChapter;
+            return <button 
+              key={chapter.id} 
+              onClick={() => setSelectedChapter(idx)} 
+              className={cn(
+                "w-full text-left p-2 rounded-md transition-colors text-xs",
+                isActive ? "bg-primary/10" : "hover:bg-muted"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <StatusIcon className={cn(
+                  "w-3 h-3 shrink-0",
+                  statusConfig[chapter.status].color,
+                  statusConfig[chapter.status].animate && "animate-spin"
+                )} />
+                <span className="truncate font-medium">
+                  {chapter.chapterNumber}. {chapter.title}
+                </span>
+              </div>
+            </button>;
+          })}
+        </div>
+      </ScrollArea>
+
+      {/* Content on right - no chapter heading */}
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="p-4">
+          {currentChapter.subsections.map((sub, subIdx) => (
+            <div key={sub.id} className="mb-4 last:mb-0">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary font-medium text-xs">
+                  {subIdx + 1}
+                </div>
+                <h3 className="font-medium text-sm">{sub.title}</h3>
+              </div>
+              {sub.content ? (
+                <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground/90 pl-7">
+                  {sub.content}
+                </p>
+              ) : (
+                <Skeleton className="h-12 w-full ml-7" />
+              )}
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+    </div>;
+  }
+
+  // Regular desktop view
   return <div className="h-[calc(100vh-theme(spacing.32))] flex gap-4 min-h-0">
       {/* Chapter Navigation Sidebar */}
       <Card className="w-64 shrink-0 flex flex-col min-h-0">
@@ -304,22 +369,6 @@ export function ChapterView({
           </CardContent>
         </ScrollArea>
 
-        {/* Chapter Footer with navigation */}
-        <div className="p-4 border-t bg-muted/30 shrink-0">
-          <div className="flex items-center justify-between">
-            <Button variant="outline" onClick={() => setSelectedChapter(Math.max(0, selectedChapter - 1))} disabled={selectedChapter === 0} className="gap-2">
-              <ChevronLeft className="w-4 h-4" />
-              Previous Chapter
-            </Button>
-            <div className="flex items-center gap-1">
-              {chapters.map((_, idx) => <button key={idx} onClick={() => setSelectedChapter(idx)} className={cn("w-2 h-2 rounded-full transition-colors", idx === selectedChapter ? "bg-primary" : "bg-muted-foreground/30 hover:bg-muted-foreground/50")} />)}
-            </div>
-            <Button variant="outline" onClick={() => setSelectedChapter(Math.min(chapters.length - 1, selectedChapter + 1))} disabled={selectedChapter === chapters.length - 1} className="gap-2">
-              Next Chapter
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
       </Card>
     </div>;
 }

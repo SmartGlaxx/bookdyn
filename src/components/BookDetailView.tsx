@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { ArrowLeft, Play, Pause, Square, Download, Settings, BookOpen, CheckCircle2, Circle, Loader2, Layers, Tv, BookText, Scroll, Users } from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Download, Settings, BookOpen, CheckCircle2, Circle, Loader2, Layers, BookText, Scroll, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,12 +38,12 @@ const statusConfig: Record<"pending" | "writing" | "completed", {
     color: "text-success"
   }
 };
-type ViewMode = "live" | "chapter" | "full" | "characters";
+type ViewMode = "chapter" | "full" | "characters";
 const BookDetailView = ({
   book,
   onBack
 }: BookDetailViewProps) => {
-  const [viewMode, setViewMode] = useState<ViewMode>("live");
+  const [viewMode, setViewMode] = useState<ViewMode>("chapter");
   const {
     updateBook
   } = useBooks();
@@ -145,10 +145,6 @@ const BookDetailView = ({
             {/* View Mode Tabs */}
             <Tabs value={viewMode} onValueChange={v => setViewMode(v as ViewMode)} className="flex flex-col h-full min-h-0">
               <TabsList className="w-fit mb-4 shrink-0 sticky top-0 z-10 bg-background">
-                <TabsTrigger value="live" className="gap-2">
-                  <Tv className="w-4 h-4" />
-                  Live View
-                </TabsTrigger>
                 <TabsTrigger value="chapter" className="gap-2">
                   <BookText className="w-4 h-4" />
                   Chapters
@@ -166,7 +162,7 @@ const BookDetailView = ({
               <div className="flex-1 min-h-0 overflow-hidden">
                 {viewMode === "characters" && hasCharacters ? <ScrollArea className="h-full rounded-xl border bg-card p-6">
                     <CharacterGallery characters={book.outline!.characters!} visualStyleGuide={book.outline!.visualStyleGuide} />
-                  </ScrollArea> : viewMode === "chapter" ? <ChapterView book={book} /> : <LiveContentView book={book} generationState={generationState} viewMode={viewMode === "characters" ? "live" : viewMode} />}
+                  </ScrollArea> : viewMode === "chapter" ? <ChapterView book={book} /> : <LiveContentView book={book} generationState={generationState} viewMode="full" />}
               </div>
             </Tabs>
           </div>
