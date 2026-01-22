@@ -1,6 +1,7 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { ArrowLeft, Play, Pause, Square, Download, Settings, BookOpen, CheckCircle2, Circle, Loader2, Layers, BookText, Scroll, Users } from "lucide-react";
+import BookSettings from "@/components/BookSettings";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +45,7 @@ const BookDetailView = ({
   onBack
 }: BookDetailViewProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>("chapter");
+  const [showSettings, setShowSettings] = useState(false);
   const {
     updateBook
   } = useBooks();
@@ -76,6 +78,11 @@ const BookDetailView = ({
   const canStart = book.status === "planning" || book.status === "ready_to_write" || isIdle && !isComplete;
   const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
   const hasCharacters = book.outline?.characters && book.outline.characters.length > 0;
+  // Show settings page
+  if (showSettings) {
+    return <BookSettings book={book} onBack={() => setShowSettings(false)} />;
+  }
+
   return <motion.div initial={{
     opacity: 0
   }} animate={{
@@ -119,7 +126,7 @@ const BookDetailView = ({
                   <Download className="w-4 h-4" />
                   Export Book
                 </Button>}
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)}>
                 <Settings className="w-5 h-5" />
               </Button>
             </div>
