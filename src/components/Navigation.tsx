@@ -1,4 +1,4 @@
-import { BookOpen, Sparkles, LogOut, User } from "lucide-react";
+import { BookOpen, Sparkles, LogOut, User, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -37,9 +37,12 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
           </div>
 
           <div className="flex items-center gap-3">
-            <Button variant="hero" size="sm" onClick={onCreateBook}>
+            <Button variant="hero" size="sm" onClick={onCreateBook} className="hidden sm:inline-flex">
               <Sparkles className="w-4 h-4" />
               New Book
+            </Button>
+            <Button variant="hero" size="icon" onClick={onCreateBook} className="sm:hidden">
+              <Plus className="w-5 h-5" />
             </Button>
 
             <DropdownMenu>
