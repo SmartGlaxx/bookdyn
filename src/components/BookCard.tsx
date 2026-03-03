@@ -75,7 +75,7 @@ const BookCard = ({ book, onSelect, onDelete, index }: BookCardProps) => {
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button variant="ghost" size="icon">
                   <MoreVertical className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
