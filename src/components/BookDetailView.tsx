@@ -118,11 +118,11 @@ const BookDetailView = ({
                   Resume
                 </Button>}
               {isComplete && <>
-                  <Button variant="hero" className="hidden sm:inline-flex">
+                  <Button variant="ghost" className="hidden sm:inline-flex gap-2">
                     <Download className="w-4 h-4" />
                     Export Book
                   </Button>
-                  <Button variant="hero" size="icon" className="sm:hidden">
+                  <Button variant="ghost" size="icon" className="sm:hidden">
                     <Download className="w-4 h-4" />
                   </Button>
                 </>}
