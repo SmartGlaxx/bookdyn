@@ -126,12 +126,12 @@ export function ChapterView({
   // Mobile view - accordion style
   if (isMobile) {
     return <ScrollArea className="h-[calc(100vh-theme(spacing.32))]">
-        <div className="px-4 py-2 space-y-2">
+        <div className="py-2 space-y-2">
           {chapters.map((chapter, idx) => {
           const StatusIcon = statusConfig[chapter.status].icon;
           const isExpanded = expandedChapter === idx;
           return <Collapsible key={chapter.id} open={isExpanded} onOpenChange={open => setExpandedChapter(open ? idx : null)}>
-                <Card className={cn("overflow-hidden transition-colors", isExpanded && "ring-2 ring-primary/30")}>
+                <Card className={cn("overflow-hidden transition-colors rounded-none border-x-0", isExpanded && "ring-1 ring-primary/20")}>
                   <CollapsibleTrigger className="w-full">
                     <div className="p-4 flex items-center gap-3">
                       <StatusIcon className={cn("w-5 h-5 shrink-0", statusConfig[chapter.status].color, statusConfig[chapter.status].animate && "animate-spin")} />
@@ -223,7 +223,7 @@ export function ChapterView({
   }
 
   // Regular desktop view
-  return <div className="h-[calc(100vh-theme(spacing.32))] flex gap-4 min-h-0">
+  return <div className="h-[calc(100vh-theme(spacing.32))] flex gap-4 min-h-0 pb-6">
       {/* Chapter Navigation Sidebar */}
       <Card className="w-64 shrink-0 flex flex-col min-h-0">
         <div className="p-4 border-b shrink-0">
@@ -304,7 +304,7 @@ export function ChapterView({
 
         {/* Chapter Content - independently scrollable */}
         <ScrollArea className="flex-1 min-h-0">
-          <CardContent className="p-6">
+          <CardContent className="p-6 pb-12">
             <AnimatePresence mode="wait">
               <motion.div key={selectedChapter} initial={{
               opacity: 0,
