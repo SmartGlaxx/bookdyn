@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { ArrowLeft, Play, Pause, Square, Download, Settings, CheckCircle2, Circle, Loader2, BookText, Users } from "lucide-react";
 import BookSettings from "@/components/BookSettings";
@@ -149,16 +150,16 @@ const BookDetailView = ({
         <div className="h-[calc(100vh-theme(spacing.20))]">
           <div className="flex flex-col h-full min-h-0">
             <Tabs value={viewMode} onValueChange={v => setViewMode(v as ViewMode)} className="flex flex-col h-full min-h-0">
-              {hasCharacters && <TabsList className="w-fit mb-4 shrink-0 sticky top-0 z-10 bg-background mx-4 md:mx-0">
-                <TabsTrigger value="chapter" className="gap-2">
+              <TabsList className="w-fit mb-4 shrink-0 sticky top-0 z-10 bg-background mx-4 md:mx-0">
+                <TabsTrigger value="chapter" className={cn("gap-2", !hasCharacters && "pointer-events-none")}>
                   <BookText className="w-4 h-4" />
                   Chapters
                 </TabsTrigger>
-                <TabsTrigger value="characters" className="gap-2">
+                {hasCharacters && <TabsTrigger value="characters" className="gap-2">
                     <Users className="w-4 h-4" />
                     Characters
-                  </TabsTrigger>
-              </TabsList>}
+                  </TabsTrigger>}
+              </TabsList>
 
               <div className="flex-1 min-h-0 overflow-hidden">
                 {viewMode === "characters" && hasCharacters ? <ScrollArea className="h-full rounded-xl border bg-card p-6">
