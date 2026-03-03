@@ -150,8 +150,8 @@ const BookDetailView = ({
         <div className="h-[calc(100vh-theme(spacing.20))]">
           <div className="flex flex-col h-full min-h-0">
             <Tabs value={viewMode} onValueChange={v => setViewMode(v as ViewMode)} className="flex flex-col h-full min-h-0">
-              <TabsList className="w-fit mb-4 shrink-0 sticky top-0 z-10 bg-background mx-4 md:mx-0">
-                <TabsTrigger value="chapter" className={cn("gap-2", !hasCharacters && "pointer-events-none")}>
+              <TabsList className={cn("w-fit mb-4 shrink-0 sticky top-0 z-10 bg-background mx-4 md:mx-0", !hasCharacters && "invisible")}>
+                <TabsTrigger value="chapter" className="gap-2 pointer-events-none">
                   <BookText className="w-4 h-4" />
                   Chapters
                 </TabsTrigger>
