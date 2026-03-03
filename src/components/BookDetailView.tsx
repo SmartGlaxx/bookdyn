@@ -85,28 +85,27 @@ const BookDetailView = ({
     opacity: 1
   }} className="min-h-screen flex flex-col">
       {/* Header */}
+      {/* Header */}
       <header className="sticky top-0 z-40 glass border-b">
-        <div className="container max-w-7xl mx-auto px-4 py-4">
+        <div className="container max-w-7xl mx-auto px-4 py-3">
+          {/* Title row - above controls */}
+          <div className="mb-2">
+            <h1 className="text-xl font-serif font-semibold">{book.title}</h1>
+            {book.subtitle && <p className="text-sm text-muted-foreground">{book.subtitle}</p>}
+          </div>
+          {/* Controls row */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={onBack}>
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{typeInfo.icon}</span>
-                  <h1 className="text-xl font-serif font-semibold">{book.title}</h1>
-                </div>
-                {book.subtitle && <p className="text-sm text-muted-foreground">{book.subtitle}</p>}
-              </div>
-            </div>
+            <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 -ml-2">
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Back</span>
+            </Button>
             <div className="flex items-center gap-2">
-              {canStart && <Button variant="hero" onClick={startGeneration}>
+              {canStart && <Button variant="hero" size="sm" onClick={startGeneration}>
                   <Play className="w-4 h-4" />
                   {book.outline ? "Continue" : "Start"} Generation
                 </Button>}
               {isGenerating && <>
-                  <Button variant="outline" onClick={pauseGeneration}>
+                  <Button variant="outline" size="sm" onClick={pauseGeneration}>
                     <Pause className="w-4 h-4" />
                     Pause
                   </Button>
@@ -114,14 +113,19 @@ const BookDetailView = ({
                     <Square className="w-4 h-4" />
                   </Button>
                 </>}
-              {isPaused && <Button variant="hero" onClick={resumeGeneration}>
+              {isPaused && <Button variant="hero" size="sm" onClick={resumeGeneration}>
                   <Play className="w-4 h-4" />
                   Resume
                 </Button>}
-              {isComplete && <Button variant="hero">
-                  <Download className="w-4 h-4" />
-                  Export Book
-                </Button>}
+              {isComplete && <>
+                  <Button variant="hero" className="hidden sm:inline-flex">
+                    <Download className="w-4 h-4" />
+                    Export Book
+                  </Button>
+                  <Button variant="hero" size="icon" className="sm:hidden">
+                    <Download className="w-4 h-4" />
+                  </Button>
+                </>}
               <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)}>
                 <Settings className="w-5 h-5" />
               </Button>
