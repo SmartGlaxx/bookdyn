@@ -130,9 +130,9 @@ const BookDetailView = ({
         </div>
       </header>
 
-      <main className="flex-1 container max-w-7xl mx-auto">
+      <main className="flex-1 container max-w-7xl mx-auto px-0 md:px-4 pb-4 md:pb-6">
         {/* Generation Status */}
-        {(isGenerating || isPaused || generationState.phase !== "idle") && <motion.div className="mb-6" initial={{
+        {(isGenerating || isPaused || generationState.phase !== "idle") && <motion.div className="mb-6 px-4 md:px-0" initial={{
         opacity: 0,
         y: -20
       }} animate={{
@@ -145,7 +145,7 @@ const BookDetailView = ({
         <div className="h-[calc(100vh-theme(spacing.20))]">
           <div className="flex flex-col h-full min-h-0">
             <Tabs value={viewMode} onValueChange={v => setViewMode(v as ViewMode)} className="flex flex-col h-full min-h-0">
-              <TabsList className="w-fit mb-4 shrink-0 sticky top-0 z-10 bg-background">
+              <TabsList className="w-fit mb-4 shrink-0 sticky top-0 z-10 bg-background mx-4 md:mx-0">
                 <TabsTrigger value="chapter" className="gap-2">
                   <BookText className="w-4 h-4" />
                   Chapters
