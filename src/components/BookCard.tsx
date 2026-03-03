@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Book, Clock, FileText, MoreVertical, Play, Pause, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -67,14 +67,11 @@ const BookCard = ({ book, onSelect, onDelete, index }: BookCardProps) => {
       >
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="text-3xl">{typeInfo.icon}</div>
-              <div>
-                <CardTitle className="text-lg line-clamp-1">{book.title}</CardTitle>
-                {book.subtitle && (
-                  <CardDescription className="line-clamp-1">{book.subtitle}</CardDescription>
-                )}
-              </div>
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-lg line-clamp-1">{book.title}</CardTitle>
+              {book.subtitle && (
+                <CardDescription className="line-clamp-1">{book.subtitle}</CardDescription>
+              )}
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -107,15 +104,6 @@ const BookCard = ({ book, onSelect, onDelete, index }: BookCardProps) => {
 
           <p className="text-sm text-muted-foreground line-clamp-2">{book.theme}</p>
 
-          {book.status !== "planning" && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Progress</span>
-                <span>{progress}%</span>
-              </div>
-              <Progress value={progress} variant="accent" />
-            </div>
-          )}
 
           <div className="flex items-center gap-4 text-sm text-muted-foreground pt-2">
             <div className="flex items-center gap-1">
