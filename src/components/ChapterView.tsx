@@ -74,7 +74,7 @@ export function ChapterView({
       return acc + (sub.content?.split(/\s+/).filter(Boolean).length || 0);
     }, 0);
   };
-  const renderChapterContent = (chapter: ChapterType) => <div className="p-4 md:p-6">
+  const renderChapterContent = (chapter: ChapterType) => <div className="p-4 md:p-6 overflow-hidden">
       {chapter.subsections.map((sub, subIdx) => <div key={sub.id} className="mb-8 last:mb-0">
           {/* Subsection Header */}
           <div className="flex items-center gap-3 mb-4">
@@ -103,8 +103,8 @@ export function ChapterView({
             </motion.div>}
 
           {/* Content */}
-          {sub.content ? <div className="prose prose-sm dark:prose-invert max-w-none pl-11">
-              <p className="whitespace-pre-wrap leading-relaxed text-foreground/90">
+          {sub.content ? <div className="prose prose-sm dark:prose-invert max-w-none pl-11 overflow-hidden">
+              <p className="whitespace-pre-wrap leading-relaxed text-foreground/90 break-words">
                 {sub.content}
               </p>
             </div> : sub.status === "pending" ? <div className="pl-11 space-y-2">
@@ -125,7 +125,7 @@ export function ChapterView({
 
   // Mobile view - accordion style
   if (isMobile) {
-    return <ScrollArea className="h-[calc(100vh-theme(spacing.32))]">
+    return <ScrollArea className="h-[calc(100vh-theme(spacing.32))] w-full overflow-x-hidden">
         <div className="py-2 space-y-2">
           {chapters.map((chapter, idx) => {
           const StatusIcon = statusConfig[chapter.status].icon;
@@ -135,11 +135,11 @@ export function ChapterView({
                   <CollapsibleTrigger className="w-full">
                     <div className="p-4 flex items-center gap-3">
                       <StatusIcon className={cn("w-5 h-5 shrink-0", statusConfig[chapter.status].color, statusConfig[chapter.status].animate && "animate-spin")} />
-                      <div className="flex-1 min-w-0 text-left">
+                      <div className="flex-1 min-w-0 text-left overflow-hidden">
                         <div className="text-xs text-muted-foreground">
                           Chapter {chapter.chapterNumber}
                         </div>
-                        <div className="font-medium text-sm truncate">
+                        <div className="font-medium text-sm break-words">
                           {chapter.title}
                         </div>
                         <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
