@@ -200,6 +200,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
         tonalAnchors: bookData.tonalAnchors || [],
         ieltsBand,
         targetWordsPerSubsection: clampedWordsPerSubsection,
+        teaserStyle: bookData.controls?.teaserStyle || "none",
       }),
     });
 
@@ -438,11 +439,21 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
             }
           }
 
+          // Parse teaser from content if present
+          let teaser: string | undefined;
+          let cleanContent = content;
+          const teaserMatch = content.match(/\[TEASER\]([\s\S]*?)\[\/TEASER\]/);
+          if (teaserMatch) {
+            teaser = teaserMatch[1].trim();
+            cleanContent = content.replace(/\[TEASER\][\s\S]*?\[\/TEASER\]\s*/, "").trim();
+          }
+
           // Update subsection
           updatedSubsections[subIdx] = {
             ...subsection,
-            content,
+            content: cleanContent,
             summary,
+            teaser,
             imageUrl: imageUrl || undefined,
             status: "completed",
           };

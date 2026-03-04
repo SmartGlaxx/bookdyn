@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { book, chapterIndex, subsectionIndex, previousSummary, previousRawContent, tonalAnchors, ieltsBand, targetWordsPerSubsection } = await req.json();
+    const { book, chapterIndex, subsectionIndex, previousSummary, previousRawContent, tonalAnchors, ieltsBand, targetWordsPerSubsection, teaserStyle } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -84,6 +84,14 @@ CHILDREN'S BOOK REQUIREMENTS:
 ` : `
 Write approximately ${targetWordsPerSubsection || 600} words for this subsection.
 `}
+
+${teaserStyle && teaserStyle !== "none" ? `
+SECTION TEASER (MANDATORY):
+You MUST begin your output with a teaser line wrapped in [TEASER]...[/TEASER] tags, followed by two newlines, then the actual prose.
+${teaserStyle === "mood-setter" ? "The teaser should be a date, location, weather note, or atmospheric stamp that frames the section. Example: [TEASER]November 14th. Rain against the windows of a café that should have closed an hour ago.[/TEASER]" : ""}
+${teaserStyle === "cryptic-open-loop" ? "The teaser should be a SINGLE cryptic sentence — intriguing enough to demand resolution, hints at something in the section without revealing what, names no outcomes, only makes full sense in hindsight. Think of it as a riddle the section answers. Example: [TEASER]He shook three hands that morning. One of them would bury him.[/TEASER]" : ""}
+${teaserStyle === "character-voice-drop" ? "The teaser should be a one-line thought or fragment in a character's voice, no context given. Example: [TEASER]I should have turned around when I saw the second lock.[/TEASER]" : ""}
+` : ""}
 
 Write ONLY the content for this subsection. Do not include titles or headers. Match the established tone and style. Strictly adhere to the language/grammar level specified above. Create engaging, high-quality prose.`;
 

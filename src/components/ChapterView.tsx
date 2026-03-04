@@ -83,7 +83,7 @@ export function ChapterView({
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="font-medium text-lg">{sub.title}</h3>
-              {sub.summary && <p className="text-sm text-muted-foreground mt-0.5">{sub.summary}</p>}
+              {sub.teaser && <p className="text-sm text-muted-foreground/80 mt-0.5 italic">{sub.teaser}</p>}
             </div>
             {sub.status === "completed" && <CheckCircle2 className="w-5 h-5 text-success shrink-0" />}
             {sub.status === "writing" && <Loader2 className="w-5 h-5 text-primary shrink-0 animate-spin" />}
@@ -326,7 +326,7 @@ export function ChapterView({
                       </div>
                       <div className="flex-1">
                         <h3 className="font-medium text-lg">{sub.title}</h3>
-                        {sub.summary && <p className="text-sm text-muted-foreground mt-0.5">{sub.summary}</p>}
+                        {sub.teaser && <p className="text-sm text-muted-foreground/80 mt-0.5 italic">{sub.teaser}</p>}
                       </div>
                       {sub.status === "completed" && <CheckCircle2 className="w-5 h-5 text-success shrink-0" />}
                       {sub.status === "writing" && <Loader2 className="w-5 h-5 text-primary shrink-0 animate-spin" />}
