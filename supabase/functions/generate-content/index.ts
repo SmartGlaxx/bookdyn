@@ -225,7 +225,9 @@ function getLanguageGuidelines(band: number): string {
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Write the content for subsection "${subsection.title}" in chapter "${chapter.title}". Create immersive, engaging prose that advances the book's narrative/purpose. Remember: keep the momentum — no dwelling, no ruminating, always moving forward.` },
+          { role: "user", content: isScreenplay 
+            ? `Write the screenplay content for subsection "${subsection.title}" in chapter "${chapter.title}". Use proper screenplay format: sluglines, character cues, dialogue, action lines, transitions. Keep the momentum — every scene must drive conflict forward.`
+            : `Write the content for subsection "${subsection.title}" in chapter "${chapter.title}". Create immersive, engaging prose that advances the book's narrative/purpose. Remember: keep the momentum — no dwelling, no ruminating, always moving forward.` },
         ],
         stream: true,
       }),
