@@ -51,7 +51,7 @@ You MUST use standard screenplay/stage-play formatting throughout. Never write i
 
 FORMAT RULES:
 - Scene headings: ALL CAPS, e.g. "INT. COFFEE SHOP — MORNING" or "EXT. ROOFTOP — NIGHT"
-- Character names before dialogue: ALL CAPS, centered/on own line
+- Character names before dialogue: Proper case (e.g., "Durrant", "Maya"), on their own line
 - Dialogue: Under the character name, indented
 - Parentheticals: In parentheses under character name, before dialogue, e.g. (whispering) or (beat)
 - Action/stage directions: Present tense, lean descriptions of what we SEE and HEAR
