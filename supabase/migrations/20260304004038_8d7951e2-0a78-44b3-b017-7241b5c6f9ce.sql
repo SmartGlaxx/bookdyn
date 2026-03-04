@@ -1,0 +1,1 @@
+ALTER TABLE public.books ALTER COLUMN user_id SET NOT NULL;

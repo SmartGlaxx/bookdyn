@@ -1,19 +1,22 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Mail, Lock, ArrowRight, Sparkles } from "lucide-react";
+import { BookOpen, Mail, Lock, ArrowRight, Sparkles, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const { user, loading, signIn, signUp } = useAuth();
   const { toast } = useToast();
 
@@ -31,6 +34,28 @@ const Auth = () => {
   if (user) {
     return <Navigate to="/" replace />;
   }
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      toast({ title: "Missing email", description: "Please enter your email address.", variant: "destructive" });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) {
+        toast({ title: "Reset failed", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "Check your email", description: "We've sent you a password reset link." });
+        setIsForgotPassword(false);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,13 +96,16 @@ const Auth = () => {
           });
         }
       } else {
-        const { error } = await signUp(email, password);
+        const { data, error } = await signUp(email, password);
         if (error) {
           toast({
             title: "Sign up failed",
             description: error.message,
             variant: "destructive",
           });
+        } else if (data?.user && !data.session) {
+          // User created but no session = needs email verification
+          setShowVerification(true);
         } else {
           toast({
             title: "Account created!",
@@ -116,105 +144,180 @@ const Auth = () => {
         </div>
 
         <Card className="border-border/50 shadow-lg">
-          <CardHeader className="space-y-1 text-center">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={isLogin ? "login" : "signup"}
-                initial={{ opacity: 0, x: isLogin ? -20 : 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: isLogin ? 20 : -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <CardTitle className="text-2xl font-serif">
-                  {isLogin ? "Welcome Back" : "Create Account"}
-                </CardTitle>
+          {showVerification ? (
+            <>
+              <CardHeader className="text-center">
+                <div className="flex justify-center mb-4">
+                  <CheckCircle className="w-16 h-16 text-success" />
+                </div>
+                <CardTitle className="text-2xl font-serif">Check Your Email</CardTitle>
                 <CardDescription>
-                  {isLogin
-                    ? "Sign in to continue your book projects"
-                    : "Start creating AI-powered books today"}
+                  We've sent a verification link to <strong>{email}</strong>. Please click the link to verify your account before signing in.
                 </CardDescription>
-              </motion.div>
-            </AnimatePresence>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    autoComplete="email"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
-                    autoComplete={isLogin ? "current-password" : "new-password"}
-                  />
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full"
-                variant="hero"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center gap-2">
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    >
-                      <Sparkles className="w-4 h-4" />
-                    </motion.div>
-                    {isLogin ? "Signing in..." : "Creating account..."}
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    {isLogin ? "Sign In" : "Create Account"}
-                    <ArrowRight className="w-4 h-4" />
-                  </span>
-                )}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {isLogin ? (
-                  <>
-                    Don't have an account?{" "}
-                    <span className="text-primary font-medium">Sign up</span>
-                  </>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => { setShowVerification(false); setIsLogin(true); }}
+                >
+                  Back to Sign In
+                </Button>
+              </CardContent>
+            </>
+          ) : (
+            <>
+              <CardHeader className="space-y-1 text-center">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={isForgotPassword ? "forgot" : isLogin ? "login" : "signup"}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <CardTitle className="text-2xl font-serif">
+                      {isForgotPassword ? "Reset Password" : isLogin ? "Welcome Back" : "Create Account"}
+                    </CardTitle>
+                    <CardDescription>
+                      {isForgotPassword
+                        ? "Enter your email to receive a reset link"
+                        : isLogin
+                          ? "Sign in to continue your book projects"
+                          : "Start creating AI-powered books today"}
+                    </CardDescription>
+                  </motion.div>
+                </AnimatePresence>
+              </CardHeader>
+              <CardContent>
+                {isForgotPassword ? (
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="you@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="pl-10"
+                          autoComplete="email"
+                        />
+                      </div>
+                    </div>
+                    <Button type="submit" className="w-full" variant="hero" disabled={isSubmitting}>
+                      <span className="flex items-center gap-2">
+                        {isSubmitting ? "Sending..." : "Send Reset Link"}
+                        <ArrowRight className="w-4 h-4" />
+                      </span>
+                    </Button>
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => setIsForgotPassword(false)}
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        Back to <span className="text-primary font-medium">Sign In</span>
+                      </button>
+                    </div>
+                  </form>
                 ) : (
                   <>
-                    Already have an account?{" "}
-                    <span className="text-primary font-medium">Sign in</span>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            id="email"
+                            type="email"
+                            placeholder="you@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="pl-10"
+                            autoComplete="email"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="password">Password</Label>
+                          {isLogin && (
+                            <button
+                              type="button"
+                              onClick={() => setIsForgotPassword(true)}
+                              className="text-xs text-primary hover:text-primary/80 transition-colors"
+                            >
+                              Forgot password?
+                            </button>
+                          )}
+                        </div>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            id="password"
+                            type="password"
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="pl-10"
+                            autoComplete={isLogin ? "current-password" : "new-password"}
+                          />
+                        </div>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        className="w-full"
+                        variant="hero"
+                        disabled={isSubmitting}
+                      >
+                        {isSubmitting ? (
+                          <span className="flex items-center gap-2">
+                            <motion.div
+                              animate={{ rotate: 360 }}
+                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            >
+                              <Sparkles className="w-4 h-4" />
+                            </motion.div>
+                            {isLogin ? "Signing in..." : "Creating account..."}
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-2">
+                            {isLogin ? "Sign In" : "Create Account"}
+                            <ArrowRight className="w-4 h-4" />
+                          </span>
+                        )}
+                      </Button>
+                    </form>
+
+                    <div className="mt-6 text-center">
+                      <button
+                        type="button"
+                        onClick={() => setIsLogin(!isLogin)}
+                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {isLogin ? (
+                          <>
+                            Don't have an account?{" "}
+                            <span className="text-primary font-medium">Sign up</span>
+                          </>
+                        ) : (
+                          <>
+                            Already have an account?{" "}
+                            <span className="text-primary font-medium">Sign in</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </>
                 )}
-              </button>
-            </div>
-          </CardContent>
+              </CardContent>
+            </>
+          )}
         </Card>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
