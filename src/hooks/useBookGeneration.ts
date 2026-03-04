@@ -117,15 +117,8 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
   }, [book, onUpdateBook]);
 
   const generateCharacters = useCallback(async (outline: BookOutline): Promise<CharacterReference[]> => {
-    const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
-    
-    // Only generate character references for children's books and comics
-    if (!isChildrensBook) {
-      return [];
-    }
-
     setState(s => ({ ...s, phase: "generating-characters", characterProgress: { current: 0, total: 0 } }));
-    toast.info("Generating character portraits for consistency...");
+    toast.info("Generating character profiles...");
 
     // Get IELTS band for language complexity
     const ieltsBand = getIELTSBandForAudience(book.audience);
@@ -333,9 +326,9 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
       currentBook = { ...currentBook, outline };
     }
 
-    // Phase 1.5: Generate character portraits for children's books
+    // Phase 1.5: Generate character profiles for all book types
     const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
-    if (isChildrensBook && (!outline.characters || outline.characters.length === 0)) {
+    if (!outline.characters || outline.characters.length === 0) {
       characters = await generateCharacters(outline);
       visualStyleGuide = outline.visualStyleGuide || "";
       
