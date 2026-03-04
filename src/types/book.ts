@@ -416,12 +416,10 @@ export const AUDIENCE_OPTIONS: AudienceOption[] = [
   
   // Band 6
   { value: "older-children-10-15", label: "Older Children (10–15)", ieltsBand: 6 },
-  { value: "beginners", label: "Beginners", ieltsBand: 6 },
   
   // Band 7
   { value: "16-plus", label: "16+ years", ieltsBand: 7 },
   { value: "general-readers", label: "General Readers", ieltsBand: 7 },
-  { value: "intermediate-learners", label: "Intermediate Learners", ieltsBand: 7 },
   
   // Band 8
   { value: "academics-undergraduate", label: "Academics (undergraduate level)", ieltsBand: 8 },
@@ -453,7 +451,7 @@ export const WORD_COUNT_PRESETS = [
 export const GENRE_PRESETS: Record<BookCategory, string[]> = {
   fiction: [
     "Fantasy", "Science Fiction", "Romance", "Mystery", "Thriller", 
-    "Horror", "Literary Fiction", "Historical Fiction", "Adventure", 
+    "Literary Fiction", "Historical Fiction", "Adventure", 
     "Dystopian", "Urban Fantasy", "Contemporary"
   ],
   "non-fiction": [
