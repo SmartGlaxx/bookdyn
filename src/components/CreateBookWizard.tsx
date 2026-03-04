@@ -796,30 +796,6 @@ const CreateBookWizard = ({ onClose, onCreate }: CreateBookWizardProps) => {
                           </Tooltip>
                         ))}
                       </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <LabelWithTooltip 
-                            label="Fine-tune word count" 
-                            tooltip="Drag to set a precise target. The outline will scale chapters and subsections to match."
-                          />
-                          <span className="text-sm font-medium text-primary">
-                            {(formData.controls?.structureControls?.targetWordCount || 50000).toLocaleString()} words
-                          </span>
-                        </div>
-                        <Slider
-                          value={[formData.controls?.structureControls?.targetWordCount || 50000]}
-                          onValueChange={([v]) => updateStructureControls("targetWordCount", v)}
-                          min={5000}
-                          max={100000}
-                          step={5000}
-                          className="py-2"
-                        />
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>5k (Short)</span>
-                          <span>50k (Standard)</span>
-                          <span>100k (Epic)</span>
-                        </div>
-                      </div>
                     </div>
 
                     {/* Generation Options */}

@@ -254,8 +254,8 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
       </header>
 
       <main className="flex-1 container max-w-7xl mx-auto px-0 md:px-4 pb-4 md:pb-6">
-        {(isGenerating || isPaused || generationState.phase !== "idle") && (
-          <motion.div className="mb-6 px-4 md:px-0" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+      {(isGenerating || isPaused) && generationState.phase !== "completed" && (
+          <motion.div className="mb-2 px-4 md:px-0" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
             <GenerationStatus
               phase={generationState.phase}
               currentChapter={generationState.currentChapter}
