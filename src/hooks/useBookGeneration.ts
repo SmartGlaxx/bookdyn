@@ -428,7 +428,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
           previousSummary = summary;
           // Keep the last ~1000 words of actual prose for anti-repetition context
           const words = content.split(/\s+/);
-          const previousRawContent = words.slice(-Math.min(1000, words.length)).join(" ");
+          previousRawContent = words.slice(-Math.min(1000, words.length)).join(" ");
 
           // Random tonal anchor extraction
           if (Math.random() < 0.3 && content.length > 200) {
