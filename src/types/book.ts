@@ -50,9 +50,19 @@ export interface ToneProfile {
   authorityLevel: number; // 1-10
 }
 
+export type TeaserStyle = "none" | "mood-setter" | "cryptic-open-loop" | "character-voice-drop";
+
+export const TEASER_STYLE_OPTIONS: { value: TeaserStyle; label: string; description: string }[] = [
+  { value: "none", label: "None", description: "No teaser — section starts immediately" },
+  { value: "mood-setter", label: "Mood Setter", description: "A date, location, weather note, or atmospheric stamp that frames the section" },
+  { value: "cryptic-open-loop", label: "Cryptic Open Loop", description: "A single cryptic sentence that hints at the section without revealing anything — only makes sense in hindsight" },
+  { value: "character-voice-drop", label: "Character Voice Drop", description: "A one-line thought or fragment in a character's voice, no context given" },
+];
+
 export interface StructureControls {
   chapterCount: "flexible" | "fixed";
   targetChapters?: number;
+  sectionsPerChapter?: number; // 2-10, default 4
   subsectionCount: "flexible" | "fixed";
   targetSubsections?: number;
   titlesRequired: boolean;
@@ -98,6 +108,9 @@ export interface BookControls {
   imageGeneration: boolean;
   autoResume: boolean;
   divergenceAllowed: boolean;
+  
+  // Teaser
+  teaserStyle: TeaserStyle;
 }
 
 export interface Subsection {
@@ -105,6 +118,7 @@ export interface Subsection {
   title: string;
   content?: string;
   summary?: string;
+  teaser?: string;
   goal?: string;
   imageOpportunity?: string;
   status: "pending" | "writing" | "completed";
@@ -478,6 +492,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
     },
     structureControls: {
       chapterCount: "flexible",
+      sectionsPerChapter: 4,
       subsectionCount: "flexible",
       titlesRequired: true,
       targetWordCount: 50000,
@@ -487,6 +502,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
     imageGeneration: true,
     autoResume: true,
     divergenceAllowed: false,
+    teaserStyle: "none",
   };
 
   // Adjust defaults based on category

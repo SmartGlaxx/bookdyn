@@ -54,6 +54,8 @@ TARGET WORD COUNT: ${book.controls.structureControls?.targetWordCount ? book.con
 - Each subsection should produce roughly 400-800 words of prose
 - Calculate: target_words / 600 (avg per subsection) = total subsections needed, distributed across chapters
 
+SECTIONS PER CHAPTER: Target ~${book.controls.structureControls?.sectionsPerChapter || 4} sections per chapter, but VARY naturally between ${Math.max(2, (book.controls.structureControls?.sectionsPerChapter || 4) - 1)} and ${Math.min(10, (book.controls.structureControls?.sectionsPerChapter || 4) + 1)} so chapters feel organic rather than mechanical. Some chapters should have more sections, some fewer.
+
 STRUCTURE PREFERENCES:
 - Chapter Count: ${book.controls.structureControls?.chapterCount === "fixed" ? book.controls.structureControls.targetChapters + " chapters" : "flexible (scale to match target word count)"}
 - Titles Required: ${book.controls.structureControls?.titlesRequired ? "Yes" : "Optional"}

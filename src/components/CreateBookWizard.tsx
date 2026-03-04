@@ -46,12 +46,14 @@ import {
   AUDIENCE_OPTIONS,
   GENRE_PRESETS,
   WORD_COUNT_PRESETS,
+  TEASER_STYLE_OPTIONS,
   getDefaultControls,
   AutomationLevel,
   DepthLevel,
   TemporalEra,
   TimelineStructure,
   SpatialScope,
+  TeaserStyle,
 } from "@/types/book";
 
 interface CreateBookWizardProps {
@@ -749,6 +751,20 @@ const CreateBookWizard = ({ onClose, onCreate }: CreateBookWizardProps) => {
                             />
                           </div>
                         )}
+
+                        <div className="space-y-2">
+                          <LabelWithTooltip 
+                            label="Sections Per Chapter" 
+                            tooltip="How many sections each chapter contains. The actual count will vary naturally within ±1 of this value so chapters feel organic."
+                          />
+                          <Input
+                            type="number"
+                            min={2}
+                            max={10}
+                            value={formData.controls?.structureControls?.sectionsPerChapter || 4}
+                            onChange={(e) => updateStructureControls("sectionsPerChapter", Math.max(2, Math.min(10, parseInt(e.target.value) || 4)))}
+                          />
+                        </div>
                       </div>
 
                       <div className="flex items-center justify-between">
@@ -767,6 +783,38 @@ const CreateBookWizard = ({ onClose, onCreate }: CreateBookWizardProps) => {
                           checked={formData.controls?.structureControls?.titlesRequired ?? true}
                           onCheckedChange={(v) => updateStructureControls("titlesRequired", v)}
                         />
+                      </div>
+                    </div>
+
+                    {/* Section Teaser Setting */}
+                    <div className="space-y-4 pt-4 border-t">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <span className="text-lg">✨</span>
+                        Section Teasers
+                      </h4>
+                      <div className="space-y-2">
+                        <LabelWithTooltip 
+                          label="Teaser Style" 
+                          tooltip="Each section gets a teaser based on the selected style, applied consistently across the entire book."
+                        />
+                        <Select
+                          value={formData.controls?.teaserStyle || "none"}
+                          onValueChange={(v) => updateControls("teaserStyle", v as TeaserStyle)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover z-50">
+                            {TEASER_STYLE_OPTIONS.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                <div>
+                                  <div>{opt.label}</div>
+                                  <div className="text-xs text-muted-foreground">{opt.description}</div>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
 
