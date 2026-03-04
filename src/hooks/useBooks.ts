@@ -42,7 +42,7 @@ const transformBookToDb = (book: Partial<Book> & { id?: string }) => ({
   ...(book.toneProfile !== undefined && { tone_profile: book.toneProfile }),
   ...(book.controls !== undefined && { controls: book.controls }),
   ...(book.status !== undefined && { status: book.status }),
-  ...(book.outline !== undefined && { outline: book.outline }),
+  ...('outline' in book && { outline: book.outline ?? null }),
   ...(book.currentChapterIndex !== undefined && { current_chapter_index: book.currentChapterIndex }),
   ...(book.currentSubsectionIndex !== undefined && { current_subsection_index: book.currentSubsectionIndex }),
   ...(book.wordCount !== undefined && { word_count: book.wordCount }),
@@ -134,7 +134,7 @@ export const useBooks = () => {
       if (updates.toneProfile !== undefined) dbUpdates.tone_profile = updates.toneProfile;
       if (updates.controls !== undefined) dbUpdates.controls = updates.controls;
       if (updates.status !== undefined) dbUpdates.status = updates.status;
-      if (updates.outline !== undefined) dbUpdates.outline = updates.outline;
+      if ('outline' in updates) dbUpdates.outline = updates.outline ?? null;
       if (updates.currentChapterIndex !== undefined) dbUpdates.current_chapter_index = updates.currentChapterIndex;
       if (updates.currentSubsectionIndex !== undefined) dbUpdates.current_subsection_index = updates.currentSubsectionIndex;
       if (updates.wordCount !== undefined) dbUpdates.word_count = updates.wordCount;

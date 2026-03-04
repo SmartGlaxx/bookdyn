@@ -104,7 +104,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
 
   const handleRegenerate = () => {
     updateBook(book.id, {
-      outline: undefined,
+      outline: null as any,
       status: "planning",
       currentChapterIndex: 0,
       currentSubsectionIndex: 0,
