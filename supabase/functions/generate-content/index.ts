@@ -43,7 +43,50 @@ serve(async (req) => {
 
     const pacingRules = getPacingRules(hookFrequency, velocity, isNarrative, hookInterval, sceneChangeWords);
     
+    const isScreenplay = book.bookType === "drama";
+
+    const screenplayRules = isScreenplay ? `
+SCREENPLAY FORMAT (MANDATORY — you are writing a screenplay, NOT prose):
+You MUST use standard screenplay/stage-play formatting throughout. Never write in prose paragraph form.
+
+FORMAT RULES:
+- Scene headings: ALL CAPS, e.g. "INT. COFFEE SHOP — MORNING" or "EXT. ROOFTOP — NIGHT"
+- Character names before dialogue: ALL CAPS, centered/on own line
+- Dialogue: Under the character name, indented
+- Parentheticals: In parentheses under character name, before dialogue, e.g. (whispering) or (beat)
+- Action/stage directions: Present tense, lean descriptions of what we SEE and HEAR
+- Transitions: FADE IN:, CUT TO:, FADE TO BLACK, SMASH CUT TO:, etc. — used sparingly
+- (CONT'D) when a character's dialogue is interrupted by action then resumes
+- (V.O.) for voiceover, (O.S.) for off-screen
+- Keep action lines SHORT — 1-3 sentences max per block
+- Show, don't tell — no internal thoughts unless delivered as V.O.
+- NO prose paragraphs. NO novelistic descriptions. Every line must serve the camera or the actor.
+
+EXAMPLE FORMAT:
+INT. INTERROGATION ROOM — NIGHT
+
+Fluorescent light flickers. A metal table. Two chairs. DURRANT, 40s, worn suit, sits across from MAYA, 28, sharp eyes.
+
+DURRANT
+You called him at 11:47.
+
+MAYA
+I call a lot of people.
+
+DURRANT
+Not from payphones.
+
+Silence. Maya's jaw tightens — barely.
+
+DURRANT (CONT'D)
+(leaning forward)
+Nobody uses payphones anymore.
+
+He slides a photograph across the table. Face down.
+` : "";
+
     const systemPrompt = `You are a master writer creating content for a ${book.bookType} book.
+${isScreenplay ? "You are writing in SCREENPLAY FORMAT. Every line of output must follow screenplay conventions." : ""}
 
 BOOK CONTEXT:
 - Title: "${book.title}"
@@ -60,11 +103,13 @@ CURRENT POSITION:
 - Subsection: "${subsection.title}"
 - Goal: ${subsection.goal || "Continue the narrative"}
 
+${screenplayRules}
+
 ${pacingRules}
 
 ${previousSummary ? `PREVIOUS SECTION SUMMARY:\n${previousSummary}\n` : ""}
 
-${previousRawContent ? `PREVIOUS SECTION ENDING (last ~1000 words of actual prose — DO NOT repeat any of this content, scenes, dialogue, or descriptions. Move the story FORWARD from where this left off):\n---\n${previousRawContent}\n---\n` : ""}
+${previousRawContent ? `PREVIOUS SECTION ENDING (last ~1000 words — DO NOT repeat any of this content, scenes, dialogue, or descriptions. Move the story FORWARD from where this left off):\n---\n${previousRawContent}\n---\n` : ""}
 
 ANTI-REPETITION RULE (STRICTLY ENFORCED):
 - NEVER rewrite, paraphrase, or revisit scenes, dialogue, descriptions, or events that already appeared in the previous section.
@@ -87,13 +132,13 @@ Write approximately ${targetWordsPerSubsection || 600} words for this subsection
 
 ${teaserStyle && teaserStyle !== "none" ? `
 SECTION TEASER (MANDATORY):
-You MUST begin your output with a teaser line wrapped in [TEASER]...[/TEASER] tags, followed by two newlines, then the actual prose.
+You MUST begin your output with a teaser line wrapped in [TEASER]...[/TEASER] tags, followed by two newlines, then the actual ${isScreenplay ? "screenplay" : "prose"}.
 ${teaserStyle === "mood-setter" ? "The teaser should be a date, location, weather note, or atmospheric stamp that frames the section. Example: [TEASER]November 14th. Rain against the windows of a café that should have closed an hour ago.[/TEASER]" : ""}
 ${teaserStyle === "cryptic-open-loop" ? "The teaser should be a SINGLE cryptic sentence — intriguing enough to demand resolution, hints at something in the section without revealing what, names no outcomes, only makes full sense in hindsight. Think of it as a riddle the section answers. Example: [TEASER]He shook three hands that morning. One of them would bury him.[/TEASER]" : ""}
 ${teaserStyle === "character-voice-drop" ? "The teaser should be a one-line thought or fragment in a character's voice, no context given. Example: [TEASER]I should have turned around when I saw the second lock.[/TEASER]" : ""}
 ` : ""}
 
-Write ONLY the content for this subsection. Do not include titles or headers. Match the established tone and style. Strictly adhere to the language/grammar level specified above. Create engaging, high-quality prose.`;
+Write ONLY the content for this subsection. ${isScreenplay ? "Use proper screenplay formatting throughout. No prose paragraphs." : "Do not include titles or headers. Match the established tone and style."} Strictly adhere to the language/grammar level specified above. Create engaging, high-quality ${isScreenplay ? "screenplay scenes" : "prose"}.`;
 
 function getPacingRules(hookFreq: number, vel: number, isNarr: boolean, hookInt: number, sceneWords: number): string {
   // Always include core writing controls
