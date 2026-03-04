@@ -182,6 +182,15 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
     // Get IELTS band for language level
     const ieltsBand = getIELTSBandForAudience(bookData.audience);
 
+    // Calculate per-subsection word target based on total target and outline size
+    const totalSubsections = bookData.outline?.chapters?.reduce(
+      (sum: number, ch: any) => sum + (ch.subsections?.length || 0), 0
+    ) || 1;
+    const targetWordCount = bookData.controls?.structureControls?.targetWordCount || 50000;
+    const targetWordsPerSubsection = Math.round(targetWordCount / totalSubsections);
+    // Clamp between 300 and 1200 words per subsection
+    const clampedWordsPerSubsection = Math.max(300, Math.min(1200, targetWordsPerSubsection));
+
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-content`, {
       method: "POST",
       headers: {
@@ -195,6 +204,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
         previousSummary,
         tonalAnchors: bookData.tonalAnchors || [],
         ieltsBand,
+        targetWordsPerSubsection: clampedWordsPerSubsection,
       }),
     });
 

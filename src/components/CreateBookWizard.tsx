@@ -45,6 +45,7 @@ import {
   SPATIAL_SCOPE_OPTIONS,
   AUDIENCE_OPTIONS,
   GENRE_PRESETS,
+  WORD_COUNT_PRESETS,
   getDefaultControls,
   AutomationLevel,
   DepthLevel,
@@ -757,6 +758,58 @@ const CreateBookWizard = ({ onClose, onCreate }: CreateBookWizardProps) => {
                           checked={formData.controls?.structureControls?.titlesRequired ?? true}
                           onCheckedChange={(v) => updateStructureControls("titlesRequired", v)}
                         />
+                      </div>
+                    </div>
+
+                    {/* Target Word Count */}
+                    <div className="space-y-4 pt-4 border-t">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <span className="text-lg">📏</span>
+                        Target Word Count
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {WORD_COUNT_PRESETS.map((preset) => (
+                          <Tooltip key={preset.value}>
+                            <TooltipTrigger asChild>
+                              <Badge
+                                variant={
+                                  formData.controls?.structureControls?.targetWordCount === preset.value
+                                    ? "default"
+                                    : "outline"
+                                }
+                                className="cursor-pointer px-3 py-1.5"
+                                onClick={() => updateStructureControls("targetWordCount", preset.value)}
+                              >
+                                {preset.label}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent>{preset.description}</TooltipContent>
+                          </Tooltip>
+                        ))}
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <LabelWithTooltip 
+                            label="Fine-tune word count" 
+                            tooltip="Drag to set a precise target. The outline will scale chapters and subsections to match."
+                          />
+                          <span className="text-sm font-medium text-primary">
+                            {(formData.controls?.structureControls?.targetWordCount || 50000).toLocaleString()} words
+                          </span>
+                        </div>
+                        <Slider
+                          value={[formData.controls?.structureControls?.targetWordCount || 50000]}
+                          onValueChange={([v]) => updateStructureControls("targetWordCount", v)}
+                          min={5000}
+                          max={100000}
+                          step={5000}
+                          className="py-2"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>5k (Short)</span>
+                          <span>50k (Standard)</span>
+                          <span>100k (Epic)</span>
+                        </div>
                       </div>
                     </div>
 

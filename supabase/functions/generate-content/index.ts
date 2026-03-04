@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { book, chapterIndex, subsectionIndex, previousSummary, tonalAnchors, ieltsBand } = await req.json();
+    const { book, chapterIndex, subsectionIndex, previousSummary, tonalAnchors, ieltsBand, targetWordsPerSubsection } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -66,7 +66,7 @@ CHILDREN'S BOOK REQUIREMENTS:
 - End with a gentle hook or resolution
 - Include sensory details (colors, sounds, textures)
 ` : `
-Write 400-800 words for this subsection.
+Write approximately ${targetWordsPerSubsection || 600} words for this subsection.
 `}
 
 Write ONLY the content for this subsection. Do not include titles or headers. Match the established tone and style. Strictly adhere to the language/grammar level specified above. Create engaging, high-quality prose.`;
