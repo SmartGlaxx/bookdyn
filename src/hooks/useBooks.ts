@@ -79,7 +79,7 @@ export const useBooks = () => {
       if (!user) throw new Error("Must be logged in to create books");
       
       const bookData = {
-        title: input.title,
+        title: input.title.trim(),
         subtitle: input.subtitle ?? null,
         book_type: input.bookType,
         theme: input.theme,
