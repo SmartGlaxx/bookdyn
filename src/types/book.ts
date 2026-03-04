@@ -120,13 +120,114 @@ export interface Chapter {
   status: "pending" | "writing" | "completed";
 }
 
+export interface CharacterIdentity {
+  fullName: string;
+  aliases?: string[];
+  age?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  pronouns?: string;
+  nationality?: string;
+  ethnicity?: string;
+  culturalBackground?: string;
+  nativeLanguage?: string;
+  accent?: string;
+}
+
+export interface CharacterAppearance {
+  height?: string;
+  build?: string;
+  skinTone?: string;
+  faceShape?: string;
+  eyeColor?: string;
+  eyeShape?: string;
+  eyeDistinguishing?: string;
+  noseShape?: string;
+  lipShape?: string;
+  jawline?: string;
+  cheekbones?: string;
+  scars?: string;
+  birthmarks?: string;
+  tattoos?: string;
+  distinctiveMarks?: string;
+  hands?: string;
+}
+
+export interface CharacterHair {
+  color?: string;
+  texture?: string;
+  lengthAndStyle?: string;
+  casualStyle?: string;
+  formalStyle?: string;
+  changesAcrossStory?: string;
+}
+
+export interface CharacterFashion {
+  casualStyle?: string;
+  workAttire?: string;
+  formalWear?: string;
+  sleepwear?: string;
+  signatureItem?: string;
+  shoePreference?: string;
+  styleReflection?: string;
+  styleEvolution?: string;
+}
+
+export interface CharacterVoice {
+  toneOfVoice?: string;
+  speechPatterns?: string;
+  accentStrength?: string;
+  nervousHabits?: string;
+  posture?: string;
+  defaultExpressions?: string;
+  laughStyle?: string;
+  angerStyle?: string;
+  fearStyle?: string;
+}
+
+export interface CharacterPersonality {
+  coreType?: string;
+  strengths?: string[];
+  flaws?: string[];
+  fears?: string[];
+  desires?: string[];
+  publicPersona?: string;
+  privateReality?: string;
+  treatmentOfStrangers?: string;
+  treatmentOfLovedOnes?: string;
+}
+
+export interface CharacterBackstory {
+  upbringing?: string;
+  formativeEvents?: string[];
+  definingRelationships?: string[];
+  whatTheyLost?: string;
+  whatTheySeek?: string;
+}
+
+export interface CharacterStoryRole {
+  archetype?: string;
+  relationshipToMainCharacter?: string;
+  goal?: string;
+  obstacle?: string;
+  arc?: string;
+}
+
 export interface CharacterReference {
   id: string;
   name: string;
   description: string;
   visualDescription: string;
-  role: "protagonist" | "supporting" | "minor";
+  role: "protagonist" | "supporting" | "minor" | "background";
   portraitUrl?: string;
+  identity?: CharacterIdentity;
+  appearance?: CharacterAppearance;
+  hair?: CharacterHair;
+  fashion?: CharacterFashion;
+  voice?: CharacterVoice;
+  personality?: CharacterPersonality;
+  backstory?: CharacterBackstory;
+  storyRole?: CharacterStoryRole;
 }
 
 export interface BookOutline {
