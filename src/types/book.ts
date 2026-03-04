@@ -326,6 +326,14 @@ export const getIELTSBandForAudience = (audienceValue: string): IELTSBand => {
 // Legacy array for backward compatibility
 export const AUDIENCE_PRESETS = AUDIENCE_OPTIONS.map(opt => opt.value);
 
+export const WORD_COUNT_PRESETS = [
+  { value: 10000, label: "Short", description: "~10k words — short stories, guides" },
+  { value: 25000, label: "Novella", description: "~25k words — novellas, manuals" },
+  { value: 50000, label: "Standard", description: "~50k words — standard novels" },
+  { value: 75000, label: "Long", description: "~75k words — detailed novels" },
+  { value: 100000, label: "Epic", description: "~100k words — epic narratives" },
+] as const;
+
 export const GENRE_PRESETS: Record<BookCategory, string[]> = {
   fiction: [
     "Fantasy", "Science Fiction", "Romance", "Mystery", "Thriller", 
@@ -369,6 +377,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
       chapterCount: "flexible",
       subsectionCount: "flexible",
       titlesRequired: true,
+      targetWordCount: 50000,
     },
     automationLevel: "semi-autonomous",
     depthLevel: "intermediate",

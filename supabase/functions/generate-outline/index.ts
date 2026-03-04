@@ -49,8 +49,13 @@ DYNAMISM CONTROLS:
 - Temporal Era: ${book.controls.temporalContext?.era || "contemporary"}
 - Timeline Structure: ${book.controls.temporalContext?.timelineStructure || "linear"}
 
+TARGET WORD COUNT: ${book.controls.structureControls?.targetWordCount ? book.controls.structureControls.targetWordCount.toLocaleString() + " words" : "~50,000 words (default)"}
+- Plan chapters and subsections so that the total content will reach approximately this word count
+- Each subsection should produce roughly 400-800 words of prose
+- Calculate: target_words / 600 (avg per subsection) = total subsections needed, distributed across chapters
+
 STRUCTURE PREFERENCES:
-- Chapter Count: ${book.controls.structureControls?.chapterCount === "fixed" ? book.controls.structureControls.targetChapters + " chapters" : "flexible (3-12 chapters)"}
+- Chapter Count: ${book.controls.structureControls?.chapterCount === "fixed" ? book.controls.structureControls.targetChapters + " chapters" : "flexible (scale to match target word count)"}
 - Titles Required: ${book.controls.structureControls?.titlesRequired ? "Yes" : "Optional"}
 - Divergence Allowed: ${book.controls.divergenceAllowed ? "Yes - parallel storylines permitted" : "No - keep focused"}
 
