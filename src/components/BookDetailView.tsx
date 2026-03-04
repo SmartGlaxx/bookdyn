@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
-import { ArrowLeft, Play, Pause, Square, Download, Settings, CheckCircle2, Circle, Loader2, BookText, Users } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { ArrowLeft, Play, Pause, Square, Download, Settings, CheckCircle2, Circle, Loader2, BookText, Users, Pencil, Check, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import BookSettings from "@/components/BookSettings";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -43,6 +44,16 @@ const BookDetailView = ({
 }: BookDetailViewProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>("chapter");
   const [showSettings, setShowSettings] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editTitle, setEditTitle] = useState(book.title);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isEditingTitle && titleInputRef.current) {
+      titleInputRef.current.focus();
+      titleInputRef.current.select();
+    }
+  }, [isEditingTitle]);
   const {
     updateBook
   } = useBooks();
@@ -90,10 +101,48 @@ const BookDetailView = ({
       <header className="sticky top-0 z-40 glass border-b">
         <div className="container max-w-7xl mx-auto px-4 py-3">
           {/* Title row - above controls */}
-          <div className="mb-2">
-            <h1 className="text-xl font-serif font-semibold">{book.title}</h1>
-            {book.subtitle && <p className="text-sm text-muted-foreground">{book.subtitle}</p>}
+          <div className="mb-2 flex items-center gap-2">
+            {isEditingTitle ? (
+              <div className="flex items-center gap-2 flex-1">
+                <Input
+                  ref={titleInputRef}
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && editTitle.trim()) {
+                      updateBook(book.id, { title: editTitle.trim() });
+                      setIsEditingTitle(false);
+                    }
+                    if (e.key === "Escape") {
+                      setEditTitle(book.title);
+                      setIsEditingTitle(false);
+                    }
+                  }}
+                  className="text-xl font-serif font-semibold h-auto py-1"
+                />
+                <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={() => {
+                  if (editTitle.trim()) {
+                    updateBook(book.id, { title: editTitle.trim() });
+                    setIsEditingTitle(false);
+                  }
+                }}>
+                  <Check className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={() => {
+                  setEditTitle(book.title);
+                  setIsEditingTitle(false);
+                }}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingTitle(true)}>
+                <h1 className="text-xl font-serif font-semibold">{book.title}</h1>
+                <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            )}
           </div>
+          {!isEditingTitle && book.subtitle && <p className="text-sm text-muted-foreground mb-2">{book.subtitle}</p>}
           {/* Controls row */}
           <div className="flex items-center justify-between">
             <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 -ml-2">
