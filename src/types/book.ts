@@ -499,7 +499,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
     },
     automationLevel: "semi-autonomous",
     depthLevel: "intermediate",
-    imageGeneration: true,
+    imageGeneration: false,
     autoResume: true,
     divergenceAllowed: false,
     teaserStyle: "none",

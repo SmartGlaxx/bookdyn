@@ -737,20 +737,19 @@ const CreateBookWizard = ({ onClose, onCreate }: CreateBookWizardProps) => {
                               <SelectItem value="fixed">Fixed Number</SelectItem>
                             </SelectContent>
                           </Select>
+                          {formData.controls?.structureControls?.chapterCount === "fixed" && (
+                            <div className="space-y-2 mt-2">
+                              <Label>Target Chapters</Label>
+                              <Input
+                                type="number"
+                                min={1}
+                                max={100}
+                                value={formData.controls?.structureControls?.targetChapters || 10}
+                                onChange={(e) => updateStructureControls("targetChapters", parseInt(e.target.value))}
+                              />
+                            </div>
+                          )}
                         </div>
-
-                        {formData.controls?.structureControls?.chapterCount === "fixed" && (
-                          <div className="space-y-2">
-                            <Label>Target Chapters</Label>
-                            <Input
-                              type="number"
-                              min={1}
-                              max={100}
-                              value={formData.controls?.structureControls?.targetChapters || 10}
-                              onChange={(e) => updateStructureControls("targetChapters", parseInt(e.target.value))}
-                            />
-                          </div>
-                        )}
 
                         <div className="space-y-2">
                           <LabelWithTooltip 
@@ -792,29 +791,29 @@ const CreateBookWizard = ({ onClose, onCreate }: CreateBookWizardProps) => {
                         <span className="text-lg">✨</span>
                         Section Teasers
                       </h4>
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         <LabelWithTooltip 
                           label="Teaser Style" 
                           tooltip="Each section gets a teaser based on the selected style, applied consistently across the entire book."
                         />
-                        <Select
-                          value={formData.controls?.teaserStyle || "none"}
-                          onValueChange={(v) => updateControls("teaserStyle", v as TeaserStyle)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover z-50">
-                            {TEASER_STYLE_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                <div>
-                                  <div>{opt.label}</div>
-                                  <div className="text-xs text-muted-foreground">{opt.description}</div>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {TEASER_STYLE_OPTIONS.map((opt) => (
+                            <button
+                              key={opt.value}
+                              onClick={() => updateControls("teaserStyle", opt.value as TeaserStyle)}
+                              className={`p-3 rounded-lg border-2 text-left transition-all ${
+                                formData.controls?.teaserStyle === opt.value
+                                  ? "border-primary bg-primary/5"
+                                  : "border-border hover:border-primary/50"
+                              }`}
+                            >
+                              <div className="font-medium text-sm">{opt.label}</div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {opt.description}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
