@@ -431,6 +431,49 @@ export const AUDIENCE_OPTIONS: AudienceOption[] = [
   { value: "specialized-experts", label: "Specialized Industry Experts (technical or research-focused)", ieltsBand: 9 },
 ];
 
+// Map each book type to its reasonable audience options
+export const BOOK_TYPE_AUDIENCES: Record<BookType, string[]> = {
+  // Fiction
+  novel: ["16-plus", "general-readers", "academics-undergraduate"],
+  "fiction-serial": ["16-plus", "general-readers"],
+  "short-story": ["16-plus", "general-readers", "academics-undergraduate"],
+  children: ["children-1-9", "older-children-10-15"],
+  comic: ["older-children-10-15", "16-plus", "general-readers"],
+
+  // Non-Fiction
+  biography: ["16-plus", "general-readers", "academics-undergraduate"],
+  memoir: ["16-plus", "general-readers"],
+  "self-help": ["16-plus", "general-readers", "professionals"],
+  psychology: ["academics-undergraduate", "professionals", "scholars-researchers"],
+  business: ["academics-undergraduate", "professionals", "industry-experts"],
+  finance: ["academics-undergraduate", "professionals", "industry-experts", "specialized-experts"],
+  accounting: ["academics-undergraduate", "professionals", "industry-experts", "specialized-experts"],
+  economics: ["academics-undergraduate", "professionals", "industry-experts", "scholars-researchers"],
+  travel: ["older-children-10-15", "16-plus", "general-readers"],
+  history: ["16-plus", "general-readers", "academics-undergraduate", "scholars-researchers"],
+  culture: ["16-plus", "general-readers", "academics-undergraduate", "scholars-researchers"],
+
+  // Educational
+  technology: ["16-plus", "general-readers", "academics-undergraduate", "professionals", "industry-experts"],
+  programming: ["16-plus", "academics-undergraduate", "professionals", "industry-experts", "specialized-experts"],
+  "ai-ml": ["academics-undergraduate", "professionals", "industry-experts", "specialized-experts", "scholars-researchers"],
+  engineering: ["academics-undergraduate", "professionals", "industry-experts", "specialized-experts", "scholars-researchers"],
+  "science-academic": ["academics-undergraduate", "scholars-researchers", "specialized-experts"],
+  "science-popular": ["16-plus", "general-readers", "academics-undergraduate"],
+  textbook: ["older-children-10-15", "16-plus", "academics-undergraduate", "scholars-researchers"],
+  cookbook: ["older-children-10-15", "16-plus", "general-readers"],
+
+  // Creative
+  poetry: ["16-plus", "general-readers", "academics-undergraduate", "scholars-researchers"],
+  drama: ["16-plus", "general-readers", "academics-undergraduate"],
+  "illustrated-guide": ["older-children-10-15", "16-plus", "general-readers"],
+
+  // Specialized
+  magazine: ["16-plus", "general-readers", "professionals"],
+  reference: ["professionals", "industry-experts", "specialized-experts", "scholars-researchers"],
+  custom: ["children-1-9", "older-children-10-15", "16-plus", "general-readers", "academics-undergraduate", "industry-experts", "professionals", "scholars-researchers", "specialized-experts"],
+};
+
 // Helper to get IELTS band from audience value
 export const getIELTSBandForAudience = (audienceValue: string): IELTSBand => {
   const option = AUDIENCE_OPTIONS.find(opt => opt.value === audienceValue);

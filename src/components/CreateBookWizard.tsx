@@ -44,6 +44,7 @@ import {
   TIMELINE_OPTIONS,
   SPATIAL_SCOPE_OPTIONS,
   AUDIENCE_OPTIONS,
+  BOOK_TYPE_AUDIENCES,
   GENRE_PRESETS,
   WORD_COUNT_PRESETS,
   TEASER_STYLE_OPTIONS,
@@ -125,6 +126,11 @@ const CreateBookWizard = ({ onClose, onCreate }: CreateBookWizardProps) => {
     updateForm("bookType", type);
     // Apply default controls for the new book type
     updateForm("controls", getDefaultControls(type));
+    // Clear audience if it's not valid for the new book type
+    const allowed = BOOK_TYPE_AUDIENCES[type];
+    if (formData.audience && allowed && !allowed.includes(formData.audience)) {
+      updateForm("audience", "");
+    }
   };
 
   const filteredBookTypes = useMemo(() => {
@@ -351,7 +357,12 @@ const CreateBookWizard = ({ onClose, onCreate }: CreateBookWizardProps) => {
                             <SelectValue placeholder="Select audience" />
                           </SelectTrigger>
                           <SelectContent className="bg-popover z-50">
-                            {AUDIENCE_OPTIONS.map((option) => (
+                            {AUDIENCE_OPTIONS
+                              .filter((option) => {
+                                const allowedAudiences = formData.bookType ? BOOK_TYPE_AUDIENCES[formData.bookType] : null;
+                                return !allowedAudiences || allowedAudiences.includes(option.value);
+                              })
+                              .map((option) => (
                               <SelectItem key={option.value} value={option.value}>
                                 {option.label}
                               </SelectItem>
