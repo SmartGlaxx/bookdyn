@@ -162,7 +162,8 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
     bookData: Book,
     chapterIndex: number,
     subsectionIndex: number,
-    previousSummary?: string
+    previousSummary?: string,
+    previousRawContent?: string
   ): Promise<string> => {
     setState(s => ({ 
       ...s, 
@@ -195,6 +196,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
         chapterIndex,
         subsectionIndex,
         previousSummary,
+        previousRawContent,
         tonalAnchors: bookData.tonalAnchors || [],
         ieltsBand,
         targetWordsPerSubsection: clampedWordsPerSubsection,
@@ -347,6 +349,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
     onUpdateBook(book.id, { status: "writing" });
 
     let previousSummary = "";
+    let previousRawContent = "";
     let tonalAnchors: string[] = [...(book.tonalAnchors || [])];
     let subsectionCounter = 0;
 
@@ -376,7 +379,8 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
               { ...currentBook, outline, tonalAnchors },
               chIdx,
               subIdx,
-              previousSummary
+              previousSummary,
+              previousRawContent
             ),
             MAX_RETRIES,
             (attempt, error) => {
@@ -421,6 +425,9 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
           }
           
           previousSummary = summary;
+          // Keep the last ~1000 words of actual prose for anti-repetition context
+          const words = content.split(/\s+/);
+          const previousRawContent = words.slice(-Math.min(1000, words.length)).join(" ");
 
           // Random tonal anchor extraction
           if (Math.random() < 0.3 && content.length > 200) {

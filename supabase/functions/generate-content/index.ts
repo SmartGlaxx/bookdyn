@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { book, chapterIndex, subsectionIndex, previousSummary, tonalAnchors, ieltsBand, targetWordsPerSubsection } = await req.json();
+    const { book, chapterIndex, subsectionIndex, previousSummary, previousRawContent, tonalAnchors, ieltsBand, targetWordsPerSubsection } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -63,6 +63,13 @@ CURRENT POSITION:
 ${pacingRules}
 
 ${previousSummary ? `PREVIOUS SECTION SUMMARY:\n${previousSummary}\n` : ""}
+
+${previousRawContent ? `PREVIOUS SECTION ENDING (last ~1000 words of actual prose — DO NOT repeat any of this content, scenes, dialogue, or descriptions. Move the story FORWARD from where this left off):\n---\n${previousRawContent}\n---\n` : ""}
+
+ANTI-REPETITION RULE (STRICTLY ENFORCED):
+- NEVER rewrite, paraphrase, or revisit scenes, dialogue, descriptions, or events that already appeared in the previous section.
+- If the previous section ended mid-scene, continue from exactly that point — do not restart the scene.
+- Each subsection must introduce NEW events, NEW dialogue, or NEW developments. Zero overlap with previous content.
 
 ${tonalAnchors?.length > 0 ? `TONAL ANCHORS (match this style):\n${tonalAnchors.join("\n\n")}\n` : ""}
 
