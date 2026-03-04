@@ -26,10 +26,22 @@ serve(async (req) => {
     }
 
     const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
+    const isNarrative = ["novel", "fiction-serial", "short-story", "children", "comic", "biography", "memoir", "drama"].includes(book.bookType);
     
     // IELTS Band language guidelines
-    const band = ieltsBand || 7; // Default to Band 7
+    const band = ieltsBand || 7;
     const languageGuidelines = getLanguageGuidelines(band);
+    
+    // Hook frequency & velocity
+    const hookFrequency = book.controls?.hookFrequency ?? 5;
+    const velocity = book.controls?.velocity ?? 5;
+    
+    // Calculate hook interval in paragraphs based on slider (1=every 8 paragraphs, 10=every paragraph)
+    const hookInterval = Math.max(1, Math.round(9 - (hookFrequency - 1) * (8 / 9)));
+    // Scene change word limit based on velocity+hookFrequency combo
+    const sceneChangeWords = Math.max(150, Math.round(600 - ((velocity + hookFrequency) / 2 - 1) * 50));
+
+    const pacingRules = getPacingRules(hookFrequency, velocity, isNarrative, hookInterval, sceneChangeWords);
     
     const systemPrompt = `You are a master writer creating content for a ${book.bookType} book.
 
@@ -48,10 +60,7 @@ CURRENT POSITION:
 - Subsection: "${subsection.title}"
 - Goal: ${subsection.goal || "Continue the narrative"}
 
-WRITING CONTROLS:
-- Velocity: ${book.controls.velocity}/10 (${book.controls.velocity > 6 ? "fast-paced, action-driven" : book.controls.velocity > 3 ? "balanced pacing" : "slow, descriptive"})
-- Creativity: ${book.controls.creativity}/10
-- Scope: ${book.controls.scope}/10
+${pacingRules}
 
 ${previousSummary ? `PREVIOUS SECTION SUMMARY:\n${previousSummary}\n` : ""}
 
@@ -70,6 +79,37 @@ Write approximately ${targetWordsPerSubsection || 600} words for this subsection
 `}
 
 Write ONLY the content for this subsection. Do not include titles or headers. Match the established tone and style. Strictly adhere to the language/grammar level specified above. Create engaging, high-quality prose.`;
+
+function getPacingRules(hookFreq: number, vel: number, isNarr: boolean, hookInt: number, sceneWords: number): string {
+  // Always include core writing controls
+  let rules = `WRITING CONTROLS:
+- Velocity: ${vel}/10 (${vel > 6 ? "fast-paced, action-driven" : vel > 3 ? "balanced pacing" : "slow, descriptive"})
+- Creativity: ${book.controls.creativity}/10
+- Scope: ${book.controls.scope}/10
+- Hook Frequency: ${hookFreq}/10 (inject a hook every ~${hookInt} paragraph(s))`;
+
+  if (!isNarr && hookFreq <= 3) {
+    // Non-narrative, low hook: just basic controls, no special pacing
+    return rules;
+  }
+
+  // Anti-rumination rules scale with hookFrequency
+  rules += `
+
+PACING & MOMENTUM RULES (STRICTLY ENFORCED):
+1. HOOK INJECTION: Every ${hookInt} paragraph(s), inject a hook — a compelling question, revelation, action beat, scene change, new character entrance, or dialogue shift. A hook is an open loop that creates a question the reader's brain needs answered.
+2. NO RUMINATION: Never spend more than ${hookFreq >= 7 ? "1-2" : "2-3"} sentences on a character's internal feelings, thoughts, or reflections before moving the scene forward with action, dialogue, or a new event.
+3. SCENE MOMENTUM: Every ${sceneWords} words maximum, something MUST change: a new character enters, the location shifts, dialogue starts or ends, a revelation occurs, or action happens. If nothing has changed, you are ruminating — cut it.
+4. DYNAMIC PACING: Treat each paragraph like a cut in a film. If nothing changed from the previous paragraph (no new information, no new action, no new speaker), that paragraph should not exist.
+5. DIALOGUE BREAKS RUMINATION: If internal monologue exceeds 2 sentences, interrupt it with dialogue or external action immediately.
+6. SHOW DON'T DWELL: Describe a scene or observation in one vivid sentence, then move. A policeman sees a woman in a phone booth = one sentence of observation, then the next beat. No extended meditation on any single moment.
+7. CONTENT MIX: Aim for roughly ${hookFreq >= 7 ? "60% action/events, 25% dialogue, 15% internal thought" : "50% action/events, 30% dialogue, 20% internal thought"}. Never let any single category dominate a passage.
+8. OPEN LOOPS: Plant unanswered questions, unresolved tensions, and curiosity gaps throughout. Each subsection should end with the reader needing to know what happens next.
+9. IN MEDIAS RES: When starting a new scene or subsection, drop into the middle of the action. Do not set up scenes with long descriptions before anything happens.
+10. PATTERN INTERRUPTS: Break predictable rhythms. If you've had two paragraphs of similar structure, the third must be structurally different (shorter, dialogue-heavy, action-only, single sentence).`;
+
+  return rules;
+}
 
 function getLanguageGuidelines(band: number): string {
   switch (band) {
@@ -125,7 +165,7 @@ function getLanguageGuidelines(band: number): string {
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: `Write the content for subsection "${subsection.title}" in chapter "${chapter.title}". Create immersive, engaging prose that advances the book's narrative/purpose.` },
+          { role: "user", content: `Write the content for subsection "${subsection.title}" in chapter "${chapter.title}". Create immersive, engaging prose that advances the book's narrative/purpose. Remember: keep the momentum — no dwelling, no ruminating, always moving forward.` },
         ],
         stream: true,
       }),

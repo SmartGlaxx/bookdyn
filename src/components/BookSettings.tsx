@@ -190,6 +190,7 @@ const BookSettings = ({ book, onBack }: BookSettingsProps) => {
                   <ControlSlider label="Scope" value={book.controls.scope} description="Detail depth" />
                   <ControlSlider label="Creativity" value={book.controls.creativity} description="Creative license" />
                   <ControlSlider label="Entity Complexity" value={book.controls.entityComplexity} description="Character depth" />
+                  <ControlSlider label="Hook Frequency" value={book.controls.hookFrequency ?? 5} description="Scene change rate" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <ControlSlider 
