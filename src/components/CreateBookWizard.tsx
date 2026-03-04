@@ -595,6 +595,15 @@ const CreateBookWizard = ({ onClose, onCreate }: CreateBookWizardProps) => {
                       rightLabel="Experimental"
                     />
 
+                    <ControlSlider
+                      label="Hook Frequency"
+                      tooltip="How often hooks appear — scene changes, revelations, new characters, dialogue shifts, or action beats. High = every paragraph is a cut. Low = slower, more contemplative. For narrative types, this enforces anti-rumination: no dwelling on a single scene or thought for too long."
+                      value={formData.controls?.hookFrequency || 5}
+                      onChange={(v) => updateControls("hookFrequency", v)}
+                      leftLabel="Contemplative"
+                      rightLabel="Rapid-Fire"
+                    />
+
                     <div className="flex items-center justify-between pt-4 border-t">
                       <div className="flex items-center gap-2">
                         <Label>Divergence Allowed</Label>

@@ -77,6 +77,7 @@ export interface BookControls {
   velocity: number; // 1-10, pace of narrative
   scope: number; // 1-10, depth of detail
   creativity: number; // 1-10, creative license
+  hookFrequency: number; // 1-10, how often hooks/scene changes occur
   
   // New dynamism controls
   entityComplexity: number; // 1-10, character/concept complexity
@@ -366,6 +367,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
     velocity: 5,
     scope: 5,
     creativity: 5,
+    hookFrequency: 5,
     entityComplexity: 5,
     spatialScope: "regional",
     perspectiveMultiplexing: 3,
@@ -392,6 +394,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
       return {
         ...baseControls,
         creativity: 7,
+        hookFrequency: 7,
         entityComplexity: 6,
         perspectiveMultiplexing: 4,
         divergenceAllowed: true,
