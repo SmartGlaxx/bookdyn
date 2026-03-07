@@ -4,18 +4,18 @@ import { Float, Environment, MeshDistortMaterial } from "@react-three/drei";
 import * as THREE from "three";
 
 const Book = () => {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
 
   useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.2 + state.clock.elapsedTime * 0.1;
-      meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.2) * 0.05;
+    if (groupRef.current) {
+      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.2 + state.clock.elapsedTime * 0.1;
+      groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.2) * 0.05;
     }
   });
 
   return (
     <Float speed={2} rotationIntensity={0.3} floatIntensity={1.5}>
-      <group ref={meshRef}>
+      <group ref={groupRef}>
         {/* Book cover */}
         <mesh position={[0, 0, 0.05]}>
           <boxGeometry args={[1.6, 2.2, 0.08]} />
