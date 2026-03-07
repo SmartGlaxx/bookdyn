@@ -117,14 +117,9 @@ const LandingPage = ({ onCreateBook, bookCount }: LandingPageProps) => {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button variant="hero" size="xl" onClick={onCreateBook} className="group">
                   <BookOpen className="w-5 h-5 transition-transform group-hover:scale-110" />
-                  Start Creating
+                  Start Now — It's Free
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </Button>
-                {bookCount > 0 && (
-                  <Button variant="outline" size="xl">
-                    Your Library ({bookCount})
-                  </Button>
-                )}
               </div>
 
               {/* Social proof */}
