@@ -152,7 +152,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
                 <DropdownMenuSeparator />
 
                 {/* Manage Subscription */}
-                <DropdownMenuItem onClick={handleManageSubscription} disabled={loadingPortal}>
+                <DropdownMenuItem onClick={handleManageSubscription}>
                   <CreditCard className="w-4 h-4 mr-2" />
                   {profile?.plan === "free" ? "Upgrade Plan" : "Manage Subscription"}
                 </DropdownMenuItem>
