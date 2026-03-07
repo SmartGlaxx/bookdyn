@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { sanitizeText } from "@/lib/sanitize";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
