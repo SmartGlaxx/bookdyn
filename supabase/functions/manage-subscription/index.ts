@@ -36,6 +36,31 @@ function safeTimestamp(ts: number | null | undefined): string | null {
   }
 }
 
+// Calculate the next monthly billing date from a billing_cycle_anchor timestamp
+function getNextBillingDate(anchorTs: number): string {
+  const anchor = new Date(anchorTs * 1000);
+  const now = new Date();
+  const anchorDay = anchor.getUTCDate();
+  
+  // Start from current month, find next billing date that's in the future
+  let year = now.getUTCFullYear();
+  let month = now.getUTCMonth();
+  
+  for (let i = 0; i < 13; i++) {
+    const targetMonth = month + i;
+    const targetYear = year + Math.floor(targetMonth / 12);
+    const targetMon = targetMonth % 12;
+    // Clamp day to last day of month
+    const daysInMonth = new Date(targetYear, targetMon + 1, 0).getDate();
+    const day = Math.min(anchorDay, daysInMonth);
+    const candidate = new Date(Date.UTC(targetYear, targetMon, day, anchor.getUTCHours(), anchor.getUTCMinutes(), anchor.getUTCSeconds()));
+    if (candidate > now) {
+      return candidate.toISOString();
+    }
+  }
+  return anchor.toISOString();
+}
+
 async function getStripeAndUser(req: Request) {
   const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
   if (!stripeKey) throw new Error("Stripe not configured");
@@ -99,8 +124,8 @@ serve(async (req) => {
             id: sub.id,
             status: sub.status,
             cancel_at_period_end: sub.cancel_at_period_end,
-            current_period_end: safeTimestamp(sub.current_period_end),
-            current_period_start: safeTimestamp(sub.current_period_start),
+            current_period_end: safeTimestamp((sub as any).current_period_end) || ((sub as any).billing_cycle_anchor ? getNextBillingDate((sub as any).billing_cycle_anchor) : null),
+            current_period_start: safeTimestamp((sub as any).current_period_start),
             plan: planInfo?.plan || "unknown",
             price_id: priceId,
           },
@@ -134,10 +159,9 @@ serve(async (req) => {
         const newAmount = PLAN_PRICE_AMOUNT[new_plan] || 0;
         const isUpgrade = newAmount > currentAmount;
 
-        const rawPeriodEnd = (sub as any).current_period_end 
-          ?? (sub as any).billing_cycle_anchor
-          ?? null;
-        const periodEnd = safeTimestamp(rawPeriodEnd);
+        // billing_cycle_anchor exists but current_period_end doesn't in newer Stripe API
+        const anchor = (sub as any).billing_cycle_anchor;
+        const periodEnd = anchor ? getNextBillingDate(anchor) : null;
 
         result = {
           is_upgrade: isUpgrade,
