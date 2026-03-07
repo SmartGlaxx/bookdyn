@@ -231,7 +231,7 @@ export function LiveContentView({ book, generationState, viewMode }: LiveContent
                   
                   {sub.content && (
                     <p className="whitespace-pre-wrap leading-relaxed text-lg first-letter:text-4xl first-letter:font-serif first-letter:mr-1">
-                      {sub.content}
+                      {sanitizeText(sub.content)}
                     </p>
                   )}
                 </div>
