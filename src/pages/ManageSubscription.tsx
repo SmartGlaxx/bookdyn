@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, CreditCard, Receipt, ArrowUpDown, XCircle,
-  RefreshCw, Check, Crown, Sparkles, Zap, Download,
-  ExternalLink, AlertTriangle, RotateCcw
+  RefreshCw, Crown, Sparkles, Zap, Download,
+  ExternalLink, AlertTriangle, RotateCcw, ArrowUp, ArrowDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -26,8 +26,8 @@ interface SubscriptionData {
   id: string;
   status: string;
   cancel_at_period_end: boolean;
-  current_period_end: string;
-  current_period_start: string;
+  current_period_end: string | null;
+  current_period_start: string | null;
   plan: string;
   price_id: string;
 }
@@ -44,9 +44,19 @@ interface InvoiceData {
   amount_paid: number;
   currency: string;
   status: string;
-  created: string;
+  created: string | null;
   invoice_pdf: string | null;
   hosted_invoice_url: string | null;
+}
+
+interface PlanChangePreview {
+  is_upgrade: boolean;
+  proration_amount: number;
+  new_plan: string;
+  new_price: number;
+  current_plan: string;
+  current_price: number;
+  period_end: string | null;
 }
 
 const PLANS = [
@@ -54,6 +64,17 @@ const PLANS = [
   { id: "pro", name: "Pro", price: 29, credits: 500, icon: Crown },
   { id: "unlimited", name: "Unlimited", price: 79, credits: null, icon: Crown },
 ];
+
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "N/A";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "N/A";
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  } catch {
+    return "N/A";
+  }
+}
 
 const ManageSubscription = () => {
   const { user } = useAuth();
@@ -67,6 +88,8 @@ const ManageSubscription = () => {
   const [profile, setProfile] = useState<{ plan: string; credits_used: number; credits_limit: number } | null>(null);
 
   const [changePlanOpen, setChangePlanOpen] = useState(false);
+  const [confirmChangeOpen, setConfirmChangeOpen] = useState(false);
+  const [planPreview, setPlanPreview] = useState<PlanChangePreview | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -101,12 +124,32 @@ const ManageSubscription = () => {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const handleChangePlan = async (newPlan: string) => {
+  const handlePreviewPlanChange = async (newPlan: string) => {
     setActionLoading(newPlan);
     try {
-      await invoke("change_plan", { new_plan: newPlan });
-      toast({ title: "Plan updated!", description: `You're now on the ${newPlan.charAt(0).toUpperCase() + newPlan.slice(1)} plan.` });
+      const preview = await invoke("preview_plan_change", { new_plan: newPlan });
+      setPlanPreview(preview);
       setChangePlanOpen(false);
+      setConfirmChangeOpen(true);
+    } catch (err: any) {
+      toast({ title: "Failed to preview plan change", description: err.message, variant: "destructive" });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleConfirmChangePlan = async () => {
+    if (!planPreview) return;
+    setActionLoading("confirm_change");
+    try {
+      const result = await invoke("change_plan", { new_plan: planPreview.new_plan });
+      const planName = planPreview.new_plan.charAt(0).toUpperCase() + planPreview.new_plan.slice(1);
+      const msg = result.is_upgrade
+        ? `Upgraded to ${planName}! Prorated charges have been applied.`
+        : `Switched to ${planName}. Your new rate applies from the next billing cycle.`;
+      toast({ title: "Plan updated!", description: msg });
+      setConfirmChangeOpen(false);
+      setPlanPreview(null);
       await loadData();
     } catch (err: any) {
       toast({ title: "Failed to change plan", description: err.message, variant: "destructive" });
@@ -118,8 +161,12 @@ const ManageSubscription = () => {
   const handleCancel = async () => {
     setActionLoading("cancel");
     try {
-      await invoke("cancel_subscription");
-      toast({ title: "Subscription canceled", description: "You'll retain access until the end of your billing period." });
+      const result = await invoke("cancel_subscription");
+      const effectiveDate = formatDate(result.effective_date);
+      toast({
+        title: "Subscription canceled",
+        description: `You'll retain access until ${effectiveDate}. After that, you'll move to the Free plan.`,
+      });
       setCancelOpen(false);
       await loadData();
     } catch (err: any) {
@@ -133,7 +180,7 @@ const ManageSubscription = () => {
     setActionLoading("reactivate");
     try {
       await invoke("reactivate_subscription");
-      toast({ title: "Subscription reactivated!", description: "Your subscription will continue." });
+      toast({ title: "Subscription reactivated!", description: "Your subscription will continue as normal." });
       await loadData();
     } catch (err: any) {
       toast({ title: "Failed to reactivate", description: err.message, variant: "destructive" });
@@ -143,13 +190,14 @@ const ManageSubscription = () => {
   };
 
   const handleUpdatePayment = async () => {
+    // For now, use the customer portal for payment method updates (requires Stripe.js for in-app)
     setActionLoading("payment");
     try {
-      const data = await invoke("update_payment_method");
-      // For payment method update we need Stripe.js — fall back to customer portal for this one action
       const portalData = await supabase.functions.invoke("customer-portal");
       if (portalData.data?.url) {
         window.open(portalData.data.url, "_blank");
+      } else {
+        toast({ title: "Unable to open payment settings", description: "Please try again later.", variant: "destructive" });
       }
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -203,8 +251,8 @@ const ManageSubscription = () => {
                       <CardDescription>
                         {isFree ? "No active subscription" : (
                           subscription?.cancel_at_period_end
-                            ? `Cancels on ${new Date(subscription.current_period_end).toLocaleDateString()}`
-                            : `Renews on ${new Date(subscription!.current_period_end).toLocaleDateString()}`
+                            ? `Cancels on ${formatDate(subscription.current_period_end)}`
+                            : `Renews on ${formatDate(subscription?.current_period_end)}`
                         )}
                       </CardDescription>
                     </div>
@@ -216,7 +264,6 @@ const ManageSubscription = () => {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Credits usage */}
                 {profile && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
@@ -231,17 +278,18 @@ const ManageSubscription = () => {
                   </div>
                 )}
 
-                {/* Cancel warning */}
                 {subscription?.cancel_at_period_end && (
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
                     <AlertTriangle className="w-4 h-4 shrink-0" />
-                    <span>Your subscription is set to cancel. You'll lose access to paid features after the billing period ends.</span>
+                    <span>
+                      Your subscription is set to cancel on {formatDate(subscription.current_period_end)}.
+                      You'll lose access to paid features after that date.
+                    </span>
                   </div>
                 )}
 
                 <Separator />
 
-                {/* Actions */}
                 <div className="flex flex-wrap gap-3">
                   {isFree ? (
                     <Button variant="hero" onClick={() => navigate("/plans")}>
@@ -317,17 +365,13 @@ const ManageSubscription = () => {
                   <div className="space-y-3">
                     {invoices.map((inv) => (
                       <div key={inv.id} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                        <div className="flex items-center gap-3">
-                          <div>
-                            <p className="text-sm font-medium">
-                              {new Date(inv.created).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                            </p>
-                            <p className="text-xs text-muted-foreground capitalize">{inv.status}</p>
-                          </div>
+                        <div>
+                          <p className="text-sm font-medium">{formatDate(inv.created)}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{inv.status}</p>
                         </div>
                         <div className="flex items-center gap-3">
                           <span className="font-medium text-sm">
-                            ${(inv.amount_paid / 100).toFixed(2)} {inv.currency.toUpperCase()}
+                            ${(inv.amount_paid / 100).toFixed(2)} {inv.currency?.toUpperCase()}
                           </span>
                           {inv.invoice_pdf && (
                             <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
@@ -354,13 +398,13 @@ const ManageSubscription = () => {
         </div>
       </div>
 
-      {/* Change Plan Dialog */}
+      {/* Select Plan Dialog */}
       <Dialog open={changePlanOpen} onOpenChange={setChangePlanOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Change Plan</DialogTitle>
             <DialogDescription>
-              Select a new plan. Changes take effect immediately with prorated billing.
+              Select a new plan to see pricing details before confirming.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-4">
@@ -369,8 +413,8 @@ const ManageSubscription = () => {
               return (
                 <button
                   key={plan.id}
-                  disabled={isCurrentPlan || actionLoading === plan.id}
-                  onClick={() => handleChangePlan(plan.id)}
+                  disabled={isCurrentPlan || !!actionLoading}
+                  onClick={() => handlePreviewPlanChange(plan.id)}
                   className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all text-left
                     ${isCurrentPlan
                       ? "border-primary/50 bg-primary/5 cursor-default"
@@ -401,14 +445,77 @@ const ManageSubscription = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Confirm Plan Change Dialog */}
+      <AlertDialog open={confirmChangeOpen} onOpenChange={setConfirmChangeOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              {planPreview?.is_upgrade ? (
+                <><ArrowUp className="w-5 h-5 text-primary" /> Upgrade Plan</>
+              ) : (
+                <><ArrowDown className="w-5 h-5 text-muted-foreground" /> Downgrade Plan</>
+              )}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
+                  <span className="text-sm">{planPreview?.current_plan?.charAt(0).toUpperCase()}{planPreview?.current_plan?.slice(1)} → {planPreview?.new_plan?.charAt(0).toUpperCase()}{planPreview?.new_plan?.slice(1)}</span>
+                  <span className="font-semibold text-sm">
+                    ${((planPreview?.current_price || 0) / 100).toFixed(0)}/mo → ${((planPreview?.new_price || 0) / 100).toFixed(0)}/mo
+                  </span>
+                </div>
+
+                {planPreview?.is_upgrade ? (
+                  <div className="text-sm space-y-1">
+                    <p>
+                      You'll be charged a prorated amount of{" "}
+                      <span className="font-semibold">
+                        ${((planPreview?.proration_amount || 0) / 100).toFixed(2)}
+                      </span>{" "}
+                      immediately for the remainder of this billing period.
+                    </p>
+                    <p className="text-muted-foreground">
+                      Starting next billing cycle ({formatDate(planPreview?.period_end)}), you'll be charged ${((planPreview?.new_price || 0) / 100).toFixed(0)}/mo.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-sm space-y-1">
+                    <p>
+                      You'll receive a credit of{" "}
+                      <span className="font-semibold">
+                        ${(Math.abs(planPreview?.proration_amount || 0) / 100).toFixed(2)}
+                      </span>{" "}
+                      applied to your next invoice.
+                    </p>
+                    <p className="text-muted-foreground">
+                      Your new rate of ${((planPreview?.new_price || 0) / 100).toFixed(0)}/mo starts immediately. The credit will offset your next charge on {formatDate(planPreview?.period_end)}.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPlanPreview(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmChangePlan}
+              disabled={actionLoading === "confirm_change"}
+            >
+              {actionLoading === "confirm_change" ? "Processing..." : (
+                planPreview?.is_upgrade ? "Confirm Upgrade" : "Confirm Downgrade"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Cancel Confirmation */}
       <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
             <AlertDialogDescription>
-              Your subscription will remain active until the end of the current billing period
-              ({subscription ? new Date(subscription.current_period_end).toLocaleDateString() : ""}). 
+              Your subscription will remain active until {formatDate(subscription?.current_period_end)}.
               After that, you'll be moved to the Free plan with 5 credits/month.
             </AlertDialogDescription>
           </AlertDialogHeader>
