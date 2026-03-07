@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -108,8 +108,29 @@ const Plans = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [checkingPlan, setCheckingPlan] = useState(true);
 
-  if (loading) {
+  // Auto-redirect returning paid users to dashboard
+  useEffect(() => {
+    if (!user) { setCheckingPlan(false); return; }
+    const checkExistingPlan = async () => {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("plan")
+          .eq("id", user.id)
+          .single();
+        if (data?.plan && data.plan !== "free") {
+          navigate("/dashboard", { replace: true });
+          return;
+        }
+      } catch {}
+      setCheckingPlan(false);
+    };
+    checkExistingPlan();
+  }, [user, navigate]);
+
+  if (loading || checkingPlan) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse flex items-center gap-3">
