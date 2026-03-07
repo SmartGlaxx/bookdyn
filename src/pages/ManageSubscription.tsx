@@ -51,7 +51,6 @@ interface InvoiceData {
 
 interface PlanChangePreview {
   is_upgrade: boolean;
-  proration_amount: number;
   new_plan: string;
   new_price: number;
   current_plan: string;
