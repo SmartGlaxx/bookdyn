@@ -108,6 +108,27 @@ const Plans = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [checkingPlan, setCheckingPlan] = useState(true);
+
+  // Auto-redirect returning paid users to dashboard
+  useEffect(() => {
+    if (!user) { setCheckingPlan(false); return; }
+    const checkExistingPlan = async () => {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("plan")
+          .eq("id", user.id)
+          .single();
+        if (data?.plan && data.plan !== "free") {
+          navigate("/dashboard", { replace: true });
+          return;
+        }
+      } catch {}
+      setCheckingPlan(false);
+    };
+    checkExistingPlan();
+  }, [user, navigate]);
 
   if (loading) {
     return (
