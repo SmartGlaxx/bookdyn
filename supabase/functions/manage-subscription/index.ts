@@ -145,7 +145,22 @@ serve(async (req) => {
           subscription: sub.id,
         });
 
-        const prorationAmount = preview.total; // in cents, can be negative for downgrade credit
+        // Sum only proration line items (not the regular subscription charge)
+        let prorationAmount = 0;
+        for (const line of preview.lines.data) {
+          if (line.proration) {
+            prorationAmount += line.amount;
+          }
+        }
+
+        const periodEnd = safeTimestamp(sub.current_period_end);
+        console.log("[preview_plan_change]", {
+          total: preview.total,
+          prorationAmount,
+          lineItems: preview.lines.data.map(l => ({ amount: l.amount, proration: l.proration, description: l.description })),
+          current_period_end_raw: sub.current_period_end,
+          periodEnd,
+        });
 
         result = {
           is_upgrade: isUpgrade,
@@ -154,7 +169,7 @@ serve(async (req) => {
           new_price: newAmount,
           current_plan: currentPlan?.plan,
           current_price: currentAmount,
-          period_end: safeTimestamp(sub.current_period_end),
+          period_end: periodEnd,
         };
         break;
       }
