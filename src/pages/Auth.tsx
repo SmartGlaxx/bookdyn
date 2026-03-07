@@ -1,7 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, lazy, Suspense } from "react";
 import { Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Mail, Lock, ArrowRight, Sparkles, CheckCircle } from "lucide-react";
+import { BookOpen, Mail, Lock, ArrowRight, Sparkles, CheckCircle, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useTurnstile } from "@/hooks/useTurnstile";
 import { supabase } from "@/integrations/supabase/client";
 import { TURNSTILE_SITE_KEY } from "@/lib/security";
+
+const GlowingSphereScene = lazy(() => import("@/components/3d/GlowingSphere"));
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -26,14 +28,8 @@ const Auth = () => {
   const onTurnstileVerify = useCallback((token: string) => {
     setTurnstileToken(token);
   }, []);
-
-  const onTurnstileError = useCallback(() => {
-    setTurnstileToken(null);
-  }, []);
-
-  const onTurnstileExpire = useCallback(() => {
-    setTurnstileToken(null);
-  }, []);
+  const onTurnstileError = useCallback(() => setTurnstileToken(null), []);
+  const onTurnstileExpire = useCallback(() => setTurnstileToken(null), []);
 
   const { containerRef: turnstileRef, reset: resetTurnstile } = useTurnstile({
     siteKey: TURNSTILE_SITE_KEY,
@@ -53,21 +49,17 @@ const Auth = () => {
     );
   }
 
-  if (user) {
-    return <Navigate to="/" replace />;
-  }
+  if (user) return <Navigate to="/" replace />;
 
   const verifyTurnstile = async (): Promise<boolean> => {
     if (!turnstileToken) {
       toast({ title: "Verification required", description: "Please complete the security check.", variant: "destructive" });
       return false;
     }
-
     try {
       const { data, error } = await supabase.functions.invoke("verify-turnstile", {
         body: { token: turnstileToken },
       });
-
       if (error || !data?.success) {
         toast({ title: "Verification failed", description: "Please try again.", variant: "destructive" });
         resetTurnstile();
@@ -76,7 +68,6 @@ const Auth = () => {
       }
       return true;
     } catch {
-      // If verification service is down, allow through (fail open for UX)
       return true;
     }
   };
@@ -87,10 +78,8 @@ const Auth = () => {
       toast({ title: "Missing email", description: "Please enter your email address.", variant: "destructive" });
       return;
     }
-
     const verified = await verifyTurnstile();
     if (!verified) return;
-
     setIsSubmitting(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -111,39 +100,27 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!email.trim() || !password.trim()) {
       toast({ title: "Missing fields", description: "Please enter both email and password.", variant: "destructive" });
       return;
     }
-
     if (password.length < 6) {
       toast({ title: "Password too short", description: "Password must be at least 6 characters.", variant: "destructive" });
       return;
     }
-
     const verified = await verifyTurnstile();
     if (!verified) return;
-
     setIsSubmitting(true);
-
     try {
       if (isLogin) {
         const { error } = await signIn(email, password);
-        if (error) {
-          toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
-        } else {
-          toast({ title: "Welcome back!", description: "You've successfully signed in." });
-        }
+        if (error) toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
+        else toast({ title: "Welcome back!", description: "You've successfully signed in." });
       } else {
         const { data, error } = await signUp(email, password);
-        if (error) {
-          toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
-        } else if (data?.user && !data.session) {
-          setShowVerification(true);
-        } else {
-          toast({ title: "Account created!", description: "You can now start creating books." });
-        }
+        if (error) toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
+        else if (data?.user && !data.session) setShowVerification(true);
+        else toast({ title: "Account created!", description: "You can now start creating books." });
       }
     } finally {
       setIsSubmitting(false);
@@ -153,217 +130,194 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-primary/10 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-accent/10 blur-3xl" />
-      </div>
+    <div className="min-h-screen flex bg-background relative overflow-hidden">
+      {/* Left panel — 3D + branding (hidden on mobile) */}
+      <div className="hidden lg:flex lg:w-1/2 relative items-center justify-center">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-accent/5" />
+        <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] bg-primary/10 rounded-full blur-[120px]" />
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md relative z-10"
-      >
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-accent glow">
-            <BookOpen className="w-8 h-8 text-primary-foreground" />
+        <div className="relative z-10 w-full h-full flex flex-col items-center justify-center px-12">
+          {/* 3D scene */}
+          <div className="w-full h-[400px] mb-8">
+            <Suspense fallback={<div className="w-full h-full flex items-center justify-center"><div className="w-24 h-24 rounded-full bg-primary/20 animate-pulse-glow" /></div>}>
+              <GlowingSphereScene variant="auth" />
+            </Suspense>
           </div>
-          <div className="text-center">
-            <h1 className="font-serif font-bold text-2xl">BookForge</h1>
-            <p className="text-xs text-muted-foreground">AI Book Creation Engine</p>
+
+          {/* Branding text */}
+          <div className="text-center space-y-4 max-w-md">
+            <h2 className="text-3xl font-serif font-bold">
+              Create Books with <span className="text-gradient">AI Power</span>
+            </h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Join thousands of writers using BookForge to turn ideas into complete, professionally structured books.
+            </p>
+            {/* Mini testimonial */}
+            <div className="mt-8 p-4 rounded-xl bg-card/60 backdrop-blur-sm border border-border/50">
+              <div className="flex gap-1 mb-2 justify-center">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="w-3.5 h-3.5 fill-primary text-primary" />
+                ))}
+              </div>
+              <p className="text-sm text-muted-foreground italic">"BookForge turned my rough ideas into a complete novel outline in minutes."</p>
+              <p className="text-xs text-muted-foreground mt-2 font-medium">— Sarah Chen, Self-Published Author</p>
+            </div>
           </div>
         </div>
+      </div>
 
-        <Card className="border-border/50 shadow-lg">
-          {showVerification ? (
-            <>
-              <CardHeader className="text-center">
-                <div className="flex justify-center mb-4">
-                  <CheckCircle className="w-16 h-16 text-success" />
-                </div>
-                <CardTitle className="text-2xl font-serif">Check Your Email</CardTitle>
-                <CardDescription>
-                  We've sent a verification link to <strong>{email}</strong>. Please click the link to verify your account before signing in.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  className="w-full"
-                  variant="outline"
-                  onClick={() => { setShowVerification(false); setIsLogin(true); }}
-                >
-                  Back to Sign In
-                </Button>
-              </CardContent>
-            </>
-          ) : (
-            <>
-              <CardHeader className="space-y-1 text-center">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={isForgotPassword ? "forgot" : isLogin ? "login" : "signup"}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <CardTitle className="text-2xl font-serif">
-                      {isForgotPassword ? "Reset Password" : isLogin ? "Welcome Back" : "Create Account"}
-                    </CardTitle>
-                    <CardDescription>
-                      {isForgotPassword
-                        ? "Enter your email to receive a reset link"
-                        : isLogin
-                          ? "Sign in to continue your book projects"
-                          : "Start creating AI-powered books today"}
-                    </CardDescription>
-                  </motion.div>
-                </AnimatePresence>
-              </CardHeader>
-              <CardContent>
-                {isForgotPassword ? (
-                  <form onSubmit={handleForgotPassword} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="you@example.com"
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          className="pl-10"
-                          autoComplete="email"
-                        />
-                      </div>
+      {/* Right panel — Auth form */}
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative">
+        {/* Background decoration */}
+        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-accent/5 blur-3xl" />
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md relative z-10"
+        >
+          {/* Logo */}
+          <div className="flex items-center justify-center gap-3 mb-10">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-accent glow">
+              <BookOpen className="w-7 h-7 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="font-serif font-bold text-2xl">BookForge</h1>
+              <p className="text-xs text-muted-foreground">AI Book Creation Engine</p>
+            </div>
+          </div>
+
+          <Card className="border-border/50 shadow-lg bg-card/80 backdrop-blur-sm">
+            {showVerification ? (
+              <>
+                <CardHeader className="text-center">
+                  <div className="flex justify-center mb-4">
+                    <div className="p-4 rounded-full bg-success/10">
+                      <CheckCircle className="w-12 h-12 text-success" />
                     </div>
-
-                    {/* Turnstile rendered below outside conditional */}
-
-                    <Button type="submit" className="w-full" variant="hero" disabled={isSubmitting}>
-                      <span className="flex items-center gap-2">
-                        {isSubmitting ? "Sending..." : "Send Reset Link"}
-                        <ArrowRight className="w-4 h-4" />
-                      </span>
-                    </Button>
-                    <div className="text-center">
-                      <button
-                        type="button"
-                        onClick={() => setIsForgotPassword(false)}
-                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        Back to <span className="text-primary font-medium">Sign In</span>
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <>
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                  </div>
+                  <CardTitle className="text-2xl font-serif">Check Your Email</CardTitle>
+                  <CardDescription>
+                    We've sent a verification link to <strong>{email}</strong>. Please click the link to verify your account before signing in.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button className="w-full" variant="outline" onClick={() => { setShowVerification(false); setIsLogin(true); }}>
+                    Back to Sign In
+                  </Button>
+                </CardContent>
+              </>
+            ) : (
+              <>
+                <CardHeader className="space-y-1 text-center pb-2">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={isForgotPassword ? "forgot" : isLogin ? "login" : "signup"}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <CardTitle className="text-2xl font-serif">
+                        {isForgotPassword ? "Reset Password" : isLogin ? "Welcome Back" : "Create Account"}
+                      </CardTitle>
+                      <CardDescription className="mt-2">
+                        {isForgotPassword
+                          ? "Enter your email to receive a reset link"
+                          : isLogin
+                            ? "Sign in to continue your book projects"
+                            : "Start creating AI-powered books today"}
+                      </CardDescription>
+                    </motion.div>
+                  </AnimatePresence>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  {isForgotPassword ? (
+                    <form onSubmit={handleForgotPassword} className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
                         <div className="relative">
                           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="you@example.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="pl-10"
-                            autoComplete="email"
-                          />
+                          <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10 h-11" autoComplete="email" />
                         </div>
                       </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor="password">Password</Label>
-                          {isLogin && (
-                            <button
-                              type="button"
-                              onClick={() => setIsForgotPassword(true)}
-                              className="text-xs text-primary hover:text-primary/80 transition-colors"
-                            >
-                              Forgot password?
-                            </button>
-                          )}
-                        </div>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="password"
-                            type="password"
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="pl-10"
-                            autoComplete={isLogin ? "current-password" : "new-password"}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Turnstile widget */}
-                      <div ref={turnstileRef} className="flex justify-center" />
-
-                      <Button
-                        type="submit"
-                        className="w-full"
-                        variant="hero"
-                        disabled={isSubmitting}
-                      >
-                        {isSubmitting ? (
-                          <span className="flex items-center gap-2">
-                            <motion.div
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                            >
-                              <Sparkles className="w-4 h-4" />
-                            </motion.div>
-                            {isLogin ? "Signing in..." : "Creating account..."}
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-2">
-                            {isLogin ? "Sign In" : "Create Account"}
-                            <ArrowRight className="w-4 h-4" />
-                          </span>
-                        )}
+                      <Button type="submit" className="w-full h-11" variant="hero" disabled={isSubmitting}>
+                        {isSubmitting ? "Sending..." : "Send Reset Link"}
+                        <ArrowRight className="w-4 h-4" />
                       </Button>
+                      <div className="text-center">
+                        <button type="button" onClick={() => setIsForgotPassword(false)} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                          Back to <span className="text-primary font-medium">Sign In</span>
+                        </button>
+                      </div>
                     </form>
+                  ) : (
+                    <>
+                      <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Email</Label>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10 h-11" autoComplete="email" />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="password">Password</Label>
+                            {isLogin && (
+                              <button type="button" onClick={() => setIsForgotPassword(true)} className="text-xs text-primary hover:text-primary/80 transition-colors">
+                                Forgot password?
+                              </button>
+                            )}
+                          </div>
+                          <div className="relative">
+                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10 h-11" autoComplete={isLogin ? "current-password" : "new-password"} />
+                          </div>
+                        </div>
 
-                    <div className="mt-6 text-center">
-                      <button
-                        type="button"
-                        onClick={() => setIsLogin(!isLogin)}
-                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {isLogin ? (
-                          <>
-                            Don't have an account?{" "}
-                            <span className="text-primary font-medium">Sign up</span>
-                          </>
-                        ) : (
-                          <>
-                            Already have an account?{" "}
-                            <span className="text-primary font-medium">Sign in</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </>
-          )}
-        </Card>
+                        <div ref={turnstileRef} className="flex justify-center" />
 
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          By continuing, you agree to our Terms of Service and Privacy Policy.
-        </p>
-      </motion.div>
+                        <Button type="submit" className="w-full h-11" variant="hero" disabled={isSubmitting}>
+                          {isSubmitting ? (
+                            <span className="flex items-center gap-2">
+                              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+                                <Sparkles className="w-4 h-4" />
+                              </motion.div>
+                              {isLogin ? "Signing in..." : "Creating account..."}
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-2">
+                              {isLogin ? "Sign In" : "Create Account"}
+                              <ArrowRight className="w-4 h-4" />
+                            </span>
+                          )}
+                        </Button>
+                      </form>
+
+                      <div className="mt-6 text-center">
+                        <button type="button" onClick={() => setIsLogin(!isLogin)} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                          {isLogin ? (
+                            <>Don't have an account?{" "}<span className="text-primary font-medium">Sign up</span></>
+                          ) : (
+                            <>Already have an account?{" "}<span className="text-primary font-medium">Sign in</span></>
+                          )}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </>
+            )}
+          </Card>
+
+          <p className="text-center text-xs text-muted-foreground mt-6">
+            By continuing, you agree to our Terms of Service and Privacy Policy.
+          </p>
+        </motion.div>
+      </div>
     </div>
   );
 };
