@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
-import HeroSection from "@/components/HeroSection";
+import LandingPage from "@/components/landing/LandingPage";
 import BookCard from "@/components/BookCard";
 import CreateBookWizard from "@/components/CreateBookWizard";
 import BookDetailView from "@/components/BookDetailView";
@@ -33,16 +33,9 @@ const Index = () => {
     }
   };
 
-  // Show detail view if a book is selected
   if (selectedBook) {
-    // Get fresh book data from store
     const currentBook = books.find(b => b.id === selectedBook.id) || selectedBook;
-    return (
-      <BookDetailView
-        book={currentBook}
-        onBack={() => setSelectedBook(null)}
-      />
-    );
+    return <BookDetailView book={currentBook} onBack={() => setSelectedBook(null)} />;
   }
 
   return (
@@ -58,7 +51,7 @@ const Index = () => {
             </div>
           </div>
         ) : books.length === 0 ? (
-          <HeroSection
+          <LandingPage
             onCreateBook={() => setShowWizard(true)}
             bookCount={books.length}
           />
