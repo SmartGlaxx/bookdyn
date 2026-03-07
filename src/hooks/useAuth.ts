@@ -8,7 +8,6 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
@@ -17,7 +16,6 @@ export function useAuth() {
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -27,12 +25,15 @@ export function useAuth() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = useCallback(async (email: string, password: string) => {
+  const signUp = useCallback(async (email: string, password: string, fullName?: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/plans`,
+        data: {
+          full_name: fullName || "",
+        },
       },
     });
     return { data, error };
@@ -42,6 +43,16 @@ export function useAuth() {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
+    });
+    return { data, error };
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/plans`,
+      },
     });
     return { data, error };
   }, []);
@@ -57,6 +68,7 @@ export function useAuth() {
     loading,
     signUp,
     signIn,
+    signInWithGoogle,
     signOut,
   };
 }
