@@ -211,7 +211,7 @@ export function ChapterView({
               </div>
               {sub.content ? (
                 <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground/90 pl-7">
-                  {sub.content}
+                  {sanitizeText(sub.content)}
                 </p>
               ) : (
                 <Skeleton className="h-12 w-full ml-7" />
