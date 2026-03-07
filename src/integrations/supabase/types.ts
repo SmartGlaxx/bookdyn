@@ -116,6 +116,36 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          credits_limit: number
+          credits_used: number
+          full_name: string
+          id: string
+          plan: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credits_limit?: number
+          credits_used?: number
+          full_name?: string
+          id: string
+          plan?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credits_limit?: number
+          credits_used?: number
+          full_name?: string
+          id?: string
+          plan?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       request_logs: {
         Row: {
           created_at: string
