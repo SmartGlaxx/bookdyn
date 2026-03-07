@@ -65,22 +65,11 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
     await signOut();
   };
 
-  const handleManageSubscription = async () => {
+  const handleManageSubscription = () => {
     if (profile?.plan === "free") {
       navigate("/plans");
-      return;
-    }
-    setLoadingPortal(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("customer-portal");
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      }
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Could not open subscription portal.", variant: "destructive" });
-    } finally {
-      setLoadingPortal(false);
+    } else {
+      navigate("/manage-subscription");
     }
   };
 

@@ -76,6 +76,14 @@ const App = () => (
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/manage-subscription"
+            element={
+              <ProtectedRoute>
+                <ManageSubscription />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
