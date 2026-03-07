@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Plans from "./pages/Plans";
 import Landing from "./pages/Landing";
 import ResetPassword from "./pages/ResetPassword";
+import ManageSubscription from "./pages/ManageSubscription";
 import NotFound from "./pages/NotFound";
 import { BookOpen } from "lucide-react";
 
@@ -72,6 +73,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Index />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/manage-subscription"
+            element={
+              <ProtectedRoute>
+                <ManageSubscription />
               </ProtectedRoute>
             }
           />

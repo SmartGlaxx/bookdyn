@@ -33,7 +33,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<{ plan: string; credits_used: number; credits_limit: number } | null>(null);
-  const [loadingPortal, setLoadingPortal] = useState(false);
+  
 
   useEffect(() => {
     if (!user) return;
@@ -65,22 +65,11 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
     await signOut();
   };
 
-  const handleManageSubscription = async () => {
+  const handleManageSubscription = () => {
     if (profile?.plan === "free") {
       navigate("/plans");
-      return;
-    }
-    setLoadingPortal(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("customer-portal");
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, "_blank");
-      }
-    } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Could not open subscription portal.", variant: "destructive" });
-    } finally {
-      setLoadingPortal(false);
+    } else {
+      navigate("/manage-subscription");
     }
   };
 
@@ -163,7 +152,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
                 <DropdownMenuSeparator />
 
                 {/* Manage Subscription */}
-                <DropdownMenuItem onClick={handleManageSubscription} disabled={loadingPortal}>
+                <DropdownMenuItem onClick={handleManageSubscription}>
                   <CreditCard className="w-4 h-4 mr-2" />
                   {profile?.plan === "free" ? "Upgrade Plan" : "Manage Subscription"}
                 </DropdownMenuItem>
