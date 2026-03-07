@@ -134,44 +134,13 @@ serve(async (req) => {
         const newAmount = PLAN_PRICE_AMOUNT[new_plan] || 0;
         const isUpgrade = newAmount > currentAmount;
 
-        // Get proration preview using subscription_details (Stripe API 2025+)
-        const prorationDate = Math.floor(Date.now() / 1000);
-        const preview = await stripe.invoices.createPreview({
-          customer: customer.id,
-          subscription_details: {
-            items: [{ id: sub.items.data[0].id, price: newPriceId }],
-            proration_date: prorationDate,
-          },
-          subscription: sub.id,
-        });
-
-        // In newer Stripe API, proration lines have type "invoiceitem", 
-        // while the regular next-cycle charge has type "subscription"
-        let prorationAmount = 0;
-        for (const line of preview.lines.data) {
-          if (line.type === "invoiceitem") {
-            prorationAmount += line.amount;
-          }
-        }
-
-        // sub.current_period_end may be nested in newer API; try multiple paths
         const rawPeriodEnd = (sub as any).current_period_end 
           ?? (sub as any).billing_cycle_anchor
           ?? null;
         const periodEnd = safeTimestamp(rawPeriodEnd);
-        
-        console.log("[preview_plan_change]", {
-          total: preview.total,
-          prorationAmount,
-          lineItems: preview.lines.data.map(l => ({ amount: l.amount, type: l.type, description: l.description })),
-          subKeys: Object.keys(sub),
-          current_period_end_raw: (sub as any).current_period_end,
-          periodEnd,
-        });
 
         result = {
           is_upgrade: isUpgrade,
-          proration_amount: prorationAmount,
           new_plan,
           new_price: newAmount,
           current_plan: currentPlan?.plan,
