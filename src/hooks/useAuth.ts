@@ -49,13 +49,11 @@ export function useAuth() {
   }, []);
 
   const signInWithGoogle = useCallback(async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/plans`,
-      },
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
     });
-    return { data, error };
+    const error = result?.error ? (result.error instanceof Error ? result.error : new Error(String(result.error))) : null;
+    return { data: null, error };
   }, []);
 
   const signOut = useCallback(async () => {
