@@ -19,6 +19,23 @@ const PRICE_TO_PLAN: Record<string, { plan: string; credits: number }> = {
   "price_1T8T4vBjVtw2b7Oi2KQ4OlAI": { plan: "unlimited", credits: 999999 },
 };
 
+const PLAN_PRICE_AMOUNT: Record<string, number> = {
+  starter: 900,
+  pro: 2900,
+  unlimited: 7900,
+};
+
+function safeTimestamp(ts: number | null | undefined): string | null {
+  if (!ts || typeof ts !== "number" || ts <= 0) return null;
+  try {
+    const d = new Date(ts * 1000);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString();
+  } catch {
+    return null;
+  }
+}
+
 async function getStripeAndUser(req: Request) {
   const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
   if (!stripeKey) throw new Error("Stripe not configured");
@@ -37,8 +54,6 @@ async function getStripeAndUser(req: Request) {
   if (userError || !userData.user?.email) throw new Error("Unauthorized");
 
   const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-
-  // Find or error on customer
   const customers = await stripe.customers.list({ email: userData.user.email, limit: 1 });
 
   return { stripe, user: userData.user, supabaseClient, customer: customers.data[0] || null };
@@ -69,21 +84,6 @@ serve(async (req) => {
           expand: ["data.default_payment_method"],
         });
 
-        if (subscriptions.data.length === 0) {
-          // Check for canceled but still active
-          const canceledSubs = await stripe.subscriptions.list({
-            customer: customer.id,
-            limit: 1,
-            expand: ["data.default_payment_method"],
-          });
-          const sub = canceledSubs.data.find(s => s.status === "active" || s.status === "canceled");
-          
-          if (!sub) {
-            result = { subscription: null, payment_method: null };
-            break;
-          }
-        }
-
         const sub = subscriptions.data[0] || null;
         if (!sub) {
           result = { subscription: null, payment_method: null };
@@ -94,18 +94,13 @@ serve(async (req) => {
         const planInfo = priceId ? PRICE_TO_PLAN[priceId] : null;
         const pm = sub.default_payment_method as Stripe.PaymentMethod | null;
 
-        let periodEnd: string | null = null;
-        let periodStart: string | null = null;
-        try { if (sub.current_period_end) periodEnd = new Date(sub.current_period_end * 1000).toISOString(); } catch {}
-        try { if (sub.current_period_start) periodStart = new Date(sub.current_period_start * 1000).toISOString(); } catch {}
-
         result = {
           subscription: {
             id: sub.id,
             status: sub.status,
             cancel_at_period_end: sub.cancel_at_period_end,
-            current_period_end: periodEnd,
-            current_period_start: periodStart,
+            current_period_end: safeTimestamp(sub.current_period_end),
+            current_period_start: safeTimestamp(sub.current_period_start),
             plan: planInfo?.plan || "unknown",
             price_id: priceId,
           },
@@ -115,6 +110,49 @@ serve(async (req) => {
             exp_month: pm.card?.exp_month,
             exp_year: pm.card?.exp_year,
           } : null,
+        };
+        break;
+      }
+
+      case "preview_plan_change": {
+        const { new_plan } = params;
+        const newPriceId = PLAN_PRICES[new_plan];
+        if (!newPriceId) throw new Error("Invalid plan");
+        if (!customer) throw new Error("No subscription found");
+
+        const subscriptions = await stripe.subscriptions.list({
+          customer: customer.id,
+          status: "active",
+          limit: 1,
+        });
+        if (subscriptions.data.length === 0) throw new Error("No active subscription");
+
+        const sub = subscriptions.data[0];
+        const currentPriceId = sub.items.data[0]?.price?.id;
+        const currentPlan = currentPriceId ? PRICE_TO_PLAN[currentPriceId] : null;
+        const currentAmount = currentPlan ? PLAN_PRICE_AMOUNT[currentPlan.plan] || 0 : 0;
+        const newAmount = PLAN_PRICE_AMOUNT[new_plan] || 0;
+        const isUpgrade = newAmount > currentAmount;
+
+        // Get proration preview
+        const prorationDate = Math.floor(Date.now() / 1000);
+        const preview = await stripe.invoices.createPreview({
+          customer: customer.id,
+          subscription: sub.id,
+          subscription_items: [{ id: sub.items.data[0].id, price: newPriceId }],
+          subscription_proration_date: prorationDate,
+        });
+
+        const prorationAmount = preview.total; // in cents, can be negative for downgrade credit
+
+        result = {
+          is_upgrade: isUpgrade,
+          proration_amount: prorationAmount,
+          new_plan,
+          new_price: newAmount,
+          current_plan: currentPlan?.plan,
+          current_price: currentAmount,
+          period_end: safeTimestamp(sub.current_period_end),
         };
         break;
       }
@@ -133,9 +171,15 @@ serve(async (req) => {
         if (subscriptions.data.length === 0) throw new Error("No active subscription");
 
         const sub = subscriptions.data[0];
+        const currentPriceId = sub.items.data[0]?.price?.id;
+        const currentAmount = currentPriceId && PRICE_TO_PLAN[currentPriceId]
+          ? PLAN_PRICE_AMOUNT[PRICE_TO_PLAN[currentPriceId].plan] || 0 : 0;
+        const newAmount = PLAN_PRICE_AMOUNT[new_plan] || 0;
+        const isUpgrade = newAmount > currentAmount;
+
         const updatedSub = await stripe.subscriptions.update(sub.id, {
           items: [{ id: sub.items.data[0].id, price: newPriceId }],
-          proration_behavior: "create_prorations",
+          proration_behavior: isUpgrade ? "create_prorations" : "create_prorations",
         });
 
         const planInfo = PRICE_TO_PLAN[newPriceId];
@@ -146,7 +190,12 @@ serve(async (req) => {
             .eq("id", user.id);
         }
 
-        result = { success: true, plan: planInfo?.plan };
+        result = {
+          success: true,
+          plan: planInfo?.plan,
+          is_upgrade: isUpgrade,
+          period_end: safeTimestamp(updatedSub.current_period_end),
+        };
         break;
       }
 
@@ -160,12 +209,15 @@ serve(async (req) => {
         });
         if (subscriptions.data.length === 0) throw new Error("No active subscription");
 
-        // Cancel at period end (not immediately)
         await stripe.subscriptions.update(subscriptions.data[0].id, {
           cancel_at_period_end: true,
         });
 
-        result = { success: true, cancel_at_period_end: true };
+        result = {
+          success: true,
+          cancel_at_period_end: true,
+          effective_date: safeTimestamp(subscriptions.data[0].current_period_end),
+        };
         break;
       }
 
@@ -204,7 +256,7 @@ serve(async (req) => {
             amount_paid: inv.amount_paid,
             currency: inv.currency,
             status: inv.status,
-            created: new Date(inv.created * 1000).toISOString(),
+            created: safeTimestamp(inv.created),
             invoice_pdf: inv.invoice_pdf,
             hosted_invoice_url: inv.hosted_invoice_url,
           })),
@@ -215,7 +267,6 @@ serve(async (req) => {
       case "update_payment_method": {
         if (!customer) throw new Error("No customer found");
 
-        // Create a SetupIntent for the client to collect new payment details
         const setupIntent = await stripe.setupIntents.create({
           customer: customer.id,
           payment_method_types: ["card"],
@@ -230,12 +281,10 @@ serve(async (req) => {
         if (!customer) throw new Error("No customer found");
         if (!payment_method_id) throw new Error("No payment method ID");
 
-        // Set as default payment method on customer
         await stripe.customers.update(customer.id, {
           invoice_settings: { default_payment_method: payment_method_id },
         });
 
-        // Also update active subscription's default payment method
         const subscriptions = await stripe.subscriptions.list({
           customer: customer.id,
           status: "active",
