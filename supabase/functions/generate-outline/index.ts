@@ -1,25 +1,95 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.90.1";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// ── Security Config ──
+const ALLOWED_ORIGINS = [
+  "https://id-preview--50948d4c-97c6-4338-a33a-59e9cf03b7c0.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+const MAX_PAYLOAD_BYTES = 50_000;
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") || "";
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
+}
+
+function wafCheck(req: Request): string | null {
+  const ua = (req.headers.get("user-agent") || "").toLowerCase();
+  const blocked = ["sqlmap", "nikto", "nessus", "masscan", "zgrab"];
+  for (const b of blocked) { if (ua.includes(b)) return `Blocked: ${b}`; }
+  return null;
+}
+
+function detectPromptInjection(text: string): boolean {
+  if (!text || typeof text !== "string") return false;
+  const patterns = [/ignore\s+(all\s+)?previous\s+instructions/i, /you\s+are\s+now\s+/i, /system\s*:\s*/i, /\[INST\]/i, /<<SYS>>/i, /forget\s+(everything|all|your)\s/i, /override\s+(your|the)\s+/i];
+  return patterns.some(p => p.test(text));
+}
+
+function validateInput(body: any): string | null {
+  if (!body || typeof body !== "object") return "Invalid request body";
+  if (!body.book || typeof body.book !== "object") return "Missing book data";
+  if (!body.book.title || typeof body.book.title !== "string" || body.book.title.length > 500) return "Invalid book title";
+  if (!body.book.theme || typeof body.book.theme !== "string" || body.book.theme.length > 2000) return "Invalid theme";
+  const fieldsToCheck = [body.book.title, body.book.theme, body.book.subtitle].filter(Boolean);
+  for (const f of fieldsToCheck) { if (detectPromptInjection(f)) return "Input contains prohibited patterns"; }
+  return null;
+}
+
+async function getAuthUser(req: Request) {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader) return null;
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return null;
+  return { user, supabase };
+}
+
+async function checkRateLimit(userId: string, functionName: string) {
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const { data } = await supabase.rpc("check_rate_limit", { _user_id: userId, _function_name: functionName, _max_per_hour: 10, _max_per_day: 50 });
+  return data as boolean ?? true;
+}
+
+async function auditLog(userId: string, action: string, resourceType: string, resourceId?: string, metadata?: Record<string, unknown>) {
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  await supabase.from("audit_logs").insert({ user_id: userId, action, resource_type: resourceType, resource_id: resourceId, metadata: metadata || {} });
+}
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsHeaders = getCorsHeaders(req);
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { book, ieltsBand } = await req.json();
+    const wafResult = wafCheck(req);
+    if (wafResult) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > MAX_PAYLOAD_BYTES) return new Response(JSON.stringify({ error: "Payload too large" }), { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const auth = await getAuthUser(req);
+    if (!auth) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const allowed = await checkRateLimit(auth.user.id, "generate-outline");
+    if (!allowed) return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const body = await req.json();
+    const validationError = validateInput(body);
+    if (validationError) return new Response(JSON.stringify({ error: validationError }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const { book, ieltsBand } = body;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    await auditLog(auth.user.id, "generate_outline", "book", book.id, { title: book.title });
 
     const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
-    const band = ieltsBand || 7; // Default to Band 7
+    const band = ieltsBand || 7;
     const languageGuidelines = getLanguageGuidelines(band);
     const structureGuidelines = getStructureGuidelines(band);
     
@@ -54,7 +124,7 @@ TARGET WORD COUNT: ${book.controls.structureControls?.targetWordCount ? book.con
 - Each subsection should produce roughly 400-800 words of prose
 - Calculate: target_words / 600 (avg per subsection) = total subsections needed, distributed across chapters
 
-SECTIONS PER CHAPTER: Target ~${book.controls.structureControls?.sectionsPerChapter || 4} sections per chapter, but VARY naturally between ${Math.max(2, (book.controls.structureControls?.sectionsPerChapter || 4) - 1)} and ${Math.min(10, (book.controls.structureControls?.sectionsPerChapter || 4) + 1)} so chapters feel organic rather than mechanical. Some chapters should have more sections, some fewer.
+SECTIONS PER CHAPTER: Target ~${book.controls.structureControls?.sectionsPerChapter || 4} sections per chapter, but VARY naturally between ${Math.max(2, (book.controls.structureControls?.sectionsPerChapter || 4) - 1)} and ${Math.min(10, (book.controls.structureControls?.sectionsPerChapter || 4) + 1)}.
 
 STRUCTURE PREFERENCES:
 - Chapter Count: ${book.controls.structureControls?.chapterCount === "fixed" ? book.controls.structureControls.targetChapters + " chapters" : "flexible (scale to match target word count)"}
@@ -71,7 +141,7 @@ CHILDREN'S BOOK SPECIAL REQUIREMENTS:
 - Total: 5-8 short chapters maximum
 ` : ""}
 
-CRITICAL: Match ALL chapter titles, subsection titles, goals, and summaries to the IELTS Band ${band} language level specified above. The structural complexity and vocabulary in titles must be appropriate for the target audience.
+CRITICAL: Match ALL chapter titles, subsection titles, goals, and summaries to the IELTS Band ${band} language level specified above.
 
 OUTPUT FORMAT: Return ONLY valid JSON with this structure:
 {
@@ -97,68 +167,23 @@ OUTPUT FORMAT: Return ONLY valid JSON with this structure:
 
 function getLanguageGuidelines(band: number): string {
   switch (band) {
-    case 5:
-      return `- Use VERY simple vocabulary for young children
-- Short, clear chapter and section titles (2-4 words)
-- Goals described in basic, concrete terms
-- Avoid abstract concepts`;
-    case 6:
-      return `- Use simple, accessible vocabulary for older children/beginners
-- Straightforward chapter and section titles
-- Goals explained in clear, simple language
-- Limited abstract concepts`;
-    case 7:
-      return `- Use standard vocabulary for general readers
-- Clear, descriptive chapter titles
-- Goals articulated with moderate complexity
-- Balance concrete and abstract concepts`;
-    case 8:
-      return `- Use sophisticated vocabulary including some technical terms
-- Nuanced chapter and section titles
-- Goals can include complex concepts and analysis
-- Academic rigor where appropriate`;
-    case 9:
-      return `- Use advanced, specialized vocabulary
-- Scholarly or technical chapter titles where appropriate
-- Goals can include complex theoretical frameworks
-- Full academic or professional register`;
-    default:
-      return `- Use standard vocabulary for general readers`;
+    case 5: return `- Use VERY simple vocabulary for young children\n- Short, clear chapter and section titles (2-4 words)`;
+    case 6: return `- Use simple, accessible vocabulary for older children/beginners\n- Straightforward chapter and section titles`;
+    case 7: return `- Use standard vocabulary for general readers\n- Clear, descriptive chapter titles`;
+    case 8: return `- Use sophisticated vocabulary including some technical terms\n- Nuanced chapter and section titles`;
+    case 9: return `- Use advanced, specialized vocabulary\n- Scholarly or technical chapter titles where appropriate`;
+    default: return `- Use standard vocabulary for general readers`;
   }
 }
 
 function getStructureGuidelines(band: number): string {
   switch (band) {
-    case 5:
-      return `- Very short chapters (2-3 subsections each)
-- Linear, simple narrative structure
-- One main idea per chapter
-- Repetitive patterns for familiarity
-- Maximum 6-8 chapters total`;
-    case 6:
-      return `- Short chapters (3-4 subsections each)
-- Mostly linear structure with simple transitions
-- Clear beginning, middle, end per chapter
-- Maximum 8-10 chapters total`;
-    case 7:
-      return `- Moderate chapter length (4-5 subsections each)
-- Standard narrative structure
-- Some complexity in chapter organization
-- 8-12 chapters typical`;
-    case 8:
-      return `- Flexible chapter length based on content needs
-- Can include subplots or parallel threads
-- Complex chapter organization allowed
-- Analytical or thematic chapter structures permitted
-- 10-15 chapters typical`;
-    case 9:
-      return `- Complex, sophisticated structure
-- Multiple narrative threads or analytical frameworks
-- Can include recursive or non-linear organization
-- Academic chapter conventions if appropriate
-- Length determined by content complexity`;
-    default:
-      return `- Standard chapter structure`;
+    case 5: return `- Very short chapters (2-3 subsections each)\n- Linear, simple narrative structure\n- Maximum 6-8 chapters total`;
+    case 6: return `- Short chapters (3-4 subsections each)\n- Mostly linear structure\n- Maximum 8-10 chapters total`;
+    case 7: return `- Moderate chapter length (4-5 subsections each)\n- Standard narrative structure\n- 8-12 chapters typical`;
+    case 8: return `- Flexible chapter length\n- Can include subplots\n- 10-15 chapters typical`;
+    case 9: return `- Complex, sophisticated structure\n- Multiple narrative threads\n- Length determined by content complexity`;
+    default: return `- Standard chapter structure`;
   }
 }
 
@@ -179,18 +204,8 @@ function getStructureGuidelines(band: number): string {
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required. Please add credits." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+      if (response.status === 429) return new Response(JSON.stringify({ error: "Rate limit exceeded." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (response.status === 402) return new Response(JSON.stringify({ error: "Payment required." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
       throw new Error(`AI gateway error: ${response.status}`);
@@ -199,7 +214,6 @@ function getStructureGuidelines(band: number): string {
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content || "";
     
-    // Parse JSON from response (handle markdown code blocks)
     let outline;
     try {
       const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
@@ -209,7 +223,6 @@ function getStructureGuidelines(band: number): string {
       throw new Error("Failed to parse outline from AI response");
     }
 
-    // Ensure proper structure
     const formattedOutline = {
       chapters: outline.chapters.map((ch: any, idx: number) => ({
         id: ch.id || `ch-${idx + 1}`,
@@ -235,6 +248,7 @@ function getStructureGuidelines(band: number): string {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
+    const corsHeaders = getCorsHeaders(req);
     console.error("generate-outline error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),

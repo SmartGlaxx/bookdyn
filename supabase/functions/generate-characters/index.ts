@@ -1,28 +1,97 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.90.1";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// ── Security Config ──
+const ALLOWED_ORIGINS = [
+  "https://id-preview--50948d4c-97c6-4338-a33a-59e9cf03b7c0.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+const MAX_PAYLOAD_BYTES = 50_000;
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") || "";
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
+}
+
+function wafCheck(req: Request): string | null {
+  const ua = (req.headers.get("user-agent") || "").toLowerCase();
+  const blocked = ["sqlmap", "nikto", "nessus", "masscan", "zgrab"];
+  for (const b of blocked) { if (ua.includes(b)) return `Blocked: ${b}`; }
+  return null;
+}
+
+function detectPromptInjection(text: string): boolean {
+  if (!text || typeof text !== "string") return false;
+  const patterns = [/ignore\s+(all\s+)?previous\s+instructions/i, /you\s+are\s+now\s+/i, /system\s*:\s*/i, /\[INST\]/i, /<<SYS>>/i, /forget\s+(everything|all|your)\s/i];
+  return patterns.some(p => p.test(text));
+}
+
+function validateInput(body: any): string | null {
+  if (!body || typeof body !== "object") return "Invalid request body";
+  if (!body.book || typeof body.book !== "object") return "Missing book data";
+  if (!body.outline || typeof body.outline !== "object") return "Missing outline data";
+  if (!body.book.title || typeof body.book.title !== "string" || body.book.title.length > 500) return "Invalid book title";
+  if (detectPromptInjection(body.book.title)) return "Input contains prohibited patterns";
+  return null;
+}
+
+async function getAuthUser(req: Request) {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader) return null;
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return null;
+  return { user, supabase };
+}
+
+async function checkRateLimit(userId: string, functionName: string) {
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const { data } = await supabase.rpc("check_rate_limit", { _user_id: userId, _function_name: functionName, _max_per_hour: 10, _max_per_day: 50 });
+  return data as boolean ?? true;
+}
+
+async function auditLog(userId: string, action: string, resourceType: string, resourceId?: string, metadata?: Record<string, unknown>) {
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  await supabase.from("audit_logs").insert({ user_id: userId, action, resource_type: resourceType, resource_id: resourceId, metadata: metadata || {} });
+}
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsHeaders = getCorsHeaders(req);
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { book, outline, ieltsBand } = await req.json();
+    const wafResult = wafCheck(req);
+    if (wafResult) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > MAX_PAYLOAD_BYTES) return new Response(JSON.stringify({ error: "Payload too large" }), { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const auth = await getAuthUser(req);
+    if (!auth) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const allowed = await checkRateLimit(auth.user.id, "generate-characters");
+    if (!allowed) return new Response(JSON.stringify({ error: "Rate limit exceeded." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const body = await req.json();
+    const validationError = validateInput(body);
+    if (validationError) return new Response(JSON.stringify({ error: validationError }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const { book, outline, ieltsBand } = body;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    await auditLog(auth.user.id, "generate_characters", "book", book.id, { title: book.title });
 
     const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
     const band = ieltsBand || 7;
     const descriptionGuidelines = getDescriptionGuidelines(band);
     
-    const extractPrompt = `Analyze this book outline and extract EVERY character, person, or entity mentioned or implied — protagonists, supporting cast, minor characters, AND background characters (a shopkeeper mentioned once, a passing stranger, anyone). Every person in the narrative gets a full profile.
+    const extractPrompt = `Analyze this book outline and extract EVERY character, person, or entity mentioned or implied.
 
 BOOK: "${book.title}"
 THEME: "${book.theme}"
@@ -38,76 +107,12 @@ ${JSON.stringify(outline.chapters.map((ch: any) => ({
   subsections: ch.subsections.map((s: any) => ({ title: s.title, goal: s.goal }))
 })), null, 2)}
 
-For EACH character, provide an EXHAUSTIVE profile with ALL of these sections:
-
-IDENTITY:
-- fullName (and any aliases, nicknames, titles)
-- age and dateOfBirth
-- gender and pronouns
-- nationality, ethnicity, culturalBackground
-- nativeLanguage and accent
-
-PHYSICAL APPEARANCE:
-- height and build (slim, athletic, stocky, heavyset)
-- skinTone (specific — e.g. "warm brown with golden undertones")
-- faceShape (oval, square, heart, round)
-- eyeColor, eyeShape, eyeDistinguishing (hooded, deep-set)
-- noseShape and lipShape
-- jawline and cheekbones
-- scars, birthmarks, tattoos, distinctiveMarks
-- hands description
-
-HAIR:
-- color (natural + dyed if applicable)
-- texture (coarse, fine, wavy, kinky, straight)
-- lengthAndStyle (e.g. fade, locs, bob, bun)
-- casualStyle vs formalStyle
-- changesAcrossStory
-
-FASHION & STYLE:
-- casualStyle, workAttire, formalWear, sleepwear
-- signatureItem (a watch, ring, jacket they're always wearing)
-- shoePreference
-- styleReflection (how clothing reflects personality/status)
-- styleEvolution (how style changes across story)
-
-VOICE & MANNERISMS:
-- toneOfVoice (gravelly, soft, commanding, timid)
-- speechPatterns (verbose, terse, slang, formal)
-- accentStrength
-- nervousHabits (taps fingers, avoids eye contact)
-- posture and how they carry themselves
-- defaultExpressions
-- laughStyle, angerStyle, fearStyle
-
-PERSONALITY:
-- coreType (descriptors or MBTI)
-- strengths (array)
-- flaws (array)
-- fears (array)
-- desires (array)
-- publicPersona vs privateReality
-- treatmentOfStrangers vs treatmentOfLovedOnes
-
-BACKSTORY:
-- upbringing (where they grew up, how it shaped them)
-- formativeEvents (array of key events)
-- definingRelationships (array — parents, first love, enemies)
-- whatTheyLost
-- whatTheySeek (running from or toward)
-
-ROLE IN STORY:
-- archetype (Protagonist / Antagonist / Supporting / Minor / Background)
-- relationshipToMainCharacter (IMPORTANT — how they connect to the protagonist or other key characters)
-- goal (what they want in this story)
-- obstacle (what's standing in their way)
-- arc (how they change or refuse to change by the end)
+For EACH character, provide an EXHAUSTIVE profile with ALL sections:
+IDENTITY, PHYSICAL APPEARANCE, HAIR, FASHION & STYLE, VOICE & MANNERISMS, PERSONALITY, BACKSTORY, ROLE IN STORY.
 
 Also provide:
 - A brief description (for quick reference)
 - A visualDescription for illustration consistency
-
-IMPORTANT: Match language complexity to IELTS Band ${band}. Even background characters mentioned once get a FULL profile — consistency across a long novel depends on it.
 
 Return ONLY valid JSON:
 {
@@ -118,14 +123,14 @@ Return ONLY valid JSON:
       "description": "Quick reference summary",
       "visualDescription": "Visual description for illustration",
       "role": "protagonist|supporting|minor|background",
-      "identity": { "fullName": "...", "aliases": [], "age": "...", "dateOfBirth": "...", "gender": "...", "pronouns": "...", "nationality": "...", "ethnicity": "...", "culturalBackground": "...", "nativeLanguage": "...", "accent": "..." },
-      "appearance": { "height": "...", "build": "...", "skinTone": "...", "faceShape": "...", "eyeColor": "...", "eyeShape": "...", "eyeDistinguishing": "...", "noseShape": "...", "lipShape": "...", "jawline": "...", "cheekbones": "...", "scars": "...", "birthmarks": "...", "tattoos": "...", "distinctiveMarks": "...", "hands": "..." },
-      "hair": { "color": "...", "texture": "...", "lengthAndStyle": "...", "casualStyle": "...", "formalStyle": "...", "changesAcrossStory": "..." },
-      "fashion": { "casualStyle": "...", "workAttire": "...", "formalWear": "...", "sleepwear": "...", "signatureItem": "...", "shoePreference": "...", "styleReflection": "...", "styleEvolution": "..." },
-      "voice": { "toneOfVoice": "...", "speechPatterns": "...", "accentStrength": "...", "nervousHabits": "...", "posture": "...", "defaultExpressions": "...", "laughStyle": "...", "angerStyle": "...", "fearStyle": "..." },
-      "personality": { "coreType": "...", "strengths": [], "flaws": [], "fears": [], "desires": [], "publicPersona": "...", "privateReality": "...", "treatmentOfStrangers": "...", "treatmentOfLovedOnes": "..." },
-      "backstory": { "upbringing": "...", "formativeEvents": [], "definingRelationships": [], "whatTheyLost": "...", "whatTheySeek": "..." },
-      "storyRole": { "archetype": "...", "relationshipToMainCharacter": "...", "goal": "...", "obstacle": "...", "arc": "..." }
+      "identity": { ... },
+      "appearance": { ... },
+      "hair": { ... },
+      "fashion": { ... },
+      "voice": { ... },
+      "personality": { ... },
+      "backstory": { ... },
+      "storyRole": { ... }
     }
   ],
   "visualStyleGuide": "Overall art style description for the book"
@@ -133,60 +138,24 @@ Return ONLY valid JSON:
 
     function getDescriptionGuidelines(band: number): string {
       switch (band) {
-        case 5:
-          return `- Use VERY simple words a young child would understand
-- Short, simple sentences (5-10 words)
-- Concrete descriptions only
-- Character names should be easy to say and remember`;
-        case 6:
-          return `- Use simple, clear vocabulary for older children
-- Straightforward personality descriptions
-- Easy-to-understand character motivations`;
-        case 7:
-          return `- Standard vocabulary for general readers
-- Balanced personality descriptions with some nuance
-- Clear motivations and traits`;
-        case 8:
-          return `- Sophisticated vocabulary for academic readers
-- Nuanced character descriptions
-- Complex personality traits and motivations`;
-        case 9:
-          return `- Advanced, literary vocabulary
-- Complex, multi-dimensional character descriptions
-- Sophisticated psychological profiles`;
-        default:
-          return `- Standard vocabulary appropriate for general readers`;
+        case 5: return `- Use VERY simple words a young child would understand`;
+        case 6: return `- Use simple, clear vocabulary for older children`;
+        case 7: return `- Standard vocabulary for general readers`;
+        case 8: return `- Sophisticated vocabulary for academic readers`;
+        case 9: return `- Advanced, literary vocabulary`;
+        default: return `- Standard vocabulary`;
       }
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "user", content: extractPrompt },
-        ],
-        temperature: 0.5,
-      }),
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ model: "google/gemini-2.5-flash", messages: [{ role: "user", content: extractPrompt }], temperature: 0.5 }),
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required. Please add credits." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+      if (response.status === 429) return new Response(JSON.stringify({ error: "Rate limit exceeded." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (response.status === 402) return new Response(JSON.stringify({ error: "Payment required." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       throw new Error(`AI gateway error: ${response.status}`);
     }
 
@@ -197,88 +166,48 @@ Return ONLY valid JSON:
     try {
       const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
       parsed = JSON.parse(jsonMatch[1].trim());
-    } catch {
-      throw new Error("Failed to parse character data");
-    }
+    } catch { throw new Error("Failed to parse character data"); }
 
     const characters = parsed.characters || [];
     const visualStyleGuide = parsed.visualStyleGuide || "";
 
-    // Generate portraits only for children's books (top 5 characters)
     const charactersWithPortraits = [];
     
     if (isChildrensBook) {
       for (const character of characters.slice(0, 5)) {
         try {
-          const portraitPrompt = `Create a character reference sheet portrait for a children's book character.
-
-CHARACTER: ${character.name}
-VISUAL DESCRIPTION: ${character.visualDescription}
-STYLE: ${visualStyleGuide}
-
-Requirements:
-- Clean, clear character portrait showing the character from chest/shoulders up
-- Soft watercolor style, warm colors, friendly expression, child-friendly
-- White or simple background for reference clarity
-- Show the character's key identifying features clearly
-- No text or words in the image`;
-
-          console.log(`Generating portrait for ${character.name}`);
+          const portraitPrompt = `Create a character reference sheet portrait for a children's book character.\n\nCHARACTER: ${character.name}\nVISUAL DESCRIPTION: ${character.visualDescription}\nSTYLE: ${visualStyleGuide}\n\nRequirements:\n- Clean, clear character portrait\n- Soft watercolor style, warm colors\n- White background\n- No text`;
 
           const imageResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
             method: "POST",
-            headers: {
-              Authorization: `Bearer ${LOVABLE_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "google/gemini-3-pro-image-preview",
-              messages: [{ role: "user", content: portraitPrompt }],
-              modalities: ["image", "text"],
-            }),
+            headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ model: "google/gemini-3-pro-image-preview", messages: [{ role: "user", content: portraitPrompt }], modalities: ["image", "text"] }),
           });
 
           if (imageResponse.ok) {
             const imageData = await imageResponse.json();
             const portraitUrl = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-            
-            if (portraitUrl) {
-              charactersWithPortraits.push({ ...character, portraitUrl });
-              console.log(`Portrait generated for ${character.name}`);
-            } else {
-              charactersWithPortraits.push(character);
-            }
+            charactersWithPortraits.push(portraitUrl ? { ...character, portraitUrl } : character);
           } else {
-            console.error(`Failed to generate portrait for ${character.name}:`, imageResponse.status);
             charactersWithPortraits.push(character);
           }
-
           await new Promise(r => setTimeout(r, 1000));
         } catch (err) {
           console.error(`Error generating portrait for ${character.name}:`, err);
           charactersWithPortraits.push(character);
         }
       }
-      // Add remaining characters without portraits
-      for (const character of characters.slice(5)) {
-        charactersWithPortraits.push(character);
-      }
+      for (const character of characters.slice(5)) { charactersWithPortraits.push(character); }
     } else {
-      // Non-children's books: no portraits, just profiles
       charactersWithPortraits.push(...characters);
     }
 
-    return new Response(JSON.stringify({ 
-      characters: charactersWithPortraits,
-      visualStyleGuide,
-    }), {
+    return new Response(JSON.stringify({ characters: charactersWithPortraits, visualStyleGuide }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
+    const corsHeaders = getCorsHeaders(req);
     console.error("generate-characters error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

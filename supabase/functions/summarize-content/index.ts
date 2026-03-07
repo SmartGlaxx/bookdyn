@@ -1,22 +1,77 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.90.1";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// ── Security Config ──
+const ALLOWED_ORIGINS = [
+  "https://id-preview--50948d4c-97c6-4338-a33a-59e9cf03b7c0.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+const MAX_PAYLOAD_BYTES = 50_000;
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("origin") || "";
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
+}
+
+function wafCheck(req: Request): string | null {
+  const ua = (req.headers.get("user-agent") || "").toLowerCase();
+  const blocked = ["sqlmap", "nikto", "nessus", "masscan", "zgrab"];
+  for (const b of blocked) { if (ua.includes(b)) return `Blocked: ${b}`; }
+  return null;
+}
+
+function validateInput(body: any): string | null {
+  if (!body || typeof body !== "object") return "Invalid request body";
+  if (!body.content || typeof body.content !== "string") return "Missing content";
+  if (body.content.length > 100_000) return "Content too long";
+  if (!body.type || !["subsection", "chapter"].includes(body.type)) return "Invalid type";
+  return null;
+}
+
+async function getAuthUser(req: Request) {
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader) return null;
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { global: { headers: { Authorization: authHeader } } });
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return null;
+  return { user, supabase };
+}
+
+async function checkRateLimit(userId: string, functionName: string) {
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const { data } = await supabase.rpc("check_rate_limit", { _user_id: userId, _function_name: functionName, _max_per_hour: 60, _max_per_day: 500 });
+  return data as boolean ?? true;
+}
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsHeaders = getCorsHeaders(req);
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { content, type } = await req.json();
+    const wafResult = wafCheck(req);
+    if (wafResult) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > MAX_PAYLOAD_BYTES) return new Response(JSON.stringify({ error: "Payload too large" }), { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const auth = await getAuthUser(req);
+    if (!auth) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const allowed = await checkRateLimit(auth.user.id, "summarize-content");
+    if (!allowed) return new Response(JSON.stringify({ error: "Rate limit exceeded." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const body = await req.json();
+    const validationError = validateInput(body);
+    if (validationError) return new Response(JSON.stringify({ error: validationError }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const { content, type } = body;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const wordLimit = type === "chapter" ? "300-500" : "50-100";
     
@@ -32,10 +87,7 @@ Return ONLY the summary text, nothing else.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash-lite",
         messages: [
@@ -47,12 +99,7 @@ Return ONLY the summary text, nothing else.`;
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+      if (response.status === 429) return new Response(JSON.stringify({ error: "Rate limit exceeded." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
       throw new Error(`AI gateway error: ${response.status}`);
@@ -65,10 +112,8 @@ Return ONLY the summary text, nothing else.`;
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
+    const corsHeaders = getCorsHeaders(req);
     console.error("summarize-content error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
