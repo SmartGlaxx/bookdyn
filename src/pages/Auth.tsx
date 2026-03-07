@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Navigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, Mail, Lock, ArrowRight, Sparkles, CheckCircle } from "lucide-react";
@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useTurnstile } from "@/hooks/useTurnstile";
 import { supabase } from "@/integrations/supabase/client";
+import { TURNSTILE_SITE_KEY } from "@/lib/security";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,8 +19,28 @@ const Auth = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const { user, loading, signIn, signUp } = useAuth();
   const { toast } = useToast();
+
+  const onTurnstileVerify = useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
+
+  const onTurnstileError = useCallback(() => {
+    setTurnstileToken(null);
+  }, []);
+
+  const onTurnstileExpire = useCallback(() => {
+    setTurnstileToken(null);
+  }, []);
+
+  const { containerRef: turnstileRef, reset: resetTurnstile } = useTurnstile({
+    siteKey: TURNSTILE_SITE_KEY,
+    onVerify: onTurnstileVerify,
+    onError: onTurnstileError,
+    onExpire: onTurnstileExpire,
+  });
 
   if (loading) {
     return (
@@ -35,12 +57,40 @@ const Auth = () => {
     return <Navigate to="/" replace />;
   }
 
+  const verifyTurnstile = async (): Promise<boolean> => {
+    if (!turnstileToken) {
+      toast({ title: "Verification required", description: "Please complete the security check.", variant: "destructive" });
+      return false;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke("verify-turnstile", {
+        body: { token: turnstileToken },
+      });
+
+      if (error || !data?.success) {
+        toast({ title: "Verification failed", description: "Please try again.", variant: "destructive" });
+        resetTurnstile();
+        setTurnstileToken(null);
+        return false;
+      }
+      return true;
+    } catch {
+      // If verification service is down, allow through (fail open for UX)
+      return true;
+    }
+  };
+
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) {
       toast({ title: "Missing email", description: "Please enter your email address.", variant: "destructive" });
       return;
     }
+
+    const verified = await verifyTurnstile();
+    if (!verified) return;
+
     setIsSubmitting(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -54,6 +104,8 @@ const Auth = () => {
       }
     } finally {
       setIsSubmitting(false);
+      resetTurnstile();
+      setTurnstileToken(null);
     }
   };
 
@@ -61,22 +113,17 @@ const Auth = () => {
     e.preventDefault();
     
     if (!email.trim() || !password.trim()) {
-      toast({
-        title: "Missing fields",
-        description: "Please enter both email and password.",
-        variant: "destructive",
-      });
+      toast({ title: "Missing fields", description: "Please enter both email and password.", variant: "destructive" });
       return;
     }
 
     if (password.length < 6) {
-      toast({
-        title: "Password too short",
-        description: "Password must be at least 6 characters.",
-        variant: "destructive",
-      });
+      toast({ title: "Password too short", description: "Password must be at least 6 characters.", variant: "destructive" });
       return;
     }
+
+    const verified = await verifyTurnstile();
+    if (!verified) return;
 
     setIsSubmitting(true);
 
@@ -84,37 +131,24 @@ const Auth = () => {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
-          toast({
-            title: "Sign in failed",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast({ title: "Sign in failed", description: error.message, variant: "destructive" });
         } else {
-          toast({
-            title: "Welcome back!",
-            description: "You've successfully signed in.",
-          });
+          toast({ title: "Welcome back!", description: "You've successfully signed in." });
         }
       } else {
         const { data, error } = await signUp(email, password);
         if (error) {
-          toast({
-            title: "Sign up failed",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
         } else if (data?.user && !data.session) {
-          // User created but no session = needs email verification
           setShowVerification(true);
         } else {
-          toast({
-            title: "Account created!",
-            description: "You can now start creating books.",
-          });
+          toast({ title: "Account created!", description: "You can now start creating books." });
         }
       }
     } finally {
       setIsSubmitting(false);
+      resetTurnstile();
+      setTurnstileToken(null);
     }
   };
 
@@ -207,6 +241,9 @@ const Auth = () => {
                         />
                       </div>
                     </div>
+
+                    {/* Turnstile rendered below outside conditional */}
+
                     <Button type="submit" className="w-full" variant="hero" disabled={isSubmitting}>
                       <span className="flex items-center gap-2">
                         {isSubmitting ? "Sending..." : "Send Reset Link"}
@@ -268,6 +305,9 @@ const Auth = () => {
                           />
                         </div>
                       </div>
+
+                      {/* Turnstile widget */}
+                      <div ref={turnstileRef} className="flex justify-center" />
 
                       <Button
                         type="submit"

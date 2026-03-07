@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { sanitizeText } from "@/lib/sanitize";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -179,7 +180,7 @@ export function LiveContentView({ book, generationState, viewMode }: LiveContent
                     
                     {sub.content ? (
                       <p className="whitespace-pre-wrap leading-relaxed text-foreground/90">
-                        {sub.content}
+                        {sanitizeText(sub.content)}
                       </p>
                     ) : sub.status === "pending" ? (
                       <Skeleton className="h-24 w-full" />
@@ -230,7 +231,7 @@ export function LiveContentView({ book, generationState, viewMode }: LiveContent
                   
                   {sub.content && (
                     <p className="whitespace-pre-wrap leading-relaxed text-lg first-letter:text-4xl first-letter:font-serif first-letter:mr-1">
-                      {sub.content}
+                      {sanitizeText(sub.content)}
                     </p>
                   )}
                 </div>

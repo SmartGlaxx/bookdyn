@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { sanitizeText } from "@/lib/sanitize";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -105,7 +106,7 @@ export function ChapterView({
           {/* Content */}
           {sub.content ? <div className="prose prose-sm dark:prose-invert max-w-none pl-11 overflow-hidden">
               <p className="whitespace-pre-wrap leading-relaxed text-foreground/90 break-words">
-                {sub.content}
+                {sanitizeText(sub.content)}
               </p>
             </div> : sub.status === "pending" ? <div className="pl-11 space-y-2">
               <Skeleton className="h-4 w-full" />
@@ -210,7 +211,7 @@ export function ChapterView({
               </div>
               {sub.content ? (
                 <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground/90 pl-7">
-                  {sub.content}
+                  {sanitizeText(sub.content)}
                 </p>
               ) : (
                 <Skeleton className="h-12 w-full ml-7" />
@@ -348,7 +349,7 @@ export function ChapterView({
                     {/* Content */}
                     {sub.content ? <div className="prose prose-sm dark:prose-invert max-w-none pl-11">
                         <p className="whitespace-pre-wrap leading-relaxed text-foreground/90">
-                          {sub.content}
+                          {sanitizeText(sub.content)}
                         </p>
                       </div> : sub.status === "pending" ? <div className="pl-11 space-y-2">
                         <Skeleton className="h-4 w-full" />
