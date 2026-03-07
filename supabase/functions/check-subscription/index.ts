@@ -91,12 +91,19 @@ serve(async (req) => {
         })
         .eq("id", user.id);
 
+      let subscriptionEnd: string | null = null;
+      try {
+        if (subscription.current_period_end) {
+          subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+        }
+      } catch {}
+
       return new Response(JSON.stringify({
         subscribed: true,
         plan: planInfo.plan,
         credits_limit: planInfo.credits,
         credits_used: profile?.credits_used || 0,
-        subscription_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        subscription_end: subscriptionEnd,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
