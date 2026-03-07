@@ -11,4 +11,4 @@ export const ALLOWED_ORIGIN = "https://id-preview--50948d4c-97c6-4338-a33a-59e9c
 
 // Cloudflare Turnstile site key (public — safe to store in code)
 // Replace with your actual site key from Cloudflare Dashboard → Turnstile
-export const TURNSTILE_SITE_KEY = "REPLACE_WITH_YOUR_TURNSTILE_SITE_KEY";
+export const TURNSTILE_SITE_KEY = "0x4AAAAAACnwNHJwIarKt0hb";
