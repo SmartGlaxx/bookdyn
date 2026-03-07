@@ -33,7 +33,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<{ plan: string; credits_used: number; credits_limit: number } | null>(null);
-  const [loadingPortal, setLoadingPortal] = useState(false);
+  
 
   useEffect(() => {
     if (!user) return;
