@@ -271,7 +271,7 @@ const Plans = () => {
             type="button"
             onClick={() => {
               toast({ title: "Welcome!", description: "You're on the Free plan. Start creating!" });
-              navigate("/");
+              navigate("/dashboard");
             }}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
