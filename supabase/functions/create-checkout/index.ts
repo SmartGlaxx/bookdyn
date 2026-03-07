@@ -79,7 +79,7 @@ serve(async (req) => {
         supabase_user_id: user.id,
         plan_id: planId,
       },
-      success_url: `${origin}/?checkout=success`,
+      success_url: `${origin}/dashboard?checkout=success`,
       cancel_url: `${origin}/plans?checkout=cancelled`,
     });
 

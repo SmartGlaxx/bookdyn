@@ -8,7 +8,7 @@ const Landing = () => {
 
   const handleCTA = () => {
     if (user) {
-      navigate("/");
+      navigate("/dashboard");
     } else {
       navigate("/auth?mode=signup");
     }
