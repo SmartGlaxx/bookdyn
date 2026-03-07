@@ -130,7 +130,7 @@ const Plans = () => {
     checkExistingPlan();
   }, [user, navigate]);
 
-  if (loading) {
+  if (loading || checkingPlan) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse flex items-center gap-3">
