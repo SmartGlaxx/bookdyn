@@ -143,10 +143,7 @@ const ManageSubscription = () => {
     try {
       const result = await invoke("change_plan", { new_plan: planPreview.new_plan });
       const planName = planPreview.new_plan.charAt(0).toUpperCase() + planPreview.new_plan.slice(1);
-      const msg = result.is_upgrade
-        ? `Upgraded to ${planName}! Prorated charges have been applied.`
-        : `Switched to ${planName}. Your new rate applies from the next billing cycle.`;
-      toast({ title: "Plan updated!", description: msg });
+      toast({ title: "Plan updated!", description: `Your plan will switch to ${planName} at the start of your next billing cycle.` });
       setConfirmChangeOpen(false);
       setPlanPreview(null);
       await loadData();
