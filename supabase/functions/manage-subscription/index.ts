@@ -172,7 +172,7 @@ serve(async (req) => {
 
         const updatedSub = await stripe.subscriptions.update(sub.id, {
           items: [{ id: sub.items.data[0].id, price: newPriceId }],
-          proration_behavior: isUpgrade ? "create_prorations" : "create_prorations",
+          proration_behavior: "none",
         });
 
         const planInfo = PRICE_TO_PLAN[newPriceId];

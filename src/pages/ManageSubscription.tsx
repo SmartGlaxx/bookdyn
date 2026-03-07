@@ -464,33 +464,19 @@ const ManageSubscription = () => {
                   </span>
                 </div>
 
-                {planPreview?.is_upgrade ? (
-                  <div className="text-sm space-y-1">
-                    <p>
-                      You'll be charged a prorated amount of{" "}
-                      <span className="font-semibold">
-                        ${((planPreview?.proration_amount || 0) / 100).toFixed(2)}
-                      </span>{" "}
-                      immediately for the remainder of this billing period.
-                    </p>
-                    <p className="text-muted-foreground">
-                      Starting next billing cycle ({formatDate(planPreview?.period_end)}), you'll be charged ${((planPreview?.new_price || 0) / 100).toFixed(0)}/mo.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-sm space-y-1">
-                    <p>
-                      You'll receive a credit of{" "}
-                      <span className="font-semibold">
-                        ${(Math.abs(planPreview?.proration_amount || 0) / 100).toFixed(2)}
-                      </span>{" "}
-                      applied to your next invoice.
-                    </p>
-                    <p className="text-muted-foreground">
-                      Your new rate of ${((planPreview?.new_price || 0) / 100).toFixed(0)}/mo starts immediately. The credit will offset your next charge on {formatDate(planPreview?.period_end)}.
-                    </p>
-                  </div>
-                )}
+                <div className="text-sm space-y-1">
+                  <p>
+                    Your plan will change to{" "}
+                    <span className="font-semibold">
+                      {planPreview?.new_plan?.charAt(0).toUpperCase()}{planPreview?.new_plan?.slice(1)}
+                    </span>{" "}
+                    starting your next billing cycle on{" "}
+                    <span className="font-semibold">{formatDate(planPreview?.period_end)}</span>.
+                  </p>
+                  <p className="text-muted-foreground">
+                    You'll continue with your current plan features until then. No charges or credits will be applied today.
+                  </p>
+                </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
