@@ -1,16 +1,16 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const PLAN_PRICES: Record<string, { amount: number; credits: number | null }> = {
-  starter: { amount: 900, credits: 100 },
-  pro: { amount: 2900, credits: 500 },
-  unlimited: { amount: 7900, credits: null },
+const PLAN_PRICES: Record<string, string> = {
+  starter: "price_1T8T3zBjVtw2b7OiBecRD1Oa",
+  pro: "price_1T8T4YBjVtw2b7OimimbNZ22",
+  unlimited: "price_1T8T4vBjVtw2b7Oi2KQ4OlAI",
 };
 
 serve(async (req) => {
@@ -22,59 +22,39 @@ serve(async (req) => {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("Stripe not configured");
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    );
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No auth header");
 
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: authError } = await supabaseClient.auth.getUser(token);
+    if (authError || !userData.user?.email) throw new Error("Unauthorized");
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) throw new Error("Unauthorized");
-
+    const user = userData.user;
     const { planId } = await req.json();
-    const plan = PLAN_PRICES[planId];
-    if (!plan) throw new Error("Invalid plan");
+    const priceId = PLAN_PRICES[planId];
+    if (!priceId) throw new Error("Invalid plan");
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
     // Check for existing Stripe customer
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId: string;
+    let customerId: string | undefined;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
-    } else {
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: { supabase_user_id: user.id },
-      });
-      customerId = customer.id;
     }
 
     const origin = req.headers.get("origin") || "https://localhost:3000";
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
+      customer_email: customerId ? undefined : user.email,
       mode: "subscription",
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            recurring: { interval: "month" },
-            unit_amount: plan.amount,
-            product_data: {
-              name: `BookForge ${planId.charAt(0).toUpperCase() + planId.slice(1)} Plan`,
-              description: plan.credits
-                ? `${plan.credits} credits/month (${plan.credits * 1000} words)`
-                : "Unlimited credits & words",
-            },
-          },
-          quantity: 1,
-        },
-      ],
+      line_items: [{ price: priceId, quantity: 1 }],
       metadata: {
         supabase_user_id: user.id,
         plan_id: planId,
