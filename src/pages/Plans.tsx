@@ -126,7 +126,7 @@ const Plans = () => {
     if (plan.id === "free") {
       // Free plan — just go to the app
       toast({ title: "Welcome to BookForge!", description: "You're on the Free plan with 5 credits/month." });
-      navigate("/");
+      navigate("/dashboard");
       return;
     }
 
