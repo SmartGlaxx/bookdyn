@@ -106,7 +106,7 @@ export function ChapterView({
           {/* Content */}
           {sub.content ? <div className="prose prose-sm dark:prose-invert max-w-none pl-11 overflow-hidden">
               <p className="whitespace-pre-wrap leading-relaxed text-foreground/90 break-words">
-                {sub.content}
+                {sanitizeText(sub.content)}
               </p>
             </div> : sub.status === "pending" ? <div className="pl-11 space-y-2">
               <Skeleton className="h-4 w-full" />
