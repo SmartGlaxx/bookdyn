@@ -242,8 +242,7 @@ const Auth = () => {
                       </div>
                     </div>
 
-                    {/* Turnstile widget */}
-                    <div ref={turnstileRef} className="flex justify-center" />
+                    {/* Turnstile rendered below outside conditional */}
 
                     <Button type="submit" className="w-full" variant="hero" disabled={isSubmitting}>
                       <span className="flex items-center gap-2">
