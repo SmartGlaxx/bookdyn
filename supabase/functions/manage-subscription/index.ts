@@ -94,13 +94,18 @@ serve(async (req) => {
         const planInfo = priceId ? PRICE_TO_PLAN[priceId] : null;
         const pm = sub.default_payment_method as Stripe.PaymentMethod | null;
 
+        let periodEnd: string | null = null;
+        let periodStart: string | null = null;
+        try { if (sub.current_period_end) periodEnd = new Date(sub.current_period_end * 1000).toISOString(); } catch {}
+        try { if (sub.current_period_start) periodStart = new Date(sub.current_period_start * 1000).toISOString(); } catch {}
+
         result = {
           subscription: {
             id: sub.id,
             status: sub.status,
             cancel_at_period_end: sub.cancel_at_period_end,
-            current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
-            current_period_start: new Date(sub.current_period_start * 1000).toISOString(),
+            current_period_end: periodEnd,
+            current_period_start: periodStart,
             plan: planInfo?.plan || "unknown",
             price_id: priceId,
           },
