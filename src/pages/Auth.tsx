@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useTurnstile } from "@/hooks/useTurnstile";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { TURNSTILE_SITE_KEY } from "@/lib/security";
 
 const GlowingSphereScene = lazy(() => import("@/components/3d/GlowingSphere"));
