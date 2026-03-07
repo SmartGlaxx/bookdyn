@@ -159,10 +159,9 @@ serve(async (req) => {
         const newAmount = PLAN_PRICE_AMOUNT[new_plan] || 0;
         const isUpgrade = newAmount > currentAmount;
 
-        const rawPeriodEnd = (sub as any).current_period_end 
-          ?? (sub as any).billing_cycle_anchor
-          ?? null;
-        const periodEnd = safeTimestamp(rawPeriodEnd);
+        // billing_cycle_anchor exists but current_period_end doesn't in newer Stripe API
+        const anchor = (sub as any).billing_cycle_anchor;
+        const periodEnd = anchor ? getNextBillingDate(anchor) : null;
 
         result = {
           is_upgrade: isUpgrade,
