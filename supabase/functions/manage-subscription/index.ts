@@ -134,13 +134,15 @@ serve(async (req) => {
         const newAmount = PLAN_PRICE_AMOUNT[new_plan] || 0;
         const isUpgrade = newAmount > currentAmount;
 
-        // Get proration preview
+        // Get proration preview using subscription_details (Stripe API 2025+)
         const prorationDate = Math.floor(Date.now() / 1000);
         const preview = await stripe.invoices.createPreview({
           customer: customer.id,
+          subscription_details: {
+            items: [{ id: sub.items.data[0].id, price: newPriceId }],
+            proration_date: prorationDate,
+          },
           subscription: sub.id,
-          subscription_items: [{ id: sub.items.data[0].id, price: newPriceId }],
-          subscription_proration_date: prorationDate,
         });
 
         const prorationAmount = preview.total; // in cents, can be negative for downgrade credit
