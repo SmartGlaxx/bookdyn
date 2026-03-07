@@ -37,7 +37,20 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
 
   useEffect(() => {
     if (!user) return;
-    const fetchProfile = async () => {
+    const syncSubscription = async () => {
+      try {
+        // Call check-subscription to sync plan from Stripe into profiles
+        const { data: subData } = await supabase.functions.invoke("check-subscription");
+        if (subData?.plan) {
+          setProfile({
+            plan: subData.plan,
+            credits_used: subData.credits_used ?? 0,
+            credits_limit: subData.credits_limit ?? 5,
+          });
+          return;
+        }
+      } catch {}
+      // Fallback: read from profiles directly
       const { data } = await supabase
         .from("profiles")
         .select("plan, credits_used, credits_limit")
@@ -45,7 +58,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
         .single();
       if (data) setProfile(data);
     };
-    fetchProfile();
+    syncSubscription();
   }, [user]);
 
   const handleSignOut = async () => {
