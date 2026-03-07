@@ -145,20 +145,27 @@ serve(async (req) => {
           subscription: sub.id,
         });
 
-        // Sum only proration line items (not the regular subscription charge)
+        // In newer Stripe API, proration lines have type "invoiceitem", 
+        // while the regular next-cycle charge has type "subscription"
         let prorationAmount = 0;
         for (const line of preview.lines.data) {
-          if (line.proration) {
+          if (line.type === "invoiceitem") {
             prorationAmount += line.amount;
           }
         }
 
-        const periodEnd = safeTimestamp(sub.current_period_end);
+        // sub.current_period_end may be nested in newer API; try multiple paths
+        const rawPeriodEnd = (sub as any).current_period_end 
+          ?? (sub as any).billing_cycle_anchor
+          ?? null;
+        const periodEnd = safeTimestamp(rawPeriodEnd);
+        
         console.log("[preview_plan_change]", {
           total: preview.total,
           prorationAmount,
-          lineItems: preview.lines.data.map(l => ({ amount: l.amount, proration: l.proration, description: l.description })),
-          current_period_end_raw: sub.current_period_end,
+          lineItems: preview.lines.data.map(l => ({ amount: l.amount, type: l.type, description: l.description })),
+          subKeys: Object.keys(sub),
+          current_period_end_raw: (sub as any).current_period_end,
           periodEnd,
         });
 
