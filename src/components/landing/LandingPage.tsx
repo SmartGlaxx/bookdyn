@@ -275,7 +275,7 @@ const LandingPage = ({ onCreateBook, bookCount }: LandingPageProps) => {
                 ))}
               </div>
               <Button variant="hero" size="lg" onClick={onCreateBook} className="group">
-                Try It Now
+                Get Started Free
                 <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </RevealSection>
