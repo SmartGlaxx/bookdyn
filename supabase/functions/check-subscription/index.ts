@@ -24,6 +24,27 @@ function safeTimestamp(ts: number | null | undefined): string | null {
   }
 }
 
+// Calculate the current period start from billing_cycle_anchor
+function getCurrentPeriodStart(anchorTs: number): Date {
+  const anchor = new Date(anchorTs * 1000);
+  const now = new Date();
+  const anchorDay = anchor.getUTCDate();
+
+  // Walk backwards from current month to find the most recent billing date in the past
+  for (let i = 0; i < 13; i++) {
+    const targetMonth = now.getUTCMonth() - i;
+    const targetYear = now.getUTCFullYear() + Math.floor(targetMonth / 12);
+    const targetMon = ((targetMonth % 12) + 12) % 12;
+    const daysInMonth = new Date(targetYear, targetMon + 1, 0).getDate();
+    const day = Math.min(anchorDay, daysInMonth);
+    const candidate = new Date(Date.UTC(targetYear, targetMon, day, anchor.getUTCHours(), anchor.getUTCMinutes(), anchor.getUTCSeconds()));
+    if (candidate <= now) {
+      return candidate;
+    }
+  }
+  return anchor;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -48,6 +69,13 @@ serve(async (req) => {
 
     const user = userData.user;
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+
+    // Get current profile
+    const { data: profile } = await supabaseClient
+      .from("profiles")
+      .select("plan, credits_used, credits_limit, credits_reset_at")
+      .eq("id", user.id)
+      .single();
 
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     if (customers.data.length === 0) {
@@ -84,25 +112,32 @@ serve(async (req) => {
     const planInfo = priceId ? PRICE_TO_PLAN[priceId] : null;
 
     if (planInfo) {
-      const { data: profile } = await supabaseClient
-        .from("profiles")
-        .select("credits_used")
-        .eq("id", user.id)
-        .single();
+      const anchor = (subscription as any).billing_cycle_anchor;
+      const periodStart = anchor ? getCurrentPeriodStart(anchor) : new Date();
+      const lastReset = profile?.credits_reset_at ? new Date(profile.credits_reset_at) : new Date(0);
+
+      // Only update credits_limit (and reset credits_used) when a NEW billing period has started
+      const isNewPeriod = periodStart > lastReset;
+
+      const updateData: Record<string, any> = { plan: planInfo.plan };
+
+      if (isNewPeriod) {
+        // New billing period — apply the current Stripe plan's credits and reset usage
+        updateData.credits_limit = planInfo.credits;
+        updateData.credits_used = 0;
+        updateData.credits_reset_at = periodStart.toISOString();
+      }
 
       await supabaseClient
         .from("profiles")
-        .update({
-          plan: planInfo.plan,
-          credits_limit: planInfo.credits,
-        })
+        .update(updateData)
         .eq("id", user.id);
 
       return new Response(JSON.stringify({
         subscribed: true,
         plan: planInfo.plan,
-        credits_limit: planInfo.credits,
-        credits_used: profile?.credits_used || 0,
+        credits_limit: isNewPeriod ? planInfo.credits : (profile?.credits_limit || planInfo.credits),
+        credits_used: isNewPeriod ? 0 : (profile?.credits_used || 0),
         subscription_end: safeTimestamp(subscription.current_period_end),
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -120,6 +120,7 @@ export type Database = {
         Row: {
           created_at: string
           credits_limit: number
+          credits_reset_at: string
           credits_used: number
           full_name: string
           id: string
@@ -129,6 +130,7 @@ export type Database = {
         Insert: {
           created_at?: string
           credits_limit?: number
+          credits_reset_at?: string
           credits_used?: number
           full_name?: string
           id: string
@@ -138,6 +140,7 @@ export type Database = {
         Update: {
           created_at?: string
           credits_limit?: number
+          credits_reset_at?: string
           credits_used?: number
           full_name?: string
           id?: string
