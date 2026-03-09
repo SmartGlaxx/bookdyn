@@ -18,7 +18,7 @@ const Index = () => {
   const handleCreateBook = async (input: CreateBookInput) => {
     try {
       const newBook = await addBook(input);
-      setShowWizard(false);
+      setShowEngine(false);
       setSelectedBook(newBook);
     } catch (error) {
       console.error("Failed to create book:", error);
