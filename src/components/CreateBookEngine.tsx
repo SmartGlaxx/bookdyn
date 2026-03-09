@@ -64,7 +64,7 @@ interface CreateBookEngineProps {
 
 type Step = 1 | 2 | 3 | 4 | 5;
 
-const CreateBookWizard = ({ onClose, onCreate }: CreateBookWizardProps) => {
+const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
   const [step, setStep] = useState<Step>(1);
   const [selectedCategory, setSelectedCategory] = useState<BookCategory>("fiction");
   const [formData, setFormData] = useState<Partial<CreateBookInput>>({
