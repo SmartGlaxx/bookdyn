@@ -85,6 +85,7 @@ const App = () => (
               </ProtectedRoute>
             }
           />
+          <Route path="/dev-docs" element={<DevDocs />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
