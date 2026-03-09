@@ -10,7 +10,7 @@ import { Book, CreateBookInput } from "@/types/book";
 import { Loader2 } from "lucide-react";
 
 const Index = () => {
-  const [showWizard, setShowWizard] = useState(false);
+  const [showEngine, setShowEngine] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   
   const { books, isLoading, addBook, deleteBook, updateBook } = useBooks();
