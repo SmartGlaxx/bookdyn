@@ -201,9 +201,11 @@ serve(async (req) => {
 
         const planInfo = PRICE_TO_PLAN[newPriceId];
         if (planInfo) {
+          // Only update the plan label — credits_limit stays at current value
+          // until the next billing cycle actually starts (handled by check-subscription)
           await supabaseClient
             .from("profiles")
-            .update({ plan: planInfo.plan, credits_limit: planInfo.credits })
+            .update({ plan: planInfo.plan })
             .eq("id", user.id);
         }
 
