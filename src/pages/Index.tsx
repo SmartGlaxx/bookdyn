@@ -52,7 +52,7 @@ const Index = () => {
           </div>
         ) : books.length === 0 ? (
           <LandingPage
-            onCreateBook={() => setShowWizard(true)}
+            onCreateBook={() => setShowEngine(true)}
             bookCount={books.length}
           />
         ) : (
