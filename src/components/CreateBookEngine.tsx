@@ -57,7 +57,7 @@ import {
   TeaserStyle,
 } from "@/types/book";
 
-interface CreateBookWizardProps {
+interface CreateBookEngineProps {
   onClose: () => void;
   onCreate: (input: CreateBookInput) => void;
 }
