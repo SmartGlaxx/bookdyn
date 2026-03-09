@@ -86,9 +86,9 @@ const Index = () => {
       </main>
 
       <AnimatePresence>
-        {showWizard && (
-          <CreateBookWizard
-            onClose={() => setShowWizard(false)}
+        {showEngine && (
+          <CreateBookEngine
+            onClose={() => setShowEngine(false)}
             onCreate={handleCreateBook}
           />
         )}
