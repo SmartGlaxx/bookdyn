@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import LandingPage from "@/components/landing/LandingPage";
 import BookCard from "@/components/BookCard";
-import CreateBookWizard from "@/components/CreateBookWizard";
+import CreateBookEngine from "@/components/CreateBookEngine";
 import BookDetailView from "@/components/BookDetailView";
 import { useBooks } from "@/hooks/useBooks";
 import { Book, CreateBookInput } from "@/types/book";
