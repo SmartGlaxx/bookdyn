@@ -10,6 +10,7 @@ import Plans from "./pages/Plans";
 import Landing from "./pages/Landing";
 import ResetPassword from "./pages/ResetPassword";
 import ManageSubscription from "./pages/ManageSubscription";
+import DevDocs from "./pages/DevDocs";
 import NotFound from "./pages/NotFound";
 import { BookOpen } from "lucide-react";
 
