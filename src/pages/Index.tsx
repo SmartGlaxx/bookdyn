@@ -40,7 +40,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation onCreateBook={() => setShowWizard(true)} />
+      <Navigation onCreateBook={() => setShowEngine(true)} />
 
       <main>
         {isLoading ? (
