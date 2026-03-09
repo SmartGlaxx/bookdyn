@@ -3,14 +3,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import LandingPage from "@/components/landing/LandingPage";
 import BookCard from "@/components/BookCard";
-import CreateBookWizard from "@/components/CreateBookWizard";
+import CreateBookEngine from "@/components/CreateBookEngine";
 import BookDetailView from "@/components/BookDetailView";
 import { useBooks } from "@/hooks/useBooks";
 import { Book, CreateBookInput } from "@/types/book";
 import { Loader2 } from "lucide-react";
 
 const Index = () => {
-  const [showWizard, setShowWizard] = useState(false);
+  const [showEngine, setShowEngine] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   
   const { books, isLoading, addBook, deleteBook, updateBook } = useBooks();
@@ -18,7 +18,7 @@ const Index = () => {
   const handleCreateBook = async (input: CreateBookInput) => {
     try {
       const newBook = await addBook(input);
-      setShowWizard(false);
+      setShowEngine(false);
       setSelectedBook(newBook);
     } catch (error) {
       console.error("Failed to create book:", error);
@@ -40,7 +40,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation onCreateBook={() => setShowWizard(true)} />
+      <Navigation onCreateBook={() => setShowEngine(true)} />
 
       <main>
         {isLoading ? (
@@ -52,7 +52,7 @@ const Index = () => {
           </div>
         ) : books.length === 0 ? (
           <LandingPage
-            onCreateBook={() => setShowWizard(true)}
+            onCreateBook={() => setShowEngine(true)}
             bookCount={books.length}
           />
         ) : (
@@ -86,9 +86,9 @@ const Index = () => {
       </main>
 
       <AnimatePresence>
-        {showWizard && (
-          <CreateBookWizard
-            onClose={() => setShowWizard(false)}
+        {showEngine && (
+          <CreateBookEngine
+            onClose={() => setShowEngine(false)}
             onCreate={handleCreateBook}
           />
         )}

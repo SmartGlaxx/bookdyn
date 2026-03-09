@@ -245,7 +245,7 @@ export function CharacterGallery({
     <div className={cn("space-y-4", compact && "space-y-2")}>
       <div className="flex items-center gap-2">
         <Users className="w-5 h-5 text-primary" />
-        <h3 className="font-serif font-semibold text-lg">Character Bible</h3>
+        <h3 className="font-serif font-semibold text-lg">Character Index</h3>
         <span className="text-xs text-muted-foreground">({characters.length} characters)</span>
       </div>
       
