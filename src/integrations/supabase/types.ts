@@ -122,6 +122,8 @@ export type Database = {
           credits_limit: number
           credits_reset_at: string
           credits_used: number
+          daily_words_generated: number
+          daily_words_reset_at: string
           full_name: string
           id: string
           plan: string
@@ -132,6 +134,8 @@ export type Database = {
           credits_limit?: number
           credits_reset_at?: string
           credits_used?: number
+          daily_words_generated?: number
+          daily_words_reset_at?: string
           full_name?: string
           id: string
           plan?: string
@@ -142,6 +146,8 @@ export type Database = {
           credits_limit?: number
           credits_reset_at?: string
           credits_used?: number
+          daily_words_generated?: number
+          daily_words_reset_at?: string
           full_name?: string
           id?: string
           plan?: string
@@ -175,6 +181,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_and_deduct_word_credits: {
+        Args: { _estimated_words: number; _user_id: string }
+        Returns: Json
+      }
       check_rate_limit: {
         Args: {
           _function_name: string
