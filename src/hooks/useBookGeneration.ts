@@ -206,7 +206,11 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `Error: ${response.status}`);
+      const msg = errorData.error || `Error: ${response.status}`;
+      if (response.status === 402) {
+        throw new Error(msg.includes("Daily") ? msg : `Credit limit reached: ${msg}. Please upgrade your plan.`);
+      }
+      throw new Error(msg);
     }
 
     const reader = response.body?.getReader();
