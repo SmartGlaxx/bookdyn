@@ -179,6 +179,31 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    // ── Credit & daily word cap enforcement ──
+    const estimatedWords = targetWordsPerSubsection || 600;
+    const adminSupabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    
+    const { data: creditCheck, error: creditError } = await adminSupabase.rpc(
+      "check_and_deduct_word_credits",
+      { _user_id: auth.user.id, _estimated_words: estimatedWords }
+    );
+
+    if (creditError) {
+      console.error("Credit check failed:", creditError);
+      throw new Error("Credit check failed");
+    }
+
+    const creditResult = creditCheck as { allowed: boolean; reason?: string };
+    if (!creditResult.allowed) {
+      return new Response(
+        JSON.stringify({ error: creditResult.reason || "Credit limit reached" }),
+        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const chapter = book.outline?.chapters[chapterIndex];
     const subsection = chapter?.subsections[subsectionIndex];
     
