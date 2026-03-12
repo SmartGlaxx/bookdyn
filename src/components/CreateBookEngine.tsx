@@ -202,7 +202,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="w-full max-w-3xl max-h-[90vh] overflow-hidden"
+        className="w-full max-w-3xl max-h-[90vh] overflow-hidden mx-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <Card variant="elevated" className="overflow-hidden flex flex-col max-h-[90vh]">
