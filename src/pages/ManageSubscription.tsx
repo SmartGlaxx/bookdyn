@@ -289,7 +289,7 @@ const ManageSubscription = () => {
 
                 <div className="flex flex-wrap gap-3">
                   {isFree ? (
-                    <Button variant="hero" onClick={() => navigate("/plans")}>
+                    <Button variant="hero" onClick={() => setUpgradePlanOpen(true)}>
                       <Sparkles className="w-4 h-4 mr-2" /> Upgrade Plan
                     </Button>
                   ) : (
