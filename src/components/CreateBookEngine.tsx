@@ -250,53 +250,52 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                     exit={{ opacity: 0, x: -20 }}
                     className="space-y-6"
                   >
-                    {/* Category Tabs */}
-                    <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as BookCategory)}>
-                      <div className="overflow-x-auto px-1 pb-2">
-                        <TabsList className="inline-flex h-auto w-max gap-1 pr-1">
+                    {/* Category Tabs - Horizontal scrollable */}
+                    <div className="overflow-x-auto -mx-4 px-4 pb-2">
+                      <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as BookCategory)}>
+                        <TabsList className="inline-flex h-auto w-max gap-1">
                           {(Object.entries(BOOK_CATEGORIES) as [BookCategory, typeof BOOK_CATEGORIES[BookCategory]][]).map(
                             ([cat, info]) => (
                               <TabsTrigger 
                                 key={cat} 
                                 value={cat} 
-                                className="text-xs py-2 px-3 whitespace-nowrap"
+                                className="text-xs py-1.5 px-2 whitespace-nowrap"
                               >
                                 {info.label.split(" ")[0]}
                               </TabsTrigger>
                             )
                           )}
                         </TabsList>
-                      </div>
+                      </Tabs>
+                    </div>
 
-                      {(Object.keys(BOOK_CATEGORIES) as BookCategory[]).map((cat) => (
-                        <TabsContent key={cat} value={cat} className="mt-4">
-                          <p className="text-sm text-muted-foreground mb-4 break-words">
-                            {BOOK_CATEGORIES[cat].description}
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
-                            {filteredBookTypes.map(([type, info]) => (
-                              <button
-                                key={type}
-                                onClick={() => handleBookTypeChange(type)}
-                                className={`aspect-square sm:aspect-auto w-full min-w-0 rounded-xl border-2 p-2.5 sm:p-4 text-left transition-all overflow-hidden flex flex-col justify-between gap-1 sm:gap-2 ${
-                                  formData.bookType === type
-                                    ? "border-primary bg-primary/5 shadow-md"
-                                    : "border-border hover:border-primary/50"
-                                }`}
-                              >
-                                <div className="text-xl sm:text-2xl">{info.icon}</div>
-                                <div className="space-y-1 min-w-0">
-                                  <div className="font-medium text-xs sm:text-sm break-words whitespace-normal">{info.label}</div>
-                                  <div className="text-[11px] sm:text-xs text-muted-foreground break-words whitespace-normal line-clamp-3">
-                                    {info.description}
-                                  </div>
-                                </div>
-                              </button>
-                            ))}
-                          </div>
-                        </TabsContent>
-                      ))}
-                    </Tabs>
+                    {/* Category Content */}
+                    <div className="mt-2">
+                      <p className="text-xs text-muted-foreground mb-3 break-words">
+                        {BOOK_CATEGORIES[selectedCategory].description}
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {filteredBookTypes.map(([type, info]) => (
+                          <button
+                            key={type}
+                            onClick={() => handleBookTypeChange(type)}
+                            className={`relative w-full min-w-0 rounded-lg border-2 p-2 text-left transition-all overflow-hidden flex flex-col gap-1 ${
+                              formData.bookType === type
+                                ? "border-primary bg-primary/5 shadow-sm"
+                                : "border-border hover:border-primary/50"
+                            }`}
+                          >
+                            <div className="text-lg leading-none">{info.icon}</div>
+                            <div className="min-w-0">
+                              <div className="font-medium text-[11px] leading-tight break-words whitespace-normal">{info.label}</div>
+                              <div className="text-[10px] text-muted-foreground break-words whitespace-normal line-clamp-2 mt-0.5">
+                                {info.description}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </motion.div>
                 )}
 
