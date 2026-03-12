@@ -45,7 +45,8 @@ import {
   SPATIAL_SCOPE_OPTIONS,
   AUDIENCE_OPTIONS,
   BOOK_TYPE_AUDIENCES,
-  GENRE_PRESETS,
+  BOOK_TYPE_GENRES,
+  bookTypeHasGenres,
   WORD_COUNT_PRESETS,
   TEASER_STYLE_OPTIONS,
   getDefaultControls,
@@ -66,7 +67,7 @@ type Step = 1 | 2 | 3 | 4 | 5;
 
 const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
   const [step, setStep] = useState<Step>(1);
-  const [selectedCategory, setSelectedCategory] = useState<BookCategory>("fiction");
+  const [selectedCategory, setSelectedCategory] = useState<BookCategory>("creative");
   const [formData, setFormData] = useState<Partial<CreateBookInput>>({
     bookType: "novel",
     pov: "third-person-limited",
@@ -124,8 +125,11 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
   const handleBookTypeChange = (type: BookType) => {
     updateForm("bookType", type);
-    // Apply default controls for the new book type
     updateForm("controls", getDefaultControls(type));
+    // Clear genre if new type doesn't support genres
+    if (!bookTypeHasGenres(type)) {
+      updateForm("genre", undefined as any);
+    }
     // Clear audience if it's not valid for the new book type
     const allowed = BOOK_TYPE_AUDIENCES[type];
     if (formData.audience && allowed && !allowed.includes(formData.audience)) {
@@ -330,21 +334,29 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Genre</Label>
-                        <Select
-                          value={formData.genre || ""}
-                          onValueChange={(v) => updateForm("genre", v)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select genre" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover z-50">
-                            {GENRE_PRESETS[currentCategory].map((genre) => (
-                              <SelectItem key={genre} value={genre}>
-                                {genre}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        {formData.bookType && bookTypeHasGenres(formData.bookType) ? (
+                          <Select
+                            value={formData.genre || ""}
+                            onValueChange={(v) => updateForm("genre", v)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select genre" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-popover z-50">
+                              {(BOOK_TYPE_GENRES[formData.bookType!] || []).map((genre) => (
+                                <SelectItem key={genre} value={genre}>
+                                  {genre}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input 
+                            disabled 
+                            value="Not applicable for this book type" 
+                            className="text-muted-foreground"
+                          />
+                        )}
                       </div>
                       
                       <div className="space-y-2">
@@ -357,16 +369,14 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                             <SelectValue placeholder="Select audience" />
                           </SelectTrigger>
                           <SelectContent className="bg-popover z-50">
-                            {AUDIENCE_OPTIONS
-                              .filter((option) => {
-                                const allowedAudiences = formData.bookType ? BOOK_TYPE_AUDIENCES[formData.bookType] : null;
-                                return !allowedAudiences || allowedAudiences.includes(option.value);
-                              })
-                              .map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
+                            {(formData.bookType ? BOOK_TYPE_AUDIENCES[formData.bookType] : []).map((audienceValue) => {
+                              const option = AUDIENCE_OPTIONS.find(o => o.value === audienceValue);
+                              return (
+                                <SelectItem key={audienceValue} value={audienceValue}>
+                                  {option?.label || audienceValue}
+                                </SelectItem>
+                              );
+                            })}
                           </SelectContent>
                         </Select>
                       </div>
