@@ -406,6 +406,173 @@ export const SPATIAL_SCOPE_OPTIONS: { value: SpatialScope; label: string; descri
   { value: "universal", label: "Universal", description: "Beyond Earth / abstract" },
 ];
 
+// IELTS Band mapping (implicit, not shown to users)
+export type IELTSBand = 5 | 6 | 7 | 8 | 9;
+
+export interface AudienceOption {
+  value: string;
+  label: string;
+  ieltsBand: IELTSBand;
+}
+
+// All unique audiences used across book types
+export const AUDIENCE_OPTIONS: AudienceOption[] = [
+  // Band 5
+  { value: "young-children", label: "Young Children (5-8)", ieltsBand: 5 },
+  // Band 6
+  { value: "middle-grade", label: "Middle Grade (9-12)", ieltsBand: 6 },
+  { value: "teens", label: "Teens", ieltsBand: 6 },
+  { value: "parents", label: "Parents", ieltsBand: 6 },
+  // Band 7
+  { value: "young-adults", label: "Young Adults", ieltsBand: 7 },
+  { value: "adults", label: "Adults", ieltsBand: 7 },
+  { value: "general-readers", label: "General Readers", ieltsBand: 7 },
+  { value: "book-clubs", label: "Book Clubs", ieltsBand: 7 },
+  { value: "families", label: "Families", ieltsBand: 7 },
+  { value: "home-cooks", label: "Home Cooks", ieltsBand: 7 },
+  { value: "travel-enthusiasts", label: "Travel Enthusiasts", ieltsBand: 7 },
+  { value: "tourists", label: "Tourists", ieltsBand: 7 },
+  { value: "adventure-seekers", label: "Adventure Seekers", ieltsBand: 7 },
+  { value: "visual-learners", label: "Visual Learners", ieltsBand: 7 },
+  { value: "hobbyists", label: "Hobbyists", ieltsBand: 7 },
+  { value: "diy-enthusiasts", label: "DIY Enthusiasts", ieltsBand: 7 },
+  { value: "food-enthusiasts", label: "Food Enthusiasts", ieltsBand: 7 },
+  { value: "science-enthusiasts", label: "Science Enthusiasts", ieltsBand: 7 },
+  { value: "history-enthusiasts", label: "History Enthusiasts", ieltsBand: 7 },
+  { value: "poetry-enthusiasts", label: "Poetry Enthusiasts", ieltsBand: 7 },
+  { value: "niche-enthusiasts", label: "Niche Enthusiasts", ieltsBand: 7 },
+  { value: "trend-followers", label: "Trend Followers", ieltsBand: 7 },
+  { value: "niche-audiences", label: "Niche Audiences", ieltsBand: 7 },
+  // Band 8
+  { value: "professionals", label: "Professionals", ieltsBand: 8 },
+  { value: "entrepreneurs", label: "Entrepreneurs", ieltsBand: 8 },
+  { value: "executives", label: "Executives", ieltsBand: 8 },
+  { value: "managers", label: "Managers", ieltsBand: 8 },
+  { value: "investors", label: "Investors", ieltsBand: 8 },
+  { value: "financial-professionals", label: "Financial Professionals", ieltsBand: 8 },
+  { value: "accounting-professionals", label: "Accounting Professionals", ieltsBand: 8 },
+  { value: "small-business-owners", label: "Small Business Owners", ieltsBand: 8 },
+  { value: "tech-professionals", label: "Tech Professionals", ieltsBand: 8 },
+  { value: "developers", label: "Developers", ieltsBand: 8 },
+  { value: "software-engineers", label: "Software Engineers", ieltsBand: 8 },
+  { value: "it-managers", label: "IT Managers", ieltsBand: 8 },
+  { value: "innovators", label: "Innovators", ieltsBand: 8 },
+  { value: "engineers", label: "Engineers", ieltsBand: 8 },
+  { value: "professional-chefs", label: "Professional Chefs", ieltsBand: 8 },
+  { value: "educators", label: "Educators", ieltsBand: 8 },
+  { value: "students", label: "Students", ieltsBand: 8 },
+  { value: "general-reference", label: "General Reference", ieltsBand: 8 },
+  { value: "mental-health-professionals", label: "Mental Health Professionals", ieltsBand: 8 },
+  { value: "theater-community", label: "Theater Community", ieltsBand: 8 },
+  { value: "film-industry", label: "Film Industry", ieltsBand: 8 },
+  { value: "literary-community", label: "Literary Community", ieltsBand: 8 },
+  { value: "engineering-students", label: "Engineering Students", ieltsBand: 8 },
+  { value: "technical-professionals", label: "Technical Professionals", ieltsBand: 8 },
+  { value: "computer-science-students", label: "Computer Science Students", ieltsBand: 8 },
+  { value: "policy-makers", label: "Policy Makers", ieltsBand: 8 },
+  { value: "economists", label: "Economists", ieltsBand: 8 },
+  // Band 9
+  { value: "researchers", label: "Researchers", ieltsBand: 9 },
+  { value: "academic-researchers", label: "Academic Researchers", ieltsBand: 9 },
+  { value: "scientists", label: "Scientists", ieltsBand: 9 },
+  { value: "graduate-students", label: "Graduate Students", ieltsBand: 9 },
+  { value: "data-scientists", label: "Data Scientists", ieltsBand: 9 },
+  { value: "ai-researchers", label: "AI Researchers", ieltsBand: 9 },
+  { value: "cultural-researchers", label: "Cultural Researchers", ieltsBand: 9 },
+  { value: "anthropologists", label: "Anthropologists", ieltsBand: 9 },
+];
+
+// Helper to get IELTS band from audience value
+export const getIELTSBandForAudience = (audienceValue: string): IELTSBand => {
+  const option = AUDIENCE_OPTIONS.find(opt => opt.value === audienceValue);
+  return option?.ieltsBand ?? 7;
+};
+
+// Legacy array for backward compatibility
+export const AUDIENCE_PRESETS = AUDIENCE_OPTIONS.map(opt => opt.value);
+
+// Map each book type to its allowed audience values
+export const BOOK_TYPE_AUDIENCES: Record<BookType, string[]> = {
+  // Creative
+  novel: ["young-adults", "adults", "general-readers", "book-clubs"],
+  "fiction-serial": ["young-adults", "adults", "general-readers"],
+  "short-story": ["young-adults", "adults", "general-readers"],
+  children: ["young-children", "middle-grade", "parents"],
+  comic: ["young-adults", "adults", "general-readers", "teens"],
+  drama: ["adults", "theater-community", "film-industry"],
+  poetry: ["adults", "literary-community", "poetry-enthusiasts"],
+
+  // Personal
+  biography: ["adults", "history-enthusiasts", "researchers"],
+  memoir: ["adults", "general-readers", "book-clubs"],
+  "self-help": ["adults", "professionals", "entrepreneurs", "general-readers"],
+  psychology: ["adults", "mental-health-professionals", "students", "researchers"],
+
+  // Business
+  business: ["executives", "entrepreneurs", "managers", "professionals"],
+  finance: ["investors", "financial-professionals", "entrepreneurs", "adults"],
+  accounting: ["accounting-professionals", "students", "small-business-owners"],
+  economics: ["policy-makers", "economists", "students", "researchers"],
+  technology: ["tech-professionals", "developers", "it-managers", "innovators"],
+  programming: ["developers", "software-engineers", "computer-science-students"],
+  "ai-ml": ["data-scientists", "ai-researchers", "tech-professionals"],
+  engineering: ["engineers", "engineering-students", "technical-professionals"],
+
+  // Academic
+  textbook: ["students", "educators", "academic-researchers"],
+  reference: ["professionals", "researchers", "general-reference"],
+  history: ["history-enthusiasts", "researchers", "students", "educators"],
+  culture: ["cultural-researchers", "anthropologists", "general-readers"],
+  "science-academic": ["scientists", "researchers", "graduate-students"],
+  "science-popular": ["science-enthusiasts", "general-readers", "students"],
+
+  // Lifestyle
+  cookbook: ["home-cooks", "professional-chefs", "food-enthusiasts", "parents"],
+  travel: ["travel-enthusiasts", "tourists", "adventure-seekers", "families"],
+  "illustrated-guide": ["visual-learners", "hobbyists", "diy-enthusiasts", "parents"],
+  magazine: ["general-readers", "niche-enthusiasts", "trend-followers"],
+
+  // Custom
+  custom: ["general-readers", "niche-audiences"],
+};
+
+// Genre mapping - only novel and fiction-serial have genres
+export const BOOK_TYPE_GENRES: Partial<Record<BookType, string[]>> = {
+  novel: [
+    "Fantasy", "Science Fiction", "Mystery", "Thriller", "Romance",
+    "Historical Fiction", "Literary Fiction", "Contemporary Fiction",
+    "Dystopian", "Adventure", "Crime"
+  ],
+  "fiction-serial": [
+    "Fantasy", "Science Fiction", "Mystery", "Thriller", "Romance",
+    "Historical Fiction", "Literary Fiction", "Contemporary Fiction",
+    "Dystopian", "Adventure", "Crime"
+  ],
+};
+
+// Helper to check if a book type supports genres
+export const bookTypeHasGenres = (bookType: BookType): boolean => {
+  return bookType in BOOK_TYPE_GENRES;
+};
+
+// Legacy - kept for backward compatibility
+export const GENRE_PRESETS: Record<BookCategory, string[]> = {
+  creative: ["Fantasy", "Science Fiction", "Mystery", "Thriller", "Romance", "Historical Fiction", "Literary Fiction", "Contemporary Fiction", "Dystopian", "Adventure", "Crime"],
+  personal: [],
+  business: [],
+  academic: [],
+  lifestyle: [],
+  custom: [],
+};
+
+export const WORD_COUNT_PRESETS = [
+  { value: 20000, label: "Short", description: "~20k words — short novel or novella" },
+  { value: 40000, label: "Novella", description: "~40k words — extended novella" },
+  { value: 70000, label: "Standard", description: "~70k words — standard novel length" },
+  { value: 100000, label: "Long", description: "~100k words — longer novel" },
+  { value: 150000, label: "Epic", description: "~150k words — epic scope, series opener" },
+] as const;
+
 // Helper to get default controls based on book type
 export const getDefaultControls = (bookType: BookType): BookControls => {
   const category = BOOK_TYPE_INFO[bookType].category;
@@ -427,7 +594,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
       sectionsPerChapter: 4,
       subsectionCount: "flexible",
       titlesRequired: true,
-      targetWordCount: 50000,
+      targetWordCount: 70000,
     },
     automationLevel: "semi-autonomous",
     depthLevel: "intermediate",
@@ -437,9 +604,8 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
     teaserStyle: "none",
   };
 
-  // Adjust defaults based on category
   switch (category) {
-    case "fiction":
+    case "creative":
       return {
         ...baseControls,
         creativity: 7,
@@ -448,7 +614,22 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
         perspectiveMultiplexing: 4,
         divergenceAllowed: true,
       };
-    case "educational":
+    case "personal":
+      return {
+        ...baseControls,
+        creativity: 5,
+        entityComplexity: 7,
+        depthLevel: "comprehensive",
+      };
+    case "business":
+      return {
+        ...baseControls,
+        creativity: 3,
+        scope: 7,
+        depthLevel: "comprehensive",
+        temporalContext: { era: "contemporary", timelineStructure: "linear" },
+      };
+    case "academic":
       return {
         ...baseControls,
         creativity: 3,
@@ -456,19 +637,17 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
         depthLevel: "comprehensive",
         temporalContext: { era: "timeless", timelineStructure: "linear" },
       };
-    case "creative":
+    case "lifestyle":
       return {
         ...baseControls,
-        creativity: 9,
-        velocity: 3,
+        creativity: 6,
+        velocity: 4,
         imageGeneration: true,
       };
-    case "specialized":
+    case "custom":
       return {
         ...baseControls,
-        creativity: 2,
-        scope: 8,
-        automationLevel: "assisted",
+        creativity: 5,
       };
     default:
       return baseControls;
