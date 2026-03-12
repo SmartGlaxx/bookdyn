@@ -32,7 +32,7 @@ export type BookType =
   | "custom";
 
 export type BookStatus = "planning" | "ready_to_write" | "writing" | "completed" | "paused";
-export type POV = "first-person" | "second-person" | "third-person-limited" | "third-person-omniscient";
+export type POV = "first-person" | "second-person" | "third-person-limited" | "third-person-omniscient" | "third-person-multi" | "epistolary" | "multiple";
 export type ToneLevel = "formal" | "conversational" | "humorous" | "dramatic" | "poetic" | "technical" | "authoritative" | "reflective" | "neutral";
 export type AutomationLevel = "assisted" | "semi-autonomous" | "fully-autonomous";
 export type DepthLevel = "overview" | "intermediate" | "comprehensive" | "academic";
