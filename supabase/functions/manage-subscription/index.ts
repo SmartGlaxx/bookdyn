@@ -194,10 +194,26 @@ serve(async (req) => {
         const newAmount = PLAN_PRICE_AMOUNT[new_plan] || 0;
         const isUpgrade = newAmount > currentAmount;
 
-        const updatedSub = await stripe.subscriptions.update(sub.id, {
-          items: [{ id: sub.items.data[0].id, price: newPriceId }],
-          proration_behavior: "none",
-        });
+        // Cancel old subscription and create new one to avoid currency mismatch
+        let updatedSub;
+        try {
+          updatedSub = await stripe.subscriptions.update(sub.id, {
+            items: [{ id: sub.items.data[0].id, price: newPriceId }],
+            proration_behavior: "none",
+          });
+        } catch (e: any) {
+          if (e.type === "StripeInvalidRequestError" && e.message?.includes("currency")) {
+            // Currency mismatch — cancel old sub immediately and create a new one
+            await stripe.subscriptions.cancel(sub.id, { prorate: false });
+            updatedSub = await stripe.subscriptions.create({
+              customer: customer!.id,
+              items: [{ price: newPriceId }],
+              currency: "usd",
+            });
+          } else {
+            throw e;
+          }
+        }
 
         const planInfo = PRICE_TO_PLAN[newPriceId];
         if (planInfo) {
