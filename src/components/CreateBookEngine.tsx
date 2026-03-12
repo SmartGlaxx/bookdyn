@@ -177,7 +177,8 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: "100%", opacity: 0 }}
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        className="w-full sm:max-w-lg sm:mx-4 max-h-[95vh] sm:max-h-[85vh] flex flex-col bg-card border border-border rounded-t-2xl sm:rounded-2xl shadow-lg overflow-hidden"
+        className="w-full sm:max-w-lg sm:mx-4 max-h-[90dvh] sm:max-h-[85vh] flex flex-col bg-card border border-border rounded-t-2xl sm:rounded-2xl shadow-lg overflow-hidden"
+        style={{ maxHeight: '90dvh' }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
