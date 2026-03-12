@@ -917,7 +917,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
           </ScrollArea>
 
           {/* Footer */}
-          <div className="flex justify-between p-4 sm:p-6 border-t bg-muted/30 flex-shrink-0">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-4 sm:p-6 border-t bg-muted/30 flex-shrink-0">
             <Button
               variant="ghost"
               onClick={() => step > 1 && setStep((s) => (s - 1) as Step)}
@@ -926,7 +926,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
               <ChevronLeft className="w-4 h-4 mr-1" />
               Back
             </Button>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap justify-end gap-2">
               <Button variant="outline" onClick={onClose}>
                 Cancel
               </Button>
