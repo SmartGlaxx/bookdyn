@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "npm:stripe@18.5.0";
+import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
@@ -194,26 +194,10 @@ serve(async (req) => {
         const newAmount = PLAN_PRICE_AMOUNT[new_plan] || 0;
         const isUpgrade = newAmount > currentAmount;
 
-        // Cancel old subscription and create new one to avoid currency mismatch
-        let updatedSub;
-        try {
-          updatedSub = await stripe.subscriptions.update(sub.id, {
-            items: [{ id: sub.items.data[0].id, price: newPriceId }],
-            proration_behavior: "none",
-          });
-        } catch (e: any) {
-          if (e.type === "StripeInvalidRequestError" && e.message?.includes("currency")) {
-            // Currency mismatch — cancel old sub immediately and create a new one
-            await stripe.subscriptions.cancel(sub.id, { prorate: false });
-            updatedSub = await stripe.subscriptions.create({
-              customer: customer!.id,
-              items: [{ price: newPriceId }],
-              currency: "usd",
-            });
-          } else {
-            throw e;
-          }
-        }
+        const updatedSub = await stripe.subscriptions.update(sub.id, {
+          items: [{ id: sub.items.data[0].id, price: newPriceId }],
+          proration_behavior: "none",
+        });
 
         const planInfo = PRICE_TO_PLAN[newPriceId];
         if (planInfo) {

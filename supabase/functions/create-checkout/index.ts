@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "npm:stripe@18.5.0";
+import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
@@ -54,7 +54,6 @@ serve(async (req) => {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       mode: "subscription",
-      currency: "usd",
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: {
         supabase_user_id: user.id,
