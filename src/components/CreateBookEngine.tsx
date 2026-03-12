@@ -66,7 +66,7 @@ type Step = 1 | 2 | 3 | 4 | 5;
 
 const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
   const [step, setStep] = useState<Step>(1);
-  const [selectedCategory, setSelectedCategory] = useState<BookCategory>("fiction");
+  const [selectedCategory, setSelectedCategory] = useState<BookCategory>("creative");
   const [formData, setFormData] = useState<Partial<CreateBookInput>>({
     bookType: "novel",
     pov: "third-person-limited",
