@@ -517,7 +517,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                     </div>
 
                     {/* Tone Profile Sliders */}
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                       <ControlSlider
                         label="Formality"
                         tooltip="How formal vs. casual the writing style should be"
