@@ -288,63 +288,69 @@ export interface CreateBookInput {
 }
 
 // ============= BOOK TYPE CATEGORIES =============
-export type BookCategory = "fiction" | "non-fiction" | "educational" | "creative" | "specialized";
+export type BookCategory = "creative" | "personal" | "business" | "academic" | "lifestyle" | "custom";
 
 export const BOOK_CATEGORIES: Record<BookCategory, { label: string; description: string }> = {
-  fiction: { label: "Fiction & Narrative", description: "Stories, novels, and creative narratives" },
-  "non-fiction": { label: "Non-Fiction", description: "Factual, biographical, and self-improvement content" },
-  educational: { label: "Educational & Technical", description: "Learning materials, textbooks, and guides" },
-  creative: { label: "Creative & Artistic", description: "Poetry, drama, and visual-heavy content" },
-  specialized: { label: "Specialized", description: "Reference, periodicals, and custom formats" },
+  creative: { label: "Creative & Narrative", description: "Stories, novels, and creative narratives" },
+  personal: { label: "Personal & Life", description: "Biographies, memoirs, and personal development" },
+  business: { label: "Business & Tech", description: "Business, finance, and technology content" },
+  academic: { label: "Academic & Reference", description: "Educational materials and scholarly content" },
+  lifestyle: { label: "Lifestyle & Practical", description: "Cookbooks, travel, and practical guides" },
+  custom: { label: "Custom", description: "Flexible format for unique needs" },
 };
 
 export const BOOK_TYPE_INFO: Record<BookType, { label: string; icon: string; description: string; category: BookCategory }> = {
-  // Fiction
-  novel: { label: "Novel", icon: "📖", description: "Full-length fiction narrative with plot and characters", category: "fiction" },
-  "fiction-serial": { label: "Serialized Fiction", icon: "📚", description: "Episodic fiction released in parts", category: "fiction" },
-  "short-story": { label: "Short Story", icon: "📝", description: "Brief fiction narratives", category: "fiction" },
-  children: { label: "Children's Book", icon: "🎨", description: "Illustrated stories for young readers", category: "fiction" },
-  comic: { label: "Comic / Graphic Novel", icon: "💬", description: "Visual storytelling with panels and dialogue", category: "fiction" },
-  
-  // Non-Fiction
-  biography: { label: "Biography", icon: "👤", description: "Life story of a notable person", category: "non-fiction" },
-  memoir: { label: "Memoir", icon: "📔", description: "Personal life stories and experiences", category: "non-fiction" },
-  "self-help": { label: "Self-Help", icon: "🌟", description: "Personal development and guidance", category: "non-fiction" },
-  psychology: { label: "Psychology", icon: "🧠", description: "Mental health, behavior, and cognition", category: "non-fiction" },
-  business: { label: "Business", icon: "💼", description: "Business strategy and management", category: "non-fiction" },
-  finance: { label: "Finance", icon: "💰", description: "Money management and investing", category: "non-fiction" },
-  accounting: { label: "Accounting", icon: "📊", description: "Financial reporting and analysis", category: "non-fiction" },
-  economics: { label: "Economics", icon: "📈", description: "Economic theory and practice", category: "non-fiction" },
-  travel: { label: "Travel", icon: "✈️", description: "Travel guides and experiences", category: "non-fiction" },
-  history: { label: "History", icon: "🏛️", description: "Historical events and analysis", category: "non-fiction" },
-  culture: { label: "Culture", icon: "🎭", description: "Cultural studies and exploration", category: "non-fiction" },
-  
-  // Educational
-  technology: { label: "Technology", icon: "💻", description: "Tech concepts and innovations", category: "educational" },
-  programming: { label: "Programming", icon: "⚙️", description: "Coding tutorials and references", category: "educational" },
-  "ai-ml": { label: "AI & Machine Learning", icon: "🤖", description: "Artificial intelligence concepts", category: "educational" },
-  engineering: { label: "Engineering", icon: "🔧", description: "Engineering principles and design", category: "educational" },
-  "science-academic": { label: "Science (Academic)", icon: "🔬", description: "Rigorous scientific content", category: "educational" },
-  "science-popular": { label: "Science (Popular)", icon: "🧪", description: "Accessible science writing", category: "educational" },
-  textbook: { label: "Textbook", icon: "📕", description: "Structured educational material", category: "educational" },
-  cookbook: { label: "Cookbook", icon: "🍳", description: "Recipes and culinary guides", category: "educational" },
-  
-  // Creative
-  poetry: { label: "Poetry", icon: "✨", description: "Verse and poetic compositions", category: "creative" },
-  drama: { label: "Drama / Screenplay", icon: "🎬", description: "Plays and film scripts", category: "creative" },
-  "illustrated-guide": { label: "Illustrated Guide", icon: "🖼️", description: "Visual-heavy instructional content", category: "creative" },
-  
-  // Specialized
-  magazine: { label: "Magazine / Periodical", icon: "📰", description: "Ongoing issues or episodic content", category: "specialized" },
-  reference: { label: "Reference Manual", icon: "📋", description: "Comprehensive reference documentation", category: "specialized" },
-  custom: { label: "Custom / Hybrid", icon: "🎯", description: "Custom format combining multiple styles", category: "specialized" },
+  // Creative & Narrative
+  novel: { label: "Novel", icon: "📖", description: "Long-form fiction with deep character development and complex plots", category: "creative" },
+  "fiction-serial": { label: "Serialized Fiction", icon: "📚", description: "Episodic stories designed for ongoing releases", category: "creative" },
+  "short-story": { label: "Short Story", icon: "📝", description: "Compact narrative with a single arc", category: "creative" },
+  children: { label: "Children's Book", icon: "🎨", description: "Age-appropriate stories with simple language", category: "creative" },
+  comic: { label: "Comic / Graphic Novel", icon: "💬", description: "Visual storytelling with panels and dialogue", category: "creative" },
+  drama: { label: "Drama / Screenplay", icon: "🎬", description: "Script format for performance", category: "creative" },
+  poetry: { label: "Poetry Collection", icon: "✨", description: "Thematic verse compilation", category: "creative" },
+
+  // Personal & Life
+  biography: { label: "Biography", icon: "👤", description: "Life story of a real person", category: "personal" },
+  memoir: { label: "Memoir", icon: "📔", description: "Personal life experiences and reflections", category: "personal" },
+  "self-help": { label: "Self-Help", icon: "🌟", description: "Practical guidance for personal improvement", category: "personal" },
+  psychology: { label: "Psychology", icon: "🧠", description: "Mental health and behavioral insights", category: "personal" },
+
+  // Business, Finance & Tech
+  business: { label: "Business", icon: "💼", description: "Corporate strategy and management", category: "business" },
+  finance: { label: "Finance", icon: "💰", description: "Investment and financial planning", category: "business" },
+  accounting: { label: "Accounting", icon: "📊", description: "Financial record-keeping and analysis", category: "business" },
+  economics: { label: "Economics", icon: "📈", description: "Market and policy analysis", category: "business" },
+  technology: { label: "Technology", icon: "💻", description: "Tech trends and digital transformation", category: "business" },
+  programming: { label: "Programming", icon: "⚙️", description: "Code and development practices", category: "business" },
+  "ai-ml": { label: "AI & Machine Learning", icon: "🤖", description: "Artificial intelligence and ML concepts", category: "business" },
+  engineering: { label: "Engineering", icon: "🔧", description: "Technical design and problem-solving", category: "business" },
+
+  // Academic & Reference
+  textbook: { label: "Textbook", icon: "📕", description: "Educational material for structured learning", category: "academic" },
+  reference: { label: "Reference Manual", icon: "📋", description: "Lookup and troubleshooting guide", category: "academic" },
+  history: { label: "History", icon: "🏛️", description: "Historical events and analysis", category: "academic" },
+  culture: { label: "Culture", icon: "🎭", description: "Cultural practices and social studies", category: "academic" },
+  "science-academic": { label: "Science (Academic)", icon: "🔬", description: "Scholarly scientific research", category: "academic" },
+  "science-popular": { label: "Science (Popular)", icon: "🧪", description: "Accessible science explanations", category: "academic" },
+
+  // Lifestyle & Practical
+  cookbook: { label: "Cookbook", icon: "🍳", description: "Recipes and culinary techniques", category: "lifestyle" },
+  travel: { label: "Travel Guide", icon: "✈️", description: "Destination information and itineraries", category: "lifestyle" },
+  "illustrated-guide": { label: "Illustrated Guide", icon: "🖼️", description: "Visual how-to content", category: "lifestyle" },
+  magazine: { label: "Magazine", icon: "📰", description: "Mixed-format articles and features", category: "lifestyle" },
+
+  // Custom
+  custom: { label: "Custom Project", icon: "🎯", description: "Flexible format for unique needs", category: "custom" },
 };
 
 export const POV_OPTIONS: { value: POV; label: string; description: string }[] = [
-  { value: "first-person", label: "First Person", description: "I, me, my — intimate and personal" },
-  { value: "second-person", label: "Second Person", description: "You — direct address to reader" },
-  { value: "third-person-limited", label: "Third Person Limited", description: "He/she — one character's perspective" },
+  { value: "first-person", label: "First Person (I/me)", description: "Intimate, subjective narrator" },
+  { value: "second-person", label: "Second Person (you)", description: "Direct reader address" },
+  { value: "third-person-limited", label: "Third Person Limited (he/she/they)", description: "Follows one character" },
   { value: "third-person-omniscient", label: "Third Person Omniscient", description: "All-knowing narrator" },
+  { value: "third-person-multi", label: "Third Person Multiple", description: "Shifts between characters" },
+  { value: "epistolary", label: "Epistolary (letters/documents)", description: "Document-based narrative" },
+  { value: "multiple", label: "Multiple POVs", description: "Various perspectives mixed" },
 ];
 
 export const TONE_OPTIONS: { value: ToneLevel; label: string; emoji: string; description: string }[] = [
@@ -399,121 +405,6 @@ export const SPATIAL_SCOPE_OPTIONS: { value: SpatialScope; label: string; descri
   { value: "global", label: "Global", description: "Worldwide scope" },
   { value: "universal", label: "Universal", description: "Beyond Earth / abstract" },
 ];
-
-// IELTS Band mapping (implicit, not shown to users)
-export type IELTSBand = 5 | 6 | 7 | 8 | 9;
-
-export interface AudienceOption {
-  value: string;
-  label: string;
-  ieltsBand: IELTSBand;
-}
-
-// Ordered by IELTS band (lowest to highest complexity)
-export const AUDIENCE_OPTIONS: AudienceOption[] = [
-  // Band 5 (least complex)
-  { value: "children-1-9", label: "Children (1–9)", ieltsBand: 5 },
-  
-  // Band 6
-  { value: "older-children-10-15", label: "Older Children (10–15)", ieltsBand: 6 },
-  
-  // Band 7
-  { value: "16-plus", label: "16+ years", ieltsBand: 7 },
-  { value: "general-readers", label: "General Readers", ieltsBand: 7 },
-  
-  // Band 8
-  { value: "academics-undergraduate", label: "Academics (undergraduate level)", ieltsBand: 8 },
-  { value: "industry-experts", label: "Industry Experts (non-research roles)", ieltsBand: 8 },
-  { value: "professionals", label: "Professionals (general workplace)", ieltsBand: 8 },
-  
-  // Band 9 (highest complexity)
-  { value: "scholars-researchers", label: "Scholars/Researchers (academic research level)", ieltsBand: 9 },
-  { value: "specialized-experts", label: "Specialized Industry Experts (technical or research-focused)", ieltsBand: 9 },
-];
-
-// Map each book type to its reasonable audience options
-export const BOOK_TYPE_AUDIENCES: Record<BookType, string[]> = {
-  // Fiction
-  novel: ["16-plus", "general-readers", "academics-undergraduate"],
-  "fiction-serial": ["16-plus", "general-readers"],
-  "short-story": ["16-plus", "general-readers", "academics-undergraduate"],
-  children: ["children-1-9", "older-children-10-15"],
-  comic: ["older-children-10-15", "16-plus", "general-readers"],
-
-  // Non-Fiction
-  biography: ["16-plus", "general-readers", "academics-undergraduate"],
-  memoir: ["16-plus", "general-readers"],
-  "self-help": ["16-plus", "general-readers", "professionals"],
-  psychology: ["general-readers", "academics-undergraduate", "professionals", "scholars-researchers"],
-  business: ["general-readers", "academics-undergraduate", "professionals", "industry-experts"],
-  finance: ["general-readers", "academics-undergraduate", "professionals", "industry-experts", "specialized-experts"],
-  accounting: ["general-readers", "academics-undergraduate", "professionals", "industry-experts", "specialized-experts"],
-  economics: ["general-readers", "academics-undergraduate", "professionals", "industry-experts", "scholars-researchers"],
-  travel: ["older-children-10-15", "16-plus", "general-readers"],
-  history: ["16-plus", "general-readers", "academics-undergraduate", "scholars-researchers"],
-  culture: ["16-plus", "general-readers", "academics-undergraduate", "scholars-researchers"],
-
-  // Educational
-  technology: ["16-plus", "general-readers", "academics-undergraduate", "professionals", "industry-experts"],
-  programming: ["16-plus", "academics-undergraduate", "professionals", "industry-experts", "specialized-experts"],
-  "ai-ml": ["academics-undergraduate", "professionals", "industry-experts", "specialized-experts", "scholars-researchers"],
-  engineering: ["academics-undergraduate", "professionals", "industry-experts", "specialized-experts", "scholars-researchers"],
-  "science-academic": ["academics-undergraduate", "scholars-researchers", "specialized-experts"],
-  "science-popular": ["16-plus", "general-readers", "academics-undergraduate"],
-  textbook: ["older-children-10-15", "16-plus", "academics-undergraduate", "scholars-researchers"],
-  cookbook: ["older-children-10-15", "16-plus", "general-readers"],
-
-  // Creative
-  poetry: ["16-plus", "general-readers", "academics-undergraduate", "scholars-researchers"],
-  drama: ["16-plus", "general-readers", "academics-undergraduate"],
-  "illustrated-guide": ["older-children-10-15", "16-plus", "general-readers"],
-
-  // Specialized
-  magazine: ["16-plus", "general-readers", "professionals"],
-  reference: ["professionals", "industry-experts", "specialized-experts", "scholars-researchers"],
-  custom: ["children-1-9", "older-children-10-15", "16-plus", "general-readers", "academics-undergraduate", "industry-experts", "professionals", "scholars-researchers", "specialized-experts"],
-};
-
-// Helper to get IELTS band from audience value
-export const getIELTSBandForAudience = (audienceValue: string): IELTSBand => {
-  const option = AUDIENCE_OPTIONS.find(opt => opt.value === audienceValue);
-  return option?.ieltsBand ?? 7; // Default to Band 7 (General Readers)
-};
-
-// Legacy array for backward compatibility
-export const AUDIENCE_PRESETS = AUDIENCE_OPTIONS.map(opt => opt.value);
-
-export const WORD_COUNT_PRESETS = [
-  { value: 10000, label: "Short", description: "~10k words — short stories, guides" },
-  { value: 25000, label: "Novella", description: "~25k words — novellas, manuals" },
-  { value: 50000, label: "Standard", description: "~50k words — standard novels" },
-  { value: 75000, label: "Long", description: "~75k words — detailed novels" },
-  { value: 100000, label: "Epic", description: "~100k words — epic narratives" },
-] as const;
-
-export const GENRE_PRESETS: Record<BookCategory, string[]> = {
-  fiction: [
-    "Fantasy", "Science Fiction", "Romance", "Mystery", "Thriller", 
-    "Literary Fiction", "Historical Fiction", "Adventure", 
-    "Dystopian", "Urban Fantasy", "Contemporary"
-  ],
-  "non-fiction": [
-    "Self-Improvement", "Leadership", "Productivity", "Relationships",
-    "Health & Wellness", "Spirituality", "True Crime", "Journalism"
-  ],
-  educational: [
-    "Tutorial", "Reference", "How-To", "Academic", "Professional Development",
-    "Certification Prep", "Case Studies"
-  ],
-  creative: [
-    "Lyric Poetry", "Epic Poetry", "Haiku", "Free Verse", "Stage Play",
-    "Screenplay", "Musical"
-  ],
-  specialized: [
-    "Technical Manual", "API Documentation", "User Guide", "Lifestyle",
-    "Special Interest", "Anthology"
-  ],
-};
 
 // Helper to get default controls based on book type
 export const getDefaultControls = (bookType: BookType): BookControls => {
