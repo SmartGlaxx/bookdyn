@@ -195,33 +195,33 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-background/80 backdrop-blur-sm"
       onClick={onClose}
     >
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="w-full max-w-3xl max-h-[90vh] overflow-hidden"
+        className="w-full max-w-3xl max-h-[90vh] overflow-hidden mx-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <Card variant="elevated" className="overflow-hidden flex flex-col max-h-[90vh]">
-          <CardHeader className="relative pb-4 border-b flex-shrink-0 overflow-x-auto">
+          <CardHeader className="relative pb-4 border-b flex-shrink-0 px-4 sm:px-6">
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-4 top-4 z-10"
+              className="absolute right-3 sm:right-4 top-4 z-10 flex-shrink-0"
               onClick={onClose}
             >
               <X className="w-4 h-4" />
             </Button>
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-3 min-w-0 pr-8">
               <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
                 {stepIcons[step - 1]}
               </div>
               <div className="min-w-0">
                 <CardTitle className="text-sm sm:text-base truncate">Create New Book</CardTitle>
-                <CardDescription className="text-xs sm:text-sm">Step {step} of 5 — {stepTitles[step - 1]}</CardDescription>
+                <CardDescription className="text-xs sm:text-sm break-words">Step {step} of 5 — {stepTitles[step - 1]}</CardDescription>
               </div>
             </div>
 
@@ -239,7 +239,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
           </CardHeader>
 
           <ScrollArea className="flex-1 overflow-auto" ref={scrollAreaRef}>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <AnimatePresence mode="wait">
                 {/* Step 1: Book Type Selection */}
                 {step === 1 && (
@@ -252,7 +252,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                   >
                     {/* Category Tabs */}
                     <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as BookCategory)}>
-                      <div className="overflow-x-auto -mx-2 px-2 pb-2">
+                      <ScrollArea className="w-full pb-2">
                         <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-5 h-auto gap-1">
                           {(Object.entries(BOOK_CATEGORIES) as [BookCategory, typeof BOOK_CATEGORIES[BookCategory]][]).map(
                             ([cat, info]) => (
@@ -266,7 +266,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                             )
                           )}
                         </TabsList>
-                      </div>
+                      </ScrollArea>
 
                       {(Object.keys(BOOK_CATEGORIES) as BookCategory[]).map((cat) => (
                         <TabsContent key={cat} value={cat} className="mt-4">
@@ -278,15 +278,15 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                               <button
                                 key={type}
                                 onClick={() => handleBookTypeChange(type)}
-                                className={`p-4 rounded-xl border-2 text-left transition-all hover:scale-[1.02] ${
+                                className={`p-3 sm:p-4 rounded-xl border-2 text-left transition-all overflow-hidden ${
                                   formData.bookType === type
                                     ? "border-primary bg-primary/5 shadow-md"
                                     : "border-border hover:border-primary/50"
                                 }`}
                               >
                                 <div className="text-2xl mb-2">{info.icon}</div>
-                                <div className="font-medium text-sm">{info.label}</div>
-                                <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                <div className="font-medium text-sm break-words">{info.label}</div>
+                                <div className="text-xs text-muted-foreground mt-1 line-clamp-2 break-words">
                                   {info.description}
                                 </div>
                               </button>
@@ -456,14 +456,14 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                           <button
                             key={option.value}
                             onClick={() => updateForm("pov", option.value)}
-                            className={`p-3 rounded-lg border-2 text-left transition-all ${
+                            className={`p-3 rounded-lg border-2 text-left transition-all overflow-hidden ${
                               formData.pov === option.value
                                 ? "border-primary bg-primary/5"
                                 : "border-border hover:border-primary/50"
                             }`}
                           >
-                            <div className="font-medium text-sm">{option.label}</div>
-                            <div className="text-xs text-muted-foreground mt-1">
+                            <div className="font-medium text-sm break-words">{option.label}</div>
+                            <div className="text-xs text-muted-foreground mt-1 break-words">
                               {option.description}
                             </div>
                           </button>
@@ -823,14 +823,14 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                             <button
                               key={opt.value}
                               onClick={() => updateControls("teaserStyle", opt.value as TeaserStyle)}
-                              className={`p-3 rounded-lg border-2 text-left transition-all ${
+                              className={`p-3 rounded-lg border-2 text-left transition-all overflow-hidden ${
                                 formData.controls?.teaserStyle === opt.value
                                   ? "border-primary bg-primary/5"
                                   : "border-border hover:border-primary/50"
                               }`}
                             >
-                              <div className="font-medium text-sm">{opt.label}</div>
-                              <div className="text-xs text-muted-foreground mt-1">
+                              <div className="font-medium text-sm break-words">{opt.label}</div>
+                              <div className="text-xs text-muted-foreground mt-1 break-words">
                                 {opt.description}
                               </div>
                             </button>
@@ -915,7 +915,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
           </ScrollArea>
 
           {/* Footer */}
-          <div className="flex justify-between p-6 border-t bg-muted/30 flex-shrink-0">
+          <div className="flex justify-between p-4 sm:p-6 border-t bg-muted/30 flex-shrink-0">
             <Button
               variant="ghost"
               onClick={() => step > 1 && setStep((s) => (s - 1) as Step)}
