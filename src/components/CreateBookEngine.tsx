@@ -206,22 +206,22 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
         onClick={(e) => e.stopPropagation()}
       >
         <Card variant="elevated" className="overflow-hidden flex flex-col max-h-[90vh]">
-          <CardHeader className="relative pb-4 border-b flex-shrink-0">
+          <CardHeader className="relative pb-4 border-b flex-shrink-0 overflow-x-auto">
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-4 top-4"
+              className="absolute right-4 top-4 z-10"
               onClick={onClose}
             >
               <X className="w-4 h-4" />
             </Button>
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
                 {stepIcons[step - 1]}
               </div>
-              <div>
-                <CardTitle>Create New Book</CardTitle>
-                <CardDescription>Step {step} of 5 — {stepTitles[step - 1]}</CardDescription>
+              <div className="min-w-0">
+                <CardTitle className="text-sm sm:text-base truncate">Create New Book</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Step {step} of 5 — {stepTitles[step - 1]}</CardDescription>
               </div>
             </div>
 
