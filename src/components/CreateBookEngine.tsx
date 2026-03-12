@@ -202,11 +202,11 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="w-full max-w-3xl max-h-[90vh] overflow-hidden mx-auto"
+        className="w-full max-w-3xl max-h-[90vh] overflow-hidden mx-auto min-w-0"
         onClick={(e) => e.stopPropagation()}
       >
-        <Card variant="elevated" className="overflow-hidden flex flex-col max-h-[90vh]">
-          <CardHeader className="relative pb-4 border-b flex-shrink-0 px-4 sm:px-6">
+        <Card variant="elevated" className="overflow-hidden flex flex-col max-h-[90vh] w-full min-w-0">
+          <CardHeader className="relative pb-4 border-b flex-shrink-0 px-4 sm:px-6 overflow-x-auto">
             <Button
               variant="ghost"
               size="icon"
@@ -226,7 +226,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
             </div>
 
             {/* Progress indicators */}
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-2 mt-4 min-w-0">
               {[1, 2, 3, 4, 5].map((s) => (
                 <div
                   key={s}
@@ -238,8 +238,8 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
             </div>
           </CardHeader>
 
-          <ScrollArea className="flex-1 overflow-auto" ref={scrollAreaRef}>
-            <CardContent className="p-4 sm:p-6">
+          <ScrollArea className="flex-1 overflow-auto overflow-x-hidden" ref={scrollAreaRef}>
+            <CardContent className="p-4 sm:p-6 overflow-x-hidden min-w-0">
               <AnimatePresence mode="wait">
                 {/* Step 1: Book Type Selection */}
                 {step === 1 && (
