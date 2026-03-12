@@ -246,7 +246,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                     {/* Category Tabs */}
                     <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as BookCategory)}>
                       <div className="overflow-x-auto -mx-2 px-2 pb-2">
-                        <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-5 h-auto gap-1">
+                        <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-5 h-auto gap-1 p-1">
                           {(Object.entries(BOOK_CATEGORIES) as [BookCategory, typeof BOOK_CATEGORIES[BookCategory]][]).map(
                             ([cat, info]) => (
                               <TabsTrigger 
