@@ -395,7 +395,63 @@ const ManageSubscription = () => {
         </div>
       </div>
 
-      {/* Select Plan Dialog */}
+      {/* Upgrade Plan Dialog (for free users) */}
+      <Dialog open={upgradePlanOpen} onOpenChange={setUpgradePlanOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Upgrade Your Plan</DialogTitle>
+            <DialogDescription>
+              Choose a plan to get started with more credits and features.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-4">
+            {PLANS.map((plan) => (
+              <button
+                key={plan.id}
+                disabled={!!actionLoading}
+                onClick={async () => {
+                  setActionLoading(plan.id);
+                  try {
+                    const { data, error } = await supabase.functions.invoke("create-checkout", {
+                      body: { planId: plan.id },
+                    });
+                    if (error) throw error;
+                    if (data?.url) {
+                      window.location.href = data.url;
+                    } else {
+                      throw new Error("No checkout URL returned");
+                    }
+                  } catch (err: any) {
+                    toast({ title: "Checkout failed", description: err.message, variant: "destructive" });
+                  } finally {
+                    setActionLoading(null);
+                  }
+                }}
+                className="w-full flex items-center justify-between p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-muted/50 cursor-pointer transition-all text-left disabled:opacity-60"
+              >
+                <div className="flex items-center gap-3">
+                  <plan.icon className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{plan.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {plan.credits ? `${plan.credits} credits/mo` : "Unlimited credits"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">${plan.price}/mo</span>
+                  {actionLoading === plan.id && <RefreshCw className="w-4 h-4 animate-spin" />}
+                </div>
+              </button>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setUpgradePlanOpen(false)}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Plan Dialog (for existing subscribers) */}
       <Dialog open={changePlanOpen} onOpenChange={setChangePlanOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
