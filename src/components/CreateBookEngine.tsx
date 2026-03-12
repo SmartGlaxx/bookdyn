@@ -954,10 +954,10 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
 // Helper Components
 const LabelWithTooltip = ({ label, tooltip }: { label: string; tooltip: string }) => (
-  <div className="flex items-center gap-2">
-    <Label>{label}</Label>
+  <div className="flex items-start gap-2 min-w-0">
+    <Label className="break-words whitespace-normal">{label}</Label>
     <Tooltip>
-      <TooltipTrigger>
+      <TooltipTrigger className="flex-shrink-0">
         <HelpCircle className="w-4 h-4 text-muted-foreground" />
       </TooltipTrigger>
       <TooltipContent className="max-w-xs">{tooltip}</TooltipContent>
