@@ -251,22 +251,24 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                     className="space-y-6"
                   >
                     {/* Category Tabs - Horizontal scrollable */}
-                    <div className="overflow-x-auto -mx-4 px-4 pb-2">
-                      <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as BookCategory)}>
-                        <TabsList className="inline-flex h-auto w-max gap-1">
-                          {(Object.entries(BOOK_CATEGORIES) as [BookCategory, typeof BOOK_CATEGORIES[BookCategory]][]).map(
-                            ([cat, info]) => (
-                              <TabsTrigger 
-                                key={cat} 
-                                value={cat} 
-                                className="text-xs py-1.5 px-2 whitespace-nowrap"
-                              >
-                                {info.label.split(" ")[0]}
-                              </TabsTrigger>
-                            )
-                          )}
-                        </TabsList>
-                      </Tabs>
+                    <div className="overflow-x-auto -mx-4 px-4 pb-2 scrollbar-hide">
+                      <div className="flex gap-1 min-w-max">
+                        {(Object.entries(BOOK_CATEGORIES) as [BookCategory, typeof BOOK_CATEGORIES[BookCategory]][]).map(
+                          ([cat, info]) => (
+                            <button
+                              key={cat}
+                              onClick={() => setSelectedCategory(cat)}
+                              className={`flex-shrink-0 text-xs py-1.5 px-3 rounded-md transition-all whitespace-nowrap ${
+                                selectedCategory === cat
+                                  ? "bg-primary text-primary-foreground font-medium"
+                                  : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                              }`}
+                            >
+                              {info.label.split(" ")[0]}
+                            </button>
+                          )
+                        )}
+                      </div>
                     </div>
 
                     {/* Category Content */}
