@@ -124,8 +124,11 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
   const handleBookTypeChange = (type: BookType) => {
     updateForm("bookType", type);
-    // Apply default controls for the new book type
     updateForm("controls", getDefaultControls(type));
+    // Clear genre if new type doesn't support genres
+    if (!bookTypeHasGenres(type)) {
+      updateForm("genre", undefined as any);
+    }
     // Clear audience if it's not valid for the new book type
     const allowed = BOOK_TYPE_AUDIENCES[type];
     if (formData.audience && allowed && !allowed.includes(formData.audience)) {
