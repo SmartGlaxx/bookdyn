@@ -981,17 +981,17 @@ const ControlSlider = ({
   rightLabel: string;
 }) => (
   <div className="space-y-3">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <Label>{label}</Label>
+    <div className="flex items-start justify-between gap-3 min-w-0">
+      <div className="flex items-start gap-2 min-w-0">
+        <Label className="break-words whitespace-normal">{label}</Label>
         <Tooltip>
-          <TooltipTrigger>
+          <TooltipTrigger className="flex-shrink-0">
             <HelpCircle className="w-4 h-4 text-muted-foreground" />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">{tooltip}</TooltipContent>
         </Tooltip>
       </div>
-      <span className="text-sm font-medium text-primary">{value}/10</span>
+      <span className="text-sm font-medium text-primary flex-shrink-0">{value}/10</span>
     </div>
     <Slider
       value={[value]}
