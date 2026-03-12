@@ -251,14 +251,14 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                     className="space-y-6"
                   >
                     {/* Category Tabs - Horizontal scrollable */}
-                    <div className="overflow-x-auto -mx-4 px-4 pb-2 scrollbar-hide">
-                      <div className="flex gap-1 min-w-max">
+                    <div className="overflow-x-auto -mx-4 px-4 pb-2" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                      <div className="flex gap-1.5 min-w-max pr-4">
                         {(Object.entries(BOOK_CATEGORIES) as [BookCategory, typeof BOOK_CATEGORIES[BookCategory]][]).map(
                           ([cat, info]) => (
                             <button
                               key={cat}
                               onClick={() => setSelectedCategory(cat)}
-                              className={`flex-shrink-0 text-xs py-1.5 px-3 rounded-md transition-all whitespace-nowrap ${
+                              className={`flex-shrink-0 text-[11px] py-1 px-2.5 rounded-full transition-all whitespace-nowrap ${
                                 selectedCategory === cat
                                   ? "bg-primary text-primary-foreground font-medium"
                                   : "bg-muted hover:bg-muted/80 text-muted-foreground"
@@ -276,21 +276,21 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                       <p className="text-xs text-muted-foreground mb-3 break-words">
                         {BOOK_CATEGORIES[selectedCategory].description}
                       </p>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         {filteredBookTypes.map(([type, info]) => (
                           <button
                             key={type}
                             onClick={() => handleBookTypeChange(type)}
-                            className={`relative rounded-lg border-2 p-2 text-left transition-all overflow-hidden flex flex-col gap-1 basis-[calc(50%-0.25rem)] min-w-[100px] max-w-[200px] flex-grow ${
+                            className={`relative rounded-lg border p-2 text-left transition-all overflow-hidden flex items-start gap-2 ${
                               formData.bookType === type
                                 ? "border-primary bg-primary/5 shadow-sm"
                                 : "border-border hover:border-primary/50"
                             }`}
                           >
-                            <div className="text-lg leading-none">{info.icon}</div>
-                            <div className="min-w-0">
-                              <div className="font-medium text-[11px] leading-tight break-words whitespace-normal">{info.label}</div>
-                              <div className="text-[10px] text-muted-foreground break-words whitespace-normal line-clamp-2 mt-0.5">
+                            <div className="text-base leading-none flex-shrink-0 mt-0.5">{info.icon}</div>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium text-[11px] leading-tight break-words">{info.label}</div>
+                              <div className="text-[9px] text-muted-foreground line-clamp-2 mt-0.5 leading-tight">
                                 {info.description}
                               </div>
                             </div>
