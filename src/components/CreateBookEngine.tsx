@@ -276,7 +276,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                       <p className="text-xs text-muted-foreground mb-3 break-words">
                         {BOOK_CATEGORIES[selectedCategory].description}
                       </p>
-                      <div className="grid grid-cols-2 gap-1.5 max-w-[66%]">
+                      <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))' }}>
                         {filteredBookTypes.map(([type, info]) => (
                           <button
                             key={type}
