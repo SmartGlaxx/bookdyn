@@ -239,7 +239,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
           </CardHeader>
 
           <ScrollArea className="flex-1 overflow-auto" ref={scrollAreaRef}>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <AnimatePresence mode="wait">
                 {/* Step 1: Book Type Selection */}
                 {step === 1 && (
