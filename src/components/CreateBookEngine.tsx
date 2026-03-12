@@ -206,27 +206,27 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
         onClick={(e) => e.stopPropagation()}
       >
         <Card variant="elevated" className="overflow-hidden flex flex-col max-h-[90vh] w-full min-w-0">
-          <CardHeader className="relative pb-4 border-b flex-shrink-0 px-4 sm:px-6 overflow-x-auto">
+          <CardHeader className="relative pb-3 border-b flex-shrink-0 px-4 sm:px-6">
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-3 sm:right-4 top-4 z-10 flex-shrink-0"
+              className="absolute right-3 sm:right-4 top-3 z-10 flex-shrink-0 w-8 h-8"
               onClick={onClose}
             >
               <X className="w-4 h-4" />
             </Button>
-            <div className="flex items-center gap-3 min-w-0 pr-8">
-              <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
+            <div className="flex items-center gap-2 min-w-0 pr-10">
+              <div className="p-1.5 rounded-md bg-primary/10 flex-shrink-0">
                 {stepIcons[step - 1]}
               </div>
               <div className="min-w-0">
-                <CardTitle className="text-sm sm:text-base truncate">Create New Book</CardTitle>
-                <CardDescription className="text-xs sm:text-sm break-words">Step {step} of 5 — {stepTitles[step - 1]}</CardDescription>
+                <CardTitle className="text-sm truncate">Create New Book</CardTitle>
+                <CardDescription className="text-xs break-words">Step {step} of 5 — {stepTitles[step - 1]}</CardDescription>
               </div>
             </div>
 
             {/* Progress indicators */}
-            <div className="flex gap-2 mt-4 min-w-0">
+            <div className="flex gap-1.5 mt-3 min-w-0">
               {[1, 2, 3, 4, 5].map((s) => (
                 <div
                   key={s}
