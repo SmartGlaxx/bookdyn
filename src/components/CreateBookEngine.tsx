@@ -451,7 +451,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                         label="Point of View" 
                         tooltip="Controls narrative distance and reader immersion"
                       />
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {POV_OPTIONS.map((option) => (
                           <button
                             key={option.value}
