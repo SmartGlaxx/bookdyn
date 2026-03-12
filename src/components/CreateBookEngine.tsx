@@ -276,20 +276,21 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                       <p className="text-xs text-muted-foreground mb-3 break-words">
                         {BOOK_CATEGORIES[selectedCategory].description}
                       </p>
-                      <div className="grid grid-cols-3 gap-1.5">
+                      <div className="grid grid-cols-2 gap-1.5 max-w-[66%]">
                         {filteredBookTypes.map(([type, info]) => (
                           <button
                             key={type}
                             onClick={() => handleBookTypeChange(type)}
-                            className={`relative rounded-lg border p-1.5 text-center transition-all overflow-hidden flex flex-col items-center gap-1 ${
+                            className={`relative rounded-lg border p-1.5 text-left transition-all overflow-hidden flex items-start gap-1.5 ${
                               formData.bookType === type
                                 ? "border-primary bg-primary/5 shadow-sm"
                                 : "border-border hover:border-primary/50"
                             }`}
                           >
-                            <div className="text-sm leading-none">{info.icon}</div>
-                            <div className="min-w-0 w-full">
-                              <div className="font-medium text-[10px] leading-tight truncate">{info.label}</div>
+                            <div className="text-sm leading-none flex-shrink-0 mt-0.5">{info.icon}</div>
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium text-[10px] leading-tight">{info.label}</div>
+                              <div className="text-[8px] text-muted-foreground line-clamp-2 mt-0.5 leading-tight">{info.description}</div>
                             </div>
                           </button>
                         ))}
