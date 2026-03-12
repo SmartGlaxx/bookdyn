@@ -202,11 +202,11 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="w-full max-w-3xl max-h-[90vh] overflow-hidden mx-auto"
+        className="w-full max-w-3xl max-h-[90vh] overflow-hidden mx-auto min-w-0"
         onClick={(e) => e.stopPropagation()}
       >
-        <Card variant="elevated" className="overflow-hidden flex flex-col max-h-[90vh]">
-          <CardHeader className="relative pb-4 border-b flex-shrink-0 px-4 sm:px-6">
+        <Card variant="elevated" className="overflow-hidden flex flex-col max-h-[90vh] w-full min-w-0">
+          <CardHeader className="relative pb-4 border-b flex-shrink-0 px-4 sm:px-6 overflow-x-auto">
             <Button
               variant="ghost"
               size="icon"
@@ -226,7 +226,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
             </div>
 
             {/* Progress indicators */}
-            <div className="flex gap-2 mt-4">
+            <div className="flex gap-2 mt-4 min-w-0">
               {[1, 2, 3, 4, 5].map((s) => (
                 <div
                   key={s}
@@ -238,8 +238,8 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
             </div>
           </CardHeader>
 
-          <ScrollArea className="flex-1 overflow-auto" ref={scrollAreaRef}>
-            <CardContent className="p-4 sm:p-6">
+          <ScrollArea className="flex-1 overflow-auto overflow-x-hidden" ref={scrollAreaRef}>
+            <CardContent className="p-4 sm:p-6 overflow-x-hidden min-w-0">
               <AnimatePresence mode="wait">
                 {/* Step 1: Book Type Selection */}
                 {step === 1 && (
@@ -252,42 +252,44 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                   >
                     {/* Category Tabs */}
                     <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as BookCategory)}>
-                      <ScrollArea className="w-full pb-2">
-                        <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-5 h-auto gap-1">
+                      <div className="overflow-x-auto px-1 pb-2">
+                        <TabsList className="inline-flex h-auto w-max gap-1 pr-1">
                           {(Object.entries(BOOK_CATEGORIES) as [BookCategory, typeof BOOK_CATEGORIES[BookCategory]][]).map(
                             ([cat, info]) => (
                               <TabsTrigger 
                                 key={cat} 
                                 value={cat} 
-                                className="text-xs py-2 px-3 whitespace-nowrap flex-shrink-0"
+                                className="text-xs py-2 px-3 whitespace-nowrap"
                               >
                                 {info.label.split(" ")[0]}
                               </TabsTrigger>
                             )
                           )}
                         </TabsList>
-                      </ScrollArea>
+                      </div>
 
                       {(Object.keys(BOOK_CATEGORIES) as BookCategory[]).map((cat) => (
                         <TabsContent key={cat} value={cat} className="mt-4">
-                          <p className="text-sm text-muted-foreground mb-4">
+                          <p className="text-sm text-muted-foreground mb-4 break-words">
                             {BOOK_CATEGORIES[cat].description}
                           </p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-3">
                             {filteredBookTypes.map(([type, info]) => (
                               <button
                                 key={type}
                                 onClick={() => handleBookTypeChange(type)}
-                                className={`p-3 sm:p-4 rounded-xl border-2 text-left transition-all overflow-hidden ${
+                                className={`aspect-square sm:aspect-auto w-full min-w-0 rounded-xl border-2 p-2.5 sm:p-4 text-left transition-all overflow-hidden flex flex-col justify-between gap-1 sm:gap-2 ${
                                   formData.bookType === type
                                     ? "border-primary bg-primary/5 shadow-md"
                                     : "border-border hover:border-primary/50"
                                 }`}
                               >
-                                <div className="text-2xl mb-2">{info.icon}</div>
-                                <div className="font-medium text-sm break-words">{info.label}</div>
-                                <div className="text-xs text-muted-foreground mt-1 line-clamp-2 break-words">
-                                  {info.description}
+                                <div className="text-xl sm:text-2xl">{info.icon}</div>
+                                <div className="space-y-1 min-w-0">
+                                  <div className="font-medium text-xs sm:text-sm break-words whitespace-normal">{info.label}</div>
+                                  <div className="text-[11px] sm:text-xs text-muted-foreground break-words whitespace-normal line-clamp-3">
+                                    {info.description}
+                                  </div>
                                 </div>
                               </button>
                             ))}
@@ -915,7 +917,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
           </ScrollArea>
 
           {/* Footer */}
-          <div className="flex justify-between p-4 sm:p-6 border-t bg-muted/30 flex-shrink-0">
+          <div className="flex flex-wrap items-center justify-between gap-2 p-4 sm:p-6 border-t bg-muted/30 flex-shrink-0">
             <Button
               variant="ghost"
               onClick={() => step > 1 && setStep((s) => (s - 1) as Step)}
@@ -924,7 +926,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
               <ChevronLeft className="w-4 h-4 mr-1" />
               Back
             </Button>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap justify-end gap-2">
               <Button variant="outline" onClick={onClose}>
                 Cancel
               </Button>
@@ -952,10 +954,10 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
 // Helper Components
 const LabelWithTooltip = ({ label, tooltip }: { label: string; tooltip: string }) => (
-  <div className="flex items-center gap-2">
-    <Label>{label}</Label>
+  <div className="flex items-start gap-2 min-w-0">
+    <Label className="break-words whitespace-normal">{label}</Label>
     <Tooltip>
-      <TooltipTrigger>
+      <TooltipTrigger className="flex-shrink-0">
         <HelpCircle className="w-4 h-4 text-muted-foreground" />
       </TooltipTrigger>
       <TooltipContent className="max-w-xs">{tooltip}</TooltipContent>
@@ -979,17 +981,17 @@ const ControlSlider = ({
   rightLabel: string;
 }) => (
   <div className="space-y-3">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <Label>{label}</Label>
+    <div className="flex items-start justify-between gap-3 min-w-0">
+      <div className="flex items-start gap-2 min-w-0">
+        <Label className="break-words whitespace-normal">{label}</Label>
         <Tooltip>
-          <TooltipTrigger>
+          <TooltipTrigger className="flex-shrink-0">
             <HelpCircle className="w-4 h-4 text-muted-foreground" />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">{tooltip}</TooltipContent>
         </Tooltip>
       </div>
-      <span className="text-sm font-medium text-primary">{value}/10</span>
+      <span className="text-sm font-medium text-primary flex-shrink-0">{value}/10</span>
     </div>
     <Slider
       value={[value]}
