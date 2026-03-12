@@ -276,12 +276,12 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                       <p className="text-xs text-muted-foreground mb-3 break-words">
                         {BOOK_CATEGORIES[selectedCategory].description}
                       </p>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="flex flex-wrap gap-2">
                         {filteredBookTypes.map(([type, info]) => (
                           <button
                             key={type}
                             onClick={() => handleBookTypeChange(type)}
-                            className={`relative w-full min-w-0 rounded-lg border-2 p-2 text-left transition-all overflow-hidden flex flex-col gap-1 ${
+                            className={`relative rounded-lg border-2 p-2 text-left transition-all overflow-hidden flex flex-col gap-1 basis-[calc(50%-0.25rem)] min-w-[100px] max-w-[200px] flex-grow ${
                               formData.bookType === type
                                 ? "border-primary bg-primary/5 shadow-sm"
                                 : "border-border hover:border-primary/50"
