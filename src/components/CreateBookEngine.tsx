@@ -1,15 +1,13 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronRight, ChevronLeft, Sparkles, HelpCircle, Settings2, Palette, BookOpen, Sliders } from "lucide-react";
+import { X, ChevronRight, ChevronLeft, Sparkles, HelpCircle, Settings2, Palette, BookOpen, Sliders, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -22,12 +20,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
 import {
   BookType,
   BookCategory,
@@ -64,15 +56,23 @@ interface CreateBookEngineProps {
 
 type Step = 1 | 2 | 3 | 4 | 5;
 
+const STEP_META = [
+  { title: "Type", icon: BookOpen, color: "from-primary/80 to-primary" },
+  { title: "Details", icon: Sparkles, color: "from-amber-glow/80 to-primary" },
+  { title: "Voice", icon: Palette, color: "from-primary to-accent" },
+  { title: "Controls", icon: Sliders, color: "from-accent to-primary" },
+  { title: "Advanced", icon: Settings2, color: "from-primary/80 to-primary" },
+];
+
 const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
   const [step, setStep] = useState<Step>(1);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedCategory, setSelectedCategory] = useState<BookCategory>("fiction");
   const [formData, setFormData] = useState<Partial<CreateBookInput>>({
     bookType: "novel",
     pov: "third-person-limited",
-    toneProfile: { 
-      primary: "conversational", 
+    toneProfile: {
+      primary: "conversational",
       intensity: 5,
       formality: 5,
       emotionalIntensity: 5,
@@ -82,20 +82,11 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
     controls: getDefaultControls("novel"),
   });
 
-  // Auto-scroll to top when step changes
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      const scrollable = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollable) {
-        scrollable.scrollTop = 0;
-      }
-    }
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, [step]);
 
-  const updateForm = <K extends keyof CreateBookInput>(
-    key: K,
-    value: CreateBookInput[K]
-  ) => {
+  const updateForm = <K extends keyof CreateBookInput>(key: K, value: CreateBookInput[K]) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -135,9 +126,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
   const handleBookTypeChange = (type: BookType) => {
     updateForm("bookType", type);
-    // Apply default controls for the new book type
     updateForm("controls", getDefaultControls(type));
-    // Clear audience if it's not valid for the new book type
     const allowed = BOOK_TYPE_AUDIENCES[type];
     if (formData.audience && allowed && !allowed.includes(formData.audience)) {
       updateForm("audience", "");
@@ -147,25 +136,19 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
   const filteredBookTypes = useMemo(() => {
     return Object.entries(BOOK_TYPE_INFO).filter(
       ([_, info]) => info.category === selectedCategory
-    ) as [BookType, typeof BOOK_TYPE_INFO[BookType]][];
+    ) as [BookType, (typeof BOOK_TYPE_INFO)[BookType]][];
   }, [selectedCategory]);
 
   const currentCategory = formData.bookType ? BOOK_TYPE_INFO[formData.bookType].category : "fiction";
 
   const canProceed = () => {
     switch (step) {
-      case 1:
-        return !!formData.bookType;
-      case 2:
-        return !!formData.title && !!formData.theme && !!formData.audience;
-      case 3:
-        return !!formData.pov && !!formData.toneProfile?.primary;
-      case 4:
-        return true;
-      case 5:
-        return true;
-      default:
-        return false;
+      case 1: return !!formData.bookType;
+      case 2: return !!formData.title && !!formData.theme && !!formData.audience;
+      case 3: return !!formData.pov && !!formData.toneProfile?.primary;
+      case 4: return true;
+      case 5: return true;
+      default: return false;
     }
   };
 
@@ -174,835 +157,643 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
     onCreate(formData as CreateBookInput);
   };
 
-  const stepTitles = [
-    "Choose Book Type",
-    "Book Details",
-    "Voice & Tone",
-    "Dynamism Controls",
-    "Advanced Settings",
-  ];
-
-  const stepIcons = [
-    <BookOpen className="w-4 h-4" />,
-    <Sparkles className="w-4 h-4" />,
-    <Palette className="w-4 h-4" />,
-    <Sliders className="w-4 h-4" />,
-    <Settings2 className="w-4 h-4" />,
-  ];
+  const stepAnim = {
+    initial: { opacity: 0, y: 12 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -12 },
+    transition: { duration: 0.25 },
+  };
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-background/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-background/60 backdrop-blur-md"
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="w-full max-w-3xl max-h-[90vh] overflow-hidden mx-auto min-w-0"
+        initial={{ y: "100%", opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: "100%", opacity: 0 }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        className="w-full sm:max-w-lg sm:mx-4 max-h-[95vh] sm:max-h-[85vh] flex flex-col bg-card border border-border rounded-t-2xl sm:rounded-2xl shadow-lg overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <Card variant="elevated" className="overflow-hidden flex flex-col max-h-[90vh] w-full min-w-0">
-          <CardHeader className="relative pb-3 border-b flex-shrink-0 px-4 sm:px-6">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-3 sm:right-4 top-3 z-10 flex-shrink-0 w-8 h-8"
+        {/* Header */}
+        <div className="flex-shrink-0 px-4 pt-4 pb-3 border-b border-border/50">
+          {/* Drag indicator on mobile */}
+          <div className="w-8 h-1 rounded-full bg-muted-foreground/30 mx-auto mb-3 sm:hidden" />
+
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-serif text-base font-semibold text-foreground">New Book</h2>
+            <button
               onClick={onClose}
+              className="w-7 h-7 rounded-full flex items-center justify-center bg-muted hover:bg-muted-foreground/20 transition-colors"
             >
-              <X className="w-4 h-4" />
-            </Button>
-            <div className="flex items-center gap-2 min-w-0 pr-10">
-              <div className="p-1.5 rounded-md bg-primary/10 flex-shrink-0">
-                {stepIcons[step - 1]}
-              </div>
-              <div className="min-w-0">
-                <CardTitle className="text-sm truncate">Create New Book</CardTitle>
-                <CardDescription className="text-xs break-words">Step {step} of 5 — {stepTitles[step - 1]}</CardDescription>
-              </div>
-            </div>
+              <X className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+          </div>
 
-            {/* Progress indicators */}
-            <div className="flex gap-1.5 mt-3 min-w-0">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <div
-                  key={s}
-                  className={`h-1 flex-1 rounded-full transition-colors ${
-                    s <= step ? "bg-primary" : "bg-muted"
+          {/* Step indicators */}
+          <div className="flex items-center gap-1">
+            {STEP_META.map((s, i) => {
+              const Icon = s.icon;
+              const isActive = step === i + 1;
+              const isDone = step > i + 1;
+              return (
+                <button
+                  key={i}
+                  onClick={() => {
+                    if (isDone) setStep((i + 1) as Step);
+                  }}
+                  className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-md text-[10px] font-medium transition-all ${
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : isDone
+                      ? "bg-primary/10 text-primary cursor-pointer hover:bg-primary/20"
+                      : "bg-muted text-muted-foreground"
                   }`}
-                />
-              ))}
-            </div>
-          </CardHeader>
+                >
+                  {isDone ? (
+                    <Check className="w-3 h-3" />
+                  ) : (
+                    <Icon className="w-3 h-3" />
+                  )}
+                  <span className="hidden xs:inline">{s.title}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-          <ScrollArea className="flex-1 overflow-auto overflow-x-hidden" ref={scrollAreaRef}>
-            <CardContent className="p-4 sm:p-6 overflow-x-hidden min-w-0">
-              <AnimatePresence mode="wait">
-                {/* Step 1: Book Type Selection */}
-                {step === 1 && (
-                  <motion.div
-                    key="step1"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="space-y-6 min-w-0 max-w-full overflow-hidden"
-                  >
-                    {/* Category Tabs - Horizontal scrollable */}
-                    <div className="overflow-x-auto -mx-4 px-4 pb-2" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                      <div className="flex gap-1.5 min-w-max pr-4">
-                        {(Object.entries(BOOK_CATEGORIES) as [BookCategory, typeof BOOK_CATEGORIES[BookCategory]][]).map(
-                          ([cat, info]) => (
-                            <button
-                              key={cat}
-                              onClick={() => setSelectedCategory(cat)}
-                              className={`flex-shrink-0 text-[11px] py-1 px-2.5 rounded-full transition-all whitespace-nowrap ${
-                                selectedCategory === cat
-                                  ? "bg-primary text-primary-foreground font-medium"
-                                  : "bg-muted hover:bg-muted/80 text-muted-foreground"
-                              }`}
-                            >
-                              {info.label.split(" ")[0]}
-                            </button>
-                          )
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Category Content */}
-                    <div className="mt-2">
-                      <p className="text-xs text-muted-foreground mb-3 break-words">
-                        {BOOK_CATEGORIES[selectedCategory].description}
-                      </p>
-                      <div className="grid gap-1.5" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))' }}>
-                        {filteredBookTypes.map(([type, info]) => (
-                          <button
-                            key={type}
-                            onClick={() => handleBookTypeChange(type)}
-                            className={`relative rounded-lg border p-1.5 text-left transition-all overflow-hidden flex items-start gap-1.5 ${
-                              formData.bookType === type
-                                ? "border-primary bg-primary/5 shadow-sm"
-                                : "border-border hover:border-primary/50"
-                            }`}
-                          >
-                            <div className="text-sm leading-none flex-shrink-0 mt-0.5">{info.icon}</div>
-                            <div className="min-w-0 flex-1">
-                              <div className="font-medium text-[10px] leading-tight">{info.label}</div>
-                              <div className="text-[8px] text-muted-foreground line-clamp-2 mt-0.5 leading-tight">{info.description}</div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Step 2: Book Details */}
-                {step === 2 && (
-                  <motion.div
-                    key="step2"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="space-y-4"
-                  >
-                    <div className="space-y-2">
-                      <Label htmlFor="title">Book Title *</Label>
-                      <Input
-                        id="title"
-                        placeholder="Enter your book title"
-                        value={formData.title || ""}
-                        onChange={(e) => updateForm("title", e.target.value)}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="subtitle">Subtitle (Optional)</Label>
-                      <Input
-                        id="subtitle"
-                        placeholder="A subtitle or tagline"
-                        value={formData.subtitle || ""}
-                        onChange={(e) => updateForm("subtitle", e.target.value)}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="theme">Theme / Subject *</Label>
-                      <Textarea
-                        id="theme"
-                        placeholder="Describe the main theme, subject matter, or premise of your book"
-                        value={formData.theme || ""}
-                        onChange={(e) => updateForm("theme", e.target.value)}
-                        className="min-h-[100px]"
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Genre</Label>
-                        <Select
-                          value={formData.genre || ""}
-                          onValueChange={(v) => updateForm("genre", v)}
+        {/* Scrollable Content */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
+          <div className="p-4">
+            <AnimatePresence mode="wait">
+              {/* ───── Step 1: Book Type ───── */}
+              {step === 1 && (
+                <motion.div key="step1" {...stepAnim} className="space-y-4">
+                  {/* Category chips */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {(Object.entries(BOOK_CATEGORIES) as [BookCategory, (typeof BOOK_CATEGORIES)[BookCategory]][]).map(
+                      ([cat, info]) => (
+                        <button
+                          key={cat}
+                          onClick={() => setSelectedCategory(cat)}
+                          className={`text-[11px] py-1 px-3 rounded-full transition-all ${
+                            selectedCategory === cat
+                              ? "bg-primary text-primary-foreground font-medium shadow-sm"
+                              : "bg-muted hover:bg-muted-foreground/10 text-muted-foreground"
+                          }`}
                         >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select genre" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover z-50">
-                            {GENRE_PRESETS[currentCategory].map((genre) => (
-                              <SelectItem key={genre} value={genre}>
-                                {genre}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label>Target Audience *</Label>
-                        <Select
-                          value={formData.audience || ""}
-                          onValueChange={(v) => updateForm("audience", v)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select audience" />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover z-50">
-                            {AUDIENCE_OPTIONS
-                              .filter((option) => {
-                                const allowedAudiences = formData.bookType ? BOOK_TYPE_AUDIENCES[formData.bookType] : null;
-                                return !allowedAudiences || allowedAudiences.includes(option.value);
-                              })
-                              .map((option) => (
-                              <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+                          {info.label}
+                        </button>
+                      )
+                    )}
+                  </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <LabelWithTooltip 
-                          label="Desired Depth" 
-                          tooltip="Controls how detailed and comprehensive the content will be"
-                        />
-                        <Select
-                          value={formData.controls?.depthLevel || "intermediate"}
-                          onValueChange={(v) => updateControls("depthLevel", v as DepthLevel)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover z-50">
-                            {DEPTH_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                <div>
-                                  <div>{opt.label}</div>
-                                  <div className="text-xs text-muted-foreground">{opt.description}</div>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                  <p className="text-xs text-muted-foreground">
+                    {BOOK_CATEGORIES[selectedCategory].description}
+                  </p>
 
-                      <div className="space-y-2">
-                        <LabelWithTooltip 
-                          label="Automation Level" 
-                          tooltip="How much control you want vs. autonomous generation"
-                        />
-                        <Select
-                          value={formData.controls?.automationLevel || "semi-autonomous"}
-                          onValueChange={(v) => updateControls("automationLevel", v as AutomationLevel)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover z-50">
-                            {AUTOMATION_OPTIONS.map((opt) => (
-                              <SelectItem key={opt.value} value={opt.value}>
-                                <div>
-                                  <div>{opt.label}</div>
-                                  <div className="text-xs text-muted-foreground">{opt.description}</div>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Step 3: Voice & Tone */}
-                {step === 3 && (
-                  <motion.div
-                    key="step3"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="space-y-6"
+                  {/* Book type grid */}
+                  <div
+                    className="grid gap-2"
+                    style={{ gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))" }}
                   >
-                    <div className="space-y-3">
-                      <LabelWithTooltip 
-                        label="Point of View" 
-                        tooltip="Controls narrative distance and reader immersion"
-                      />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {POV_OPTIONS.map((option) => (
-                          <button
-                            key={option.value}
-                            onClick={() => updateForm("pov", option.value)}
-                            className={`p-3 rounded-lg border-2 text-left transition-all overflow-hidden ${
-                              formData.pov === option.value
-                                ? "border-primary bg-primary/5"
-                                : "border-border hover:border-primary/50"
-                            }`}
-                          >
-                            <div className="font-medium text-sm break-words">{option.label}</div>
-                            <div className="text-xs text-muted-foreground mt-1 break-words">
-                              {option.description}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label>Primary Tone</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {TONE_OPTIONS.map((option) => (
-                          <Tooltip key={option.value}>
-                            <TooltipTrigger asChild>
-                              <Badge
-                                variant={
-                                  formData.toneProfile?.primary === option.value
-                                    ? "default"
-                                    : "outline"
-                                }
-                                className="cursor-pointer px-4 py-2 text-sm"
-                                onClick={() => updateToneProfile("primary", option.value)}
-                              >
-                                {option.emoji} {option.label}
-                              </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>{option.description}</TooltipContent>
-                          </Tooltip>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label>Secondary Tone (Optional)</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {TONE_OPTIONS.filter(t => t.value !== formData.toneProfile?.primary).map((option) => (
-                          <Badge
-                            key={option.value}
-                            variant={
-                              formData.toneProfile?.secondary === option.value
-                                ? "amber"
-                                : "outline"
-                            }
-                            className="cursor-pointer px-3 py-1.5 text-xs"
-                            onClick={() => updateToneProfile("secondary", 
-                              formData.toneProfile?.secondary === option.value ? undefined : option.value
-                            )}
-                          >
-                            {option.emoji} {option.label}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Tone Profile Sliders */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
-                      <ControlSlider
-                        label="Formality"
-                        tooltip="How formal vs. casual the writing style should be"
-                        value={formData.toneProfile?.formality || 5}
-                        onChange={(v) => updateToneProfile("formality", v)}
-                        leftLabel="Casual"
-                        rightLabel="Formal"
-                      />
-                      <ControlSlider
-                        label="Emotional Intensity"
-                        tooltip="The level of emotional expression in the writing"
-                        value={formData.toneProfile?.emotionalIntensity || 5}
-                        onChange={(v) => updateToneProfile("emotionalIntensity", v)}
-                        leftLabel="Restrained"
-                        rightLabel="Intense"
-                      />
-                      <ControlSlider
-                        label="Humor Level"
-                        tooltip="How much humor and wit to include"
-                        value={formData.toneProfile?.humorLevel || 3}
-                        onChange={(v) => updateToneProfile("humorLevel", v)}
-                        leftLabel="Serious"
-                        rightLabel="Playful"
-                      />
-                      <ControlSlider
-                        label="Authority Level"
-                        tooltip="How authoritative and commanding the voice should be"
-                        value={formData.toneProfile?.authorityLevel || 5}
-                        onChange={(v) => updateToneProfile("authorityLevel", v)}
-                        leftLabel="Humble"
-                        rightLabel="Expert"
-                      />
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Step 4: Dynamism Controls */}
-                {step === 4 && (
-                  <motion.div
-                    key="step4"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="space-y-6"
-                  >
-                    <div className="p-4 rounded-lg bg-muted/50 border border-border">
-                      <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-                        <Sliders className="w-4 h-4 text-primary" />
-                        Narrative & Conceptual Controls
-                      </h4>
-                      <p className="text-xs text-muted-foreground">
-                        These controls adapt based on your book type. Fiction settings affect plot and characters; non-fiction affects ideas and frameworks.
-                      </p>
-                    </div>
-
-                    <ControlSlider
-                      label="Velocity"
-                      tooltip="Fiction: pacing of plot, tension, events. Non-fiction: rate of idea progression. Higher values mean faster progression and more frequent shifts."
-                      value={formData.controls?.velocity || 5}
-                      onChange={(v) => updateControls("velocity", v)}
-                      leftLabel="Slow & Deep"
-                      rightLabel="Fast & Dynamic"
-                    />
-
-                    <ControlSlider
-                      label="Scope"
-                      tooltip="Controls the depth of detail. Higher values include more descriptive content, backstory, and exploration."
-                      value={formData.controls?.scope || 5}
-                      onChange={(v) => updateControls("scope", v)}
-                      leftLabel="Concise"
-                      rightLabel="Expansive"
-                    />
-
-                    <ControlSlider
-                      label="Entity Complexity"
-                      tooltip="Fiction: number and depth of characters, arcs, motivations. Non-fiction: concepts, frameworks, case studies. Higher values introduce more independent entities or ideas."
-                      value={formData.controls?.entityComplexity || 5}
-                      onChange={(v) => updateControls("entityComplexity", v)}
-                      leftLabel="Simple"
-                      rightLabel="Complex"
-                    />
-
-                    <ControlSlider
-                      label="Perspective Multiplexing"
-                      tooltip="Allows parallel threads that eventually connect. Fiction: multiple viewpoints, parallel timelines. Non-fiction: parallel arguments, case comparisons."
-                      value={formData.controls?.perspectiveMultiplexing || 3}
-                      onChange={(v) => updateControls("perspectiveMultiplexing", v)}
-                      leftLabel="Single Focus"
-                      rightLabel="Multi-Thread"
-                    />
-
-                    <ControlSlider
-                      label="Creativity"
-                      tooltip="Controls creative license. Higher values allow more unexpected interpretations, metaphors, and stylistic choices."
-                      value={formData.controls?.creativity || 5}
-                      onChange={(v) => updateControls("creativity", v)}
-                      leftLabel="Conservative"
-                      rightLabel="Experimental"
-                    />
-
-                    <ControlSlider
-                      label="Hook Frequency"
-                      tooltip="How often hooks appear — scene changes, revelations, new characters, dialogue shifts, or action beats. High = every paragraph is a cut. Low = slower, more contemplative. For narrative types, this enforces anti-rumination: no dwelling on a single scene or thought for too long."
-                      value={formData.controls?.hookFrequency || 5}
-                      onChange={(v) => updateControls("hookFrequency", v)}
-                      leftLabel="Contemplative"
-                      rightLabel="Rapid-Fire"
-                    />
-
-                    <div className="flex items-center justify-between pt-4 border-t">
-                      <div className="flex items-center gap-2">
-                        <Label>Divergence Allowed</Label>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            <HelpCircle className="w-4 h-4 text-muted-foreground" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            When enabled, allows story threads or concepts to diverge before converging, creating richer narratives.
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <Switch
-                        checked={formData.controls?.divergenceAllowed}
-                        onCheckedChange={(v) => updateControls("divergenceAllowed", v)}
-                      />
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Step 5: Advanced Settings */}
-                {step === 5 && (
-                  <motion.div
-                    key="step5"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="space-y-6"
-                  >
-                    {/* Temporal Context */}
-                    <div className="space-y-4">
-                      <h4 className="font-medium flex items-center gap-2">
-                        <span className="text-lg">⏳</span>
-                        Temporal Context
-                      </h4>
-                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <LabelWithTooltip 
-                            label="Era" 
-                            tooltip="Defines when the book takes place"
-                          />
-                          <Select
-                            value={formData.controls?.temporalContext?.era || "contemporary"}
-                            onValueChange={(v) => updateTemporalContext("era", v as TemporalEra)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-popover z-50 max-h-60">
-                              {TEMPORAL_ERA_OPTIONS.map((opt) => (
-                                <SelectItem key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <LabelWithTooltip 
-                            label="Timeline Structure" 
-                            tooltip="How time flows in the narrative"
-                          />
-                          <Select
-                            value={formData.controls?.temporalContext?.timelineStructure || "linear"}
-                            onValueChange={(v) => updateTemporalContext("timelineStructure", v as TimelineStructure)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-popover z-50">
-                              {TIMELINE_OPTIONS.map((opt) => (
-                                <SelectItem key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Spatial Scope */}
-                    <div className="space-y-3">
-                      <LabelWithTooltip 
-                        label="Spatial Scope" 
-                        tooltip="Controls how widely the book moves across places or contexts"
-                      />
-                      <div className="flex flex-wrap gap-2">
-                        {SPATIAL_SCOPE_OPTIONS.map((opt) => (
-                          <Tooltip key={opt.value}>
-                            <TooltipTrigger asChild>
-                              <Badge
-                                variant={
-                                  formData.controls?.spatialScope === opt.value
-                                    ? "default"
-                                    : "outline"
-                                }
-                                className="cursor-pointer px-3 py-1.5"
-                                onClick={() => updateControls("spatialScope", opt.value)}
-                              >
-                                {opt.label}
-                              </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>{opt.description}</TooltipContent>
-                          </Tooltip>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Structure Controls */}
-                    <div className="space-y-4 pt-4 border-t">
-                      <h4 className="font-medium flex items-center gap-2">
-                        <span className="text-lg">📐</span>
-                        Structure Controls
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Chapter Count</Label>
-                          <Select
-                            value={formData.controls?.structureControls?.chapterCount || "flexible"}
-                            onValueChange={(v) => updateStructureControls("chapterCount", v)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className="bg-popover z-50">
-                              <SelectItem value="flexible">Flexible</SelectItem>
-                              <SelectItem value="fixed">Fixed Number</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          {formData.controls?.structureControls?.chapterCount === "fixed" && (
-                            <div className="space-y-2 mt-2">
-                              <Label>Target Chapters</Label>
-                              <Input
-                                type="number"
-                                min={1}
-                                max={100}
-                                value={formData.controls?.structureControls?.targetChapters || 10}
-                                onChange={(e) => updateStructureControls("targetChapters", parseInt(e.target.value))}
-                              />
+                    {filteredBookTypes.map(([type, info]) => {
+                      const isSelected = formData.bookType === type;
+                      return (
+                        <button
+                          key={type}
+                          onClick={() => handleBookTypeChange(type)}
+                          className={`group relative rounded-xl p-3 text-left transition-all border ${
+                            isSelected
+                              ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                              : "border-border hover:border-primary/40 hover:bg-muted/50"
+                          }`}
+                        >
+                          {isSelected && (
+                            <div className="absolute top-2 right-2">
+                              <Check className="w-3.5 h-3.5 text-primary" />
                             </div>
                           )}
-                        </div>
+                          <span className="text-lg block mb-1">{info.icon}</span>
+                          <div className="font-medium text-xs text-foreground leading-tight">{info.label}</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2 leading-snug">
+                            {info.description}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
 
-                        <div className="space-y-2">
-                          <LabelWithTooltip 
-                            label="Sections Per Chapter" 
-                            tooltip="How many sections each chapter contains. The actual count will vary naturally within ±1 of this value so chapters feel organic."
-                          />
+              {/* ───── Step 2: Book Details ───── */}
+              {step === 2 && (
+                <motion.div key="step2" {...stepAnim} className="space-y-4">
+                  <FieldGroup label="Book Title *">
+                    <Input
+                      placeholder="Enter your book title"
+                      value={formData.title || ""}
+                      onChange={(e) => updateForm("title", e.target.value)}
+                    />
+                  </FieldGroup>
+
+                  <FieldGroup label="Subtitle" optional>
+                    <Input
+                      placeholder="A subtitle or tagline"
+                      value={formData.subtitle || ""}
+                      onChange={(e) => updateForm("subtitle", e.target.value)}
+                    />
+                  </FieldGroup>
+
+                  <FieldGroup label="Theme / Subject *">
+                    <Textarea
+                      placeholder="Describe the main theme, subject matter, or premise"
+                      value={formData.theme || ""}
+                      onChange={(e) => updateForm("theme", e.target.value)}
+                      className="min-h-[80px] resize-none"
+                    />
+                  </FieldGroup>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <FieldGroup label="Genre">
+                      <Select value={formData.genre || ""} onValueChange={(v) => updateForm("genre", v)}>
+                        <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent className="bg-popover z-50">
+                          {GENRE_PRESETS[currentCategory].map((genre) => (
+                            <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FieldGroup>
+
+                    <FieldGroup label="Audience *">
+                      <Select value={formData.audience || ""} onValueChange={(v) => updateForm("audience", v)}>
+                        <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent className="bg-popover z-50">
+                          {AUDIENCE_OPTIONS
+                            .filter((option) => {
+                              const allowedAudiences = formData.bookType ? BOOK_TYPE_AUDIENCES[formData.bookType] : null;
+                              return !allowedAudiences || allowedAudiences.includes(option.value);
+                            })
+                            .map((option) => (
+                              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </FieldGroup>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <FieldGroup label="Depth" tooltip="Controls how detailed the content will be">
+                      <Select
+                        value={formData.controls?.depthLevel || "intermediate"}
+                        onValueChange={(v) => updateControls("depthLevel", v as DepthLevel)}
+                      >
+                        <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent className="bg-popover z-50">
+                          {DEPTH_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              <div>
+                                <div>{opt.label}</div>
+                                <div className="text-xs text-muted-foreground">{opt.description}</div>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FieldGroup>
+
+                    <FieldGroup label="Automation" tooltip="How much control you want vs. autonomous generation">
+                      <Select
+                        value={formData.controls?.automationLevel || "semi-autonomous"}
+                        onValueChange={(v) => updateControls("automationLevel", v as AutomationLevel)}
+                      >
+                        <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent className="bg-popover z-50">
+                          {AUTOMATION_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              <div>
+                                <div>{opt.label}</div>
+                                <div className="text-xs text-muted-foreground">{opt.description}</div>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FieldGroup>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ───── Step 3: Voice & Tone ───── */}
+              {step === 3 && (
+                <motion.div key="step3" {...stepAnim} className="space-y-5">
+                  <div className="space-y-2.5">
+                    <SectionLabel label="Point of View" tooltip="Controls narrative distance and reader immersion" />
+                    <div className="grid grid-cols-2 gap-2">
+                      {POV_OPTIONS.map((option) => (
+                        <button
+                          key={option.value}
+                          onClick={() => updateForm("pov", option.value)}
+                          className={`p-2.5 rounded-xl border text-left transition-all ${
+                            formData.pov === option.value
+                              ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                              : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          <div className="font-medium text-xs">{option.label}</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5 leading-snug">
+                            {option.description}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <Label className="text-xs">Primary Tone</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {TONE_OPTIONS.map((option) => (
+                        <Tooltip key={option.value}>
+                          <TooltipTrigger asChild>
+                            <Badge
+                              variant={formData.toneProfile?.primary === option.value ? "default" : "outline"}
+                              className="cursor-pointer px-2.5 py-1 text-[11px]"
+                              onClick={() => updateToneProfile("primary", option.value)}
+                            >
+                              {option.emoji} {option.label}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>{option.description}</TooltipContent>
+                        </Tooltip>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <Label className="text-xs">Secondary Tone <span className="text-muted-foreground">(optional)</span></Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {TONE_OPTIONS.filter((t) => t.value !== formData.toneProfile?.primary).map((option) => (
+                        <Badge
+                          key={option.value}
+                          variant={formData.toneProfile?.secondary === option.value ? "amber" : "outline"}
+                          className="cursor-pointer px-2.5 py-1 text-[11px]"
+                          onClick={() =>
+                            updateToneProfile(
+                              "secondary",
+                              formData.toneProfile?.secondary === option.value ? undefined : option.value
+                            )
+                          }
+                        >
+                          {option.emoji} {option.label}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-border/50 space-y-4">
+                    <CompactSlider label="Formality" tooltip="How formal vs. casual" value={formData.toneProfile?.formality || 5} onChange={(v) => updateToneProfile("formality", v)} left="Casual" right="Formal" />
+                    <CompactSlider label="Emotion" tooltip="Level of emotional expression" value={formData.toneProfile?.emotionalIntensity || 5} onChange={(v) => updateToneProfile("emotionalIntensity", v)} left="Restrained" right="Intense" />
+                    <CompactSlider label="Humor" tooltip="How much humor and wit" value={formData.toneProfile?.humorLevel || 3} onChange={(v) => updateToneProfile("humorLevel", v)} left="Serious" right="Playful" />
+                    <CompactSlider label="Authority" tooltip="How authoritative the voice is" value={formData.toneProfile?.authorityLevel || 5} onChange={(v) => updateToneProfile("authorityLevel", v)} left="Humble" right="Expert" />
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ───── Step 4: Dynamism Controls ───── */}
+              {step === 4 && (
+                <motion.div key="step4" {...stepAnim} className="space-y-4">
+                  <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      <Sliders className="w-3.5 h-3.5 text-primary inline mr-1.5 -mt-0.5" />
+                      These controls adapt based on your book type. Fiction affects plot and characters; non-fiction affects ideas and frameworks.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <CompactSlider label="Velocity" tooltip="Pacing of plot/idea progression" value={formData.controls?.velocity || 5} onChange={(v) => updateControls("velocity", v)} left="Slow & Deep" right="Fast & Dynamic" />
+                    <CompactSlider label="Scope" tooltip="Controls the depth of detail" value={formData.controls?.scope || 5} onChange={(v) => updateControls("scope", v)} left="Concise" right="Expansive" />
+                    <CompactSlider label="Entity Complexity" tooltip="Depth of characters/concepts" value={formData.controls?.entityComplexity || 5} onChange={(v) => updateControls("entityComplexity", v)} left="Simple" right="Complex" />
+                    <CompactSlider label="Perspective" tooltip="Parallel threads that connect" value={formData.controls?.perspectiveMultiplexing || 3} onChange={(v) => updateControls("perspectiveMultiplexing", v)} left="Single Focus" right="Multi-Thread" />
+                    <CompactSlider label="Creativity" tooltip="Creative license level" value={formData.controls?.creativity || 5} onChange={(v) => updateControls("creativity", v)} left="Conservative" right="Experimental" />
+                    <CompactSlider label="Hook Frequency" tooltip="How often hooks and shifts appear" value={formData.controls?.hookFrequency || 5} onChange={(v) => updateControls("hookFrequency", v)} left="Contemplative" right="Rapid-Fire" />
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                    <SectionLabel label="Divergence" tooltip="Allows story threads to diverge before converging" />
+                    <Switch
+                      checked={formData.controls?.divergenceAllowed}
+                      onCheckedChange={(v) => updateControls("divergenceAllowed", v)}
+                    />
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ───── Step 5: Advanced Settings ───── */}
+              {step === 5 && (
+                <motion.div key="step5" {...stepAnim} className="space-y-5">
+                  {/* Temporal Context */}
+                  <Section emoji="⏳" title="Temporal Context">
+                    <div className="grid grid-cols-2 gap-3">
+                      <FieldGroup label="Era" tooltip="When the book takes place">
+                        <Select
+                          value={formData.controls?.temporalContext?.era || "contemporary"}
+                          onValueChange={(v) => updateTemporalContext("era", v as TemporalEra)}
+                        >
+                          <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent className="bg-popover z-50 max-h-60">
+                            {TEMPORAL_ERA_OPTIONS.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FieldGroup>
+
+                      <FieldGroup label="Timeline" tooltip="How time flows in the narrative">
+                        <Select
+                          value={formData.controls?.temporalContext?.timelineStructure || "linear"}
+                          onValueChange={(v) => updateTemporalContext("timelineStructure", v as TimelineStructure)}
+                        >
+                          <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent className="bg-popover z-50">
+                            {TIMELINE_OPTIONS.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FieldGroup>
+                    </div>
+                  </Section>
+
+                  {/* Spatial Scope */}
+                  <Section emoji="🌍" title="Spatial Scope">
+                    <div className="flex flex-wrap gap-1.5">
+                      {SPATIAL_SCOPE_OPTIONS.map((opt) => (
+                        <Tooltip key={opt.value}>
+                          <TooltipTrigger asChild>
+                            <Badge
+                              variant={formData.controls?.spatialScope === opt.value ? "default" : "outline"}
+                              className="cursor-pointer px-2.5 py-1 text-[11px]"
+                              onClick={() => updateControls("spatialScope", opt.value)}
+                            >
+                              {opt.label}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>{opt.description}</TooltipContent>
+                        </Tooltip>
+                      ))}
+                    </div>
+                  </Section>
+
+                  {/* Structure */}
+                  <Section emoji="📐" title="Structure">
+                    <div className="grid grid-cols-2 gap-3">
+                      <FieldGroup label="Chapter Count">
+                        <Select
+                          value={formData.controls?.structureControls?.chapterCount || "flexible"}
+                          onValueChange={(v) => updateStructureControls("chapterCount", v)}
+                        >
+                          <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent className="bg-popover z-50">
+                            <SelectItem value="flexible">Flexible</SelectItem>
+                            <SelectItem value="fixed">Fixed Number</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {formData.controls?.structureControls?.chapterCount === "fixed" && (
                           <Input
                             type="number"
-                            min={2}
-                            max={10}
-                            value={formData.controls?.structureControls?.sectionsPerChapter || 4}
-                            onChange={(e) => updateStructureControls("sectionsPerChapter", Math.max(2, Math.min(10, parseInt(e.target.value) || 4)))}
+                            min={1}
+                            max={100}
+                            className="mt-2 text-xs"
+                            placeholder="Target chapters"
+                            value={formData.controls?.structureControls?.targetChapters || 10}
+                            onChange={(e) => updateStructureControls("targetChapters", parseInt(e.target.value))}
                           />
-                        </div>
-                      </div>
+                        )}
+                      </FieldGroup>
 
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Label>Chapter Titles Required</Label>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <HelpCircle className="w-4 h-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              Whether each chapter must have a descriptive title
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Switch
-                          checked={formData.controls?.structureControls?.titlesRequired ?? true}
-                          onCheckedChange={(v) => updateStructureControls("titlesRequired", v)}
+                      <FieldGroup label="Sections/Chapter" tooltip="How many sections each chapter contains (±1 for organic feel)">
+                        <Input
+                          type="number"
+                          min={2}
+                          max={10}
+                          className="text-xs"
+                          value={formData.controls?.structureControls?.sectionsPerChapter || 4}
+                          onChange={(e) =>
+                            updateStructureControls("sectionsPerChapter", Math.max(2, Math.min(10, parseInt(e.target.value) || 4)))
+                          }
                         />
-                      </div>
+                      </FieldGroup>
                     </div>
 
-                    {/* Section Teaser Setting */}
-                    <div className="space-y-4 pt-4 border-t">
-                      <h4 className="font-medium flex items-center gap-2">
-                        <span className="text-lg">✨</span>
-                        Section Teasers
-                      </h4>
-                      <div className="space-y-3">
-                        <LabelWithTooltip 
-                          label="Teaser Style" 
-                          tooltip="Each section gets a teaser based on the selected style, applied consistently across the entire book."
-                        />
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {TEASER_STYLE_OPTIONS.map((opt) => (
-                            <button
-                              key={opt.value}
-                              onClick={() => updateControls("teaserStyle", opt.value as TeaserStyle)}
-                              className={`p-3 rounded-lg border-2 text-left transition-all overflow-hidden ${
-                                formData.controls?.teaserStyle === opt.value
-                                  ? "border-primary bg-primary/5"
-                                  : "border-border hover:border-primary/50"
-                              }`}
+                    <ToggleRow
+                      label="Chapter Titles"
+                      tooltip="Whether each chapter must have a descriptive title"
+                      checked={formData.controls?.structureControls?.titlesRequired ?? true}
+                      onChange={(v) => updateStructureControls("titlesRequired", v)}
+                    />
+                  </Section>
+
+                  {/* Teasers */}
+                  <Section emoji="✨" title="Section Teasers">
+                    <div className="grid grid-cols-2 gap-2">
+                      {TEASER_STYLE_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => updateControls("teaserStyle", opt.value as TeaserStyle)}
+                          className={`p-2.5 rounded-xl border text-left transition-all ${
+                            formData.controls?.teaserStyle === opt.value
+                              ? "border-primary bg-primary/5 ring-1 ring-primary/30"
+                              : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          <div className="font-medium text-xs">{opt.label}</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5 leading-snug">
+                            {opt.description}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </Section>
+
+                  {/* Word Count */}
+                  <Section emoji="📏" title="Target Word Count">
+                    <div className="flex flex-wrap gap-1.5">
+                      {WORD_COUNT_PRESETS.map((preset) => (
+                        <Tooltip key={preset.value}>
+                          <TooltipTrigger asChild>
+                            <Badge
+                              variant={
+                                formData.controls?.structureControls?.targetWordCount === preset.value
+                                  ? "default"
+                                  : "outline"
+                              }
+                              className="cursor-pointer px-2.5 py-1 text-[11px]"
+                              onClick={() => updateStructureControls("targetWordCount", preset.value)}
                             >
-                              <div className="font-medium text-sm break-words">{opt.label}</div>
-                              <div className="text-xs text-muted-foreground mt-1 break-words">
-                                {opt.description}
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                              {preset.label}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>{preset.description}</TooltipContent>
+                        </Tooltip>
+                      ))}
                     </div>
+                  </Section>
 
-                    {/* Target Word Count */}
-                    <div className="space-y-4 pt-4 border-t">
-                      <h4 className="font-medium flex items-center gap-2">
-                        <span className="text-lg">📏</span>
-                        Target Word Count
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {WORD_COUNT_PRESETS.map((preset) => (
-                          <Tooltip key={preset.value}>
-                            <TooltipTrigger asChild>
-                              <Badge
-                                variant={
-                                  formData.controls?.structureControls?.targetWordCount === preset.value
-                                    ? "default"
-                                    : "outline"
-                                }
-                                className="cursor-pointer px-3 py-1.5"
-                                onClick={() => updateStructureControls("targetWordCount", preset.value)}
-                              >
-                                {preset.label}
-                              </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>{preset.description}</TooltipContent>
-                          </Tooltip>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Generation Options */}
-                    <div className="space-y-4 pt-4 border-t">
-                      <h4 className="font-medium flex items-center gap-2">
-                        <span className="text-lg">⚡</span>
-                        Generation Options
-                      </h4>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Label>Image Generation</Label>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <HelpCircle className="w-4 h-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              Automatically generate illustrations, diagrams, charts, and visual aids based on content
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Switch
-                          checked={formData.controls?.imageGeneration}
-                          onCheckedChange={(v) => updateControls("imageGeneration", v)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Label>Auto-Resume</Label>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <HelpCircle className="w-4 h-4 text-muted-foreground" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              Automatically continue generation after interruptions or failures
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Switch
-                          checked={formData.controls?.autoResume}
-                          onCheckedChange={(v) => updateControls("autoResume", v)}
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </CardContent>
-          </ScrollArea>
-
-          {/* Footer */}
-          <div className="flex flex-wrap items-center justify-between gap-2 p-4 sm:p-6 border-t bg-muted/30 flex-shrink-0">
-            <Button
-              variant="ghost"
-              onClick={() => step > 1 && setStep((s) => (s - 1) as Step)}
-              disabled={step === 1}
-            >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Back
-            </Button>
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              {step < 5 ? (
-                <Button
-                  onClick={() => setStep((s) => (s + 1) as Step)}
-                  disabled={!canProceed()}
-                >
-                  Next
-                  <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              ) : (
-                <Button variant="hero" onClick={handleSubmit} disabled={!canProceed()}>
-                  <Sparkles className="w-4 h-4 mr-1" />
-                  Create Book
-                </Button>
+                  {/* Generation Options */}
+                  <Section emoji="⚡" title="Generation Options">
+                    <ToggleRow
+                      label="Image Generation"
+                      tooltip="Automatically generate illustrations and visual aids"
+                      checked={formData.controls?.imageGeneration}
+                      onChange={(v) => updateControls("imageGeneration", v)}
+                    />
+                    <ToggleRow
+                      label="Auto-Resume"
+                      tooltip="Continue generation after interruptions"
+                      checked={formData.controls?.autoResume}
+                      onChange={(v) => updateControls("autoResume", v)}
+                    />
+                  </Section>
+                </motion.div>
               )}
-            </div>
+            </AnimatePresence>
           </div>
-        </Card>
+        </div>
+
+        {/* Footer */}
+        <div className="flex-shrink-0 flex items-center justify-between gap-2 px-4 py-3 border-t border-border/50 bg-card">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => step > 1 && setStep((s) => (s - 1) as Step)}
+            disabled={step === 1}
+            className="text-xs"
+          >
+            <ChevronLeft className="w-3.5 h-3.5 mr-0.5" />
+            Back
+          </Button>
+
+          <div className="flex gap-2">
+            <Button variant="ghost" size="sm" onClick={onClose} className="text-xs text-muted-foreground">
+              Cancel
+            </Button>
+            {step < 5 ? (
+              <Button size="sm" onClick={() => setStep((s) => (s + 1) as Step)} disabled={!canProceed()} className="text-xs">
+                Next
+                <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
+              </Button>
+            ) : (
+              <Button variant="hero" size="sm" onClick={handleSubmit} disabled={!canProceed()} className="text-xs">
+                <Sparkles className="w-3.5 h-3.5 mr-1" />
+                Create Book
+              </Button>
+            )}
+          </div>
+        </div>
       </motion.div>
     </motion.div>
   );
 };
 
-// Helper Components
-const LabelWithTooltip = ({ label, tooltip }: { label: string; tooltip: string }) => (
-  <div className="flex items-start gap-2 min-w-0">
-    <Label className="break-words whitespace-normal">{label}</Label>
+/* ─── Helper Components ─── */
+
+const FieldGroup = ({
+  label,
+  tooltip,
+  optional,
+  children,
+}: {
+  label: string;
+  tooltip?: string;
+  optional?: boolean;
+  children: React.ReactNode;
+}) => (
+  <div className="space-y-1.5">
+    <div className="flex items-center gap-1.5">
+      <Label className="text-xs">{label}</Label>
+      {optional && <span className="text-[10px] text-muted-foreground">(optional)</span>}
+      {tooltip && (
+        <Tooltip>
+          <TooltipTrigger className="flex-shrink-0">
+            <HelpCircle className="w-3 h-3 text-muted-foreground" />
+          </TooltipTrigger>
+          <TooltipContent className="max-w-xs text-xs">{tooltip}</TooltipContent>
+        </Tooltip>
+      )}
+    </div>
+    {children}
+  </div>
+);
+
+const SectionLabel = ({ label, tooltip }: { label: string; tooltip: string }) => (
+  <div className="flex items-center gap-1.5">
+    <Label className="text-xs">{label}</Label>
     <Tooltip>
       <TooltipTrigger className="flex-shrink-0">
-        <HelpCircle className="w-4 h-4 text-muted-foreground" />
+        <HelpCircle className="w-3 h-3 text-muted-foreground" />
       </TooltipTrigger>
-      <TooltipContent className="max-w-xs">{tooltip}</TooltipContent>
+      <TooltipContent className="max-w-xs text-xs">{tooltip}</TooltipContent>
     </Tooltip>
   </div>
 );
 
-const ControlSlider = ({
+const Section = ({ emoji, title, children }: { emoji: string; title: string; children: React.ReactNode }) => (
+  <div className="space-y-3">
+    <h4 className="font-medium text-sm flex items-center gap-1.5">
+      <span className="text-base">{emoji}</span>
+      {title}
+    </h4>
+    {children}
+  </div>
+);
+
+const ToggleRow = ({
+  label,
+  tooltip,
+  checked,
+  onChange,
+}: {
+  label: string;
+  tooltip: string;
+  checked?: boolean;
+  onChange: (v: boolean) => void;
+}) => (
+  <div className="flex items-center justify-between py-1">
+    <SectionLabel label={label} tooltip={tooltip} />
+    <Switch checked={checked} onCheckedChange={onChange} />
+  </div>
+);
+
+const CompactSlider = ({
   label,
   tooltip,
   value,
   onChange,
-  leftLabel,
-  rightLabel,
+  left,
+  right,
 }: {
   label: string;
   tooltip: string;
   value: number;
   onChange: (v: number) => void;
-  leftLabel: string;
-  rightLabel: string;
+  left: string;
+  right: string;
 }) => (
-  <div className="space-y-3">
-    <div className="flex items-start justify-between gap-3 min-w-0">
-      <div className="flex items-start gap-2 min-w-0">
-        <Label className="break-words whitespace-normal">{label}</Label>
-        <Tooltip>
-          <TooltipTrigger className="flex-shrink-0">
-            <HelpCircle className="w-4 h-4 text-muted-foreground" />
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs">{tooltip}</TooltipContent>
-        </Tooltip>
-      </div>
-      <span className="text-sm font-medium text-primary flex-shrink-0">{value}/10</span>
+  <div className="space-y-1.5">
+    <div className="flex items-center justify-between">
+      <SectionLabel label={label} tooltip={tooltip} />
+      <span className="text-[11px] font-medium text-primary tabular-nums">{value}/10</span>
     </div>
-    <Slider
-      value={[value]}
-      onValueChange={([v]) => onChange(v)}
-      max={10}
-      min={1}
-      step={1}
-      className="py-2"
-    />
-    <div className="flex justify-between text-xs text-muted-foreground">
-      <span>{leftLabel}</span>
-      <span>{rightLabel}</span>
+    <Slider value={[value]} onValueChange={([v]) => onChange(v)} max={10} min={1} step={1} className="py-1" />
+    <div className="flex justify-between text-[10px] text-muted-foreground">
+      <span>{left}</span>
+      <span>{right}</span>
     </div>
   </div>
 );
