@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronRight, ChevronLeft, Sparkles, HelpCircle, Settings2, Palette, BookOpen, Sliders } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -66,6 +66,7 @@ type Step = 1 | 2 | 3 | 4 | 5;
 
 const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
   const [step, setStep] = useState<Step>(1);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [selectedCategory, setSelectedCategory] = useState<BookCategory>("fiction");
   const [formData, setFormData] = useState<Partial<CreateBookInput>>({
     bookType: "novel",
@@ -80,6 +81,16 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
     },
     controls: getDefaultControls("novel"),
   });
+
+  // Auto-scroll to top when step changes
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollable = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollable) {
+        scrollable.scrollTop = 0;
+      }
+    }
+  }, [step]);
 
   const updateForm = <K extends keyof CreateBookInput>(
     key: K,
@@ -195,22 +206,22 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
         onClick={(e) => e.stopPropagation()}
       >
         <Card variant="elevated" className="overflow-hidden flex flex-col max-h-[90vh]">
-          <CardHeader className="relative pb-4 border-b flex-shrink-0">
+          <CardHeader className="relative pb-4 border-b flex-shrink-0 overflow-x-auto">
             <Button
               variant="ghost"
               size="icon"
-              className="absolute right-4 top-4"
+              className="absolute right-4 top-4 z-10"
               onClick={onClose}
             >
               <X className="w-4 h-4" />
             </Button>
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2 rounded-lg bg-primary/10 flex-shrink-0">
                 {stepIcons[step - 1]}
               </div>
-              <div>
-                <CardTitle>Create New Book</CardTitle>
-                <CardDescription>Step {step} of 5 — {stepTitles[step - 1]}</CardDescription>
+              <div className="min-w-0">
+                <CardTitle className="text-sm sm:text-base truncate">Create New Book</CardTitle>
+                <CardDescription className="text-xs sm:text-sm">Step {step} of 5 — {stepTitles[step - 1]}</CardDescription>
               </div>
             </div>
 
@@ -227,7 +238,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
             </div>
           </CardHeader>
 
-          <ScrollArea className="flex-1 overflow-auto">
+          <ScrollArea className="flex-1 overflow-auto" ref={scrollAreaRef}>
             <CardContent className="p-6">
               <AnimatePresence mode="wait">
                 {/* Step 1: Book Type Selection */}
@@ -262,7 +273,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                           <p className="text-sm text-muted-foreground mb-4">
                             {BOOK_CATEGORIES[cat].description}
                           </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                             {filteredBookTypes.map(([type, info]) => (
                               <button
                                 key={type}
@@ -327,7 +338,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                       />
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Genre</Label>
                         <Select
@@ -372,7 +383,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <LabelWithTooltip 
                           label="Desired Depth" 
@@ -440,7 +451,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                         label="Point of View" 
                         tooltip="Controls narrative distance and reader immersion"
                       />
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {POV_OPTIONS.map((option) => (
                           <button
                             key={option.value}
@@ -507,7 +518,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                     </div>
 
                     {/* Tone Profile Sliders */}
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                       <ControlSlider
                         label="Formality"
                         tooltip="How formal vs. casual the writing style should be"
@@ -652,7 +663,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                         <span className="text-lg">⏳</span>
                         Temporal Context
                       </h4>
-                      <div className="grid grid-cols-2 gap-4">
+                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <LabelWithTooltip 
                             label="Era" 
@@ -733,7 +744,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                         <span className="text-lg">📐</span>
                         Structure Controls
                       </h4>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Chapter Count</Label>
                           <Select
