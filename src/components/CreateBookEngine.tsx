@@ -914,7 +914,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
           </ScrollArea>
 
           {/* Footer */}
-          <div className="flex justify-between p-6 border-t bg-muted/30 flex-shrink-0">
+          <div className="flex justify-between p-4 sm:p-6 border-t bg-muted/30 flex-shrink-0">
             <Button
               variant="ghost"
               onClick={() => step > 1 && setStep((s) => (s - 1) as Step)}
