@@ -188,18 +188,18 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-background/80 backdrop-blur-sm"
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="w-full max-w-3xl max-h-[90vh] overflow-hidden"
+        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 20 }}
+        className="w-full sm:max-w-3xl h-[95vh] sm:max-h-[90vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <Card variant="elevated" className="overflow-hidden flex flex-col max-h-[90vh]">
-          <CardHeader className="relative pb-4 border-b flex-shrink-0">
+        <Card variant="elevated" className="overflow-hidden flex flex-col h-full sm:max-h-[90vh] rounded-t-2xl sm:rounded-xl">
+          <CardHeader className="relative pb-3 sm:pb-4 border-b flex-shrink-0 px-4 sm:px-6 pt-4 sm:pt-6">
             <Button
               variant="ghost"
               size="icon"
