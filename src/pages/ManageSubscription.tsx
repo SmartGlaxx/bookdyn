@@ -87,6 +87,7 @@ const ManageSubscription = () => {
   const [profile, setProfile] = useState<{ plan: string; credits_used: number; credits_limit: number } | null>(null);
 
   const [changePlanOpen, setChangePlanOpen] = useState(false);
+  const [upgradePlanOpen, setUpgradePlanOpen] = useState(false);
   const [confirmChangeOpen, setConfirmChangeOpen] = useState(false);
   const [planPreview, setPlanPreview] = useState<PlanChangePreview | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
