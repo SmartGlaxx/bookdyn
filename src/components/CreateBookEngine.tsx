@@ -248,7 +248,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
-                    className="space-y-6"
+                    className="space-y-6 min-w-0 max-w-full overflow-hidden"
                   >
                     {/* Category Tabs - Horizontal scrollable */}
                     <div className="overflow-x-auto -mx-4 px-4 pb-2" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
