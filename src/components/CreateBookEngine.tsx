@@ -278,15 +278,15 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                               <button
                                 key={type}
                                 onClick={() => handleBookTypeChange(type)}
-                                className={`p-4 rounded-xl border-2 text-left transition-all hover:scale-[1.02] ${
+                                className={`p-3 sm:p-4 rounded-xl border-2 text-left transition-all overflow-hidden ${
                                   formData.bookType === type
                                     ? "border-primary bg-primary/5 shadow-md"
                                     : "border-border hover:border-primary/50"
                                 }`}
                               >
                                 <div className="text-2xl mb-2">{info.icon}</div>
-                                <div className="font-medium text-sm">{info.label}</div>
-                                <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                <div className="font-medium text-sm break-words">{info.label}</div>
+                                <div className="text-xs text-muted-foreground mt-1 line-clamp-2 break-words">
                                   {info.description}
                                 </div>
                               </button>
