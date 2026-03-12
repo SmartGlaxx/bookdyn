@@ -66,11 +66,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
   };
 
   const handleManageSubscription = () => {
-    if (profile?.plan === "free") {
-      navigate("/plans");
-    } else {
-      navigate("/manage-subscription");
-    }
+    navigate("/manage-subscription");
   };
 
   const userInitial = user?.email?.charAt(0).toUpperCase() || "U";
