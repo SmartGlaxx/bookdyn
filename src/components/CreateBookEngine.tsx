@@ -251,14 +251,14 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                     className="space-y-6"
                   >
                     {/* Category Tabs - Horizontal scrollable */}
-                    <div className="overflow-x-auto -mx-4 px-4 pb-2 scrollbar-hide">
-                      <div className="flex gap-1 min-w-max">
+                    <div className="overflow-x-auto -mx-4 px-4 pb-2" style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                      <div className="flex gap-1.5 min-w-max pr-4">
                         {(Object.entries(BOOK_CATEGORIES) as [BookCategory, typeof BOOK_CATEGORIES[BookCategory]][]).map(
                           ([cat, info]) => (
                             <button
                               key={cat}
                               onClick={() => setSelectedCategory(cat)}
-                              className={`flex-shrink-0 text-xs py-1.5 px-3 rounded-md transition-all whitespace-nowrap ${
+                              className={`flex-shrink-0 text-[11px] py-1 px-2.5 rounded-full transition-all whitespace-nowrap ${
                                 selectedCategory === cat
                                   ? "bg-primary text-primary-foreground font-medium"
                                   : "bg-muted hover:bg-muted/80 text-muted-foreground"
