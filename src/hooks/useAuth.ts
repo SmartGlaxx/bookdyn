@@ -50,7 +50,7 @@ export function useAuth() {
 
   const signInWithGoogle = useCallback(async () => {
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}/plans`,
+      redirect_uri: `${window.location.origin}/dashboard`,
     });
     const error = result?.error ? (result.error instanceof Error ? result.error : new Error(String(result.error))) : null;
     return { data: null, error };
