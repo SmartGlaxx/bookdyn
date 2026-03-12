@@ -82,6 +82,16 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
     controls: getDefaultControls("novel"),
   });
 
+  // Auto-scroll to top when step changes
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      const scrollable = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollable) {
+        scrollable.scrollTop = 0;
+      }
+    }
+  }, [step]);
+
   const updateForm = <K extends keyof CreateBookInput>(
     key: K,
     value: CreateBookInput[K]
