@@ -456,14 +456,14 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                           <button
                             key={option.value}
                             onClick={() => updateForm("pov", option.value)}
-                            className={`p-3 rounded-lg border-2 text-left transition-all ${
+                            className={`p-3 rounded-lg border-2 text-left transition-all overflow-hidden ${
                               formData.pov === option.value
                                 ? "border-primary bg-primary/5"
                                 : "border-border hover:border-primary/50"
                             }`}
                           >
-                            <div className="font-medium text-sm">{option.label}</div>
-                            <div className="text-xs text-muted-foreground mt-1">
+                            <div className="font-medium text-sm break-words">{option.label}</div>
+                            <div className="text-xs text-muted-foreground mt-1 break-words">
                               {option.description}
                             </div>
                           </button>
