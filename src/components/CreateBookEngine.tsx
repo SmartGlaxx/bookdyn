@@ -188,18 +188,18 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-background/80 backdrop-blur-sm"
       onClick={onClose}
     >
       <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
-        className="w-full max-w-3xl max-h-[90vh] overflow-hidden"
+        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 20 }}
+        className="w-full sm:max-w-3xl h-[95vh] sm:max-h-[90vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <Card variant="elevated" className="overflow-hidden flex flex-col max-h-[90vh]">
-          <CardHeader className="relative pb-4 border-b flex-shrink-0">
+        <Card variant="elevated" className="overflow-hidden flex flex-col h-full sm:max-h-[90vh] rounded-t-2xl sm:rounded-xl">
+          <CardHeader className="relative pb-3 sm:pb-4 border-b flex-shrink-0 px-4 sm:px-6 pt-4 sm:pt-6">
             <Button
               variant="ghost"
               size="icon"
@@ -232,7 +232,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
           </CardHeader>
 
           <ScrollArea className="flex-1 overflow-auto">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <AnimatePresence mode="wait">
                 {/* Step 1: Book Type Selection */}
                 {step === 1 && (
@@ -246,7 +246,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                     {/* Category Tabs */}
                     <Tabs value={selectedCategory} onValueChange={(v) => setSelectedCategory(v as BookCategory)}>
                       <div className="overflow-x-auto -mx-2 px-2 pb-2">
-                        <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-5 h-auto gap-1">
+                        <TabsList className="inline-flex w-auto min-w-full sm:grid sm:grid-cols-5 h-auto gap-1 p-1">
                           {(Object.entries(BOOK_CATEGORIES) as [BookCategory, typeof BOOK_CATEGORIES[BookCategory]][]).map(
                             ([cat, info]) => (
                               <TabsTrigger 
@@ -266,7 +266,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                           <p className="text-sm text-muted-foreground mb-4">
                             {BOOK_CATEGORIES[cat].description}
                           </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                             {filteredBookTypes.map(([type, info]) => (
                               <button
                                 key={type}
@@ -331,7 +331,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                       />
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Genre</Label>
                         {formData.bookType && bookTypeHasGenres(formData.bookType) ? (
@@ -382,7 +382,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <LabelWithTooltip 
                           label="Desired Depth" 
@@ -450,7 +450,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                         label="Point of View" 
                         tooltip="Controls narrative distance and reader immersion"
                       />
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {POV_OPTIONS.map((option) => (
                           <button
                             key={option.value}
@@ -517,7 +517,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                     </div>
 
                     {/* Tone Profile Sliders */}
-                    <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                       <ControlSlider
                         label="Formality"
                         tooltip="How formal vs. casual the writing style should be"
@@ -662,7 +662,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                         <span className="text-lg">⏳</span>
                         Temporal Context
                       </h4>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <LabelWithTooltip 
                             label="Era" 
@@ -743,7 +743,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                         <span className="text-lg">📐</span>
                         Structure Controls
                       </h4>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Chapter Count</Label>
                           <Select
@@ -914,7 +914,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
           </ScrollArea>
 
           {/* Footer */}
-          <div className="flex justify-between p-6 border-t bg-muted/30 flex-shrink-0">
+          <div className="flex justify-between p-4 sm:p-6 border-t bg-muted/30 flex-shrink-0">
             <Button
               variant="ghost"
               onClick={() => step > 1 && setStep((s) => (s - 1) as Step)}

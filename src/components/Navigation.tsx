@@ -66,11 +66,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
   };
 
   const handleManageSubscription = () => {
-    if (profile?.plan === "free") {
-      navigate("/plans");
-    } else {
-      navigate("/manage-subscription");
-    }
+    navigate("/manage-subscription");
   };
 
   const userInitial = user?.email?.charAt(0).toUpperCase() || "U";
@@ -154,7 +150,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
                 {/* Manage Subscription */}
                 <DropdownMenuItem onClick={handleManageSubscription}>
                   <CreditCard className="w-4 h-4 mr-2" />
-                  {profile?.plan === "free" ? "Upgrade Plan" : "Manage Subscription"}
+                  Manage Subscription
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
