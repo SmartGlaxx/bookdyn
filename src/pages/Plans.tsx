@@ -192,7 +192,7 @@ const Plans = () => {
             <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-accent glow">
               <BookOpen className="w-7 h-7 text-primary-foreground" />
             </div>
-            <h1 className="font-serif font-bold text-2xl">BookForge</h1>
+            <h1 className="font-serif font-bold text-2xl">Authoryti</h1>
           </div>
 
           <h2 className="text-4xl md:text-5xl font-serif font-bold">

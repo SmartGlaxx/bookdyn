@@ -89,7 +89,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
               <h1 className="font-serif font-bold text-xl">Authoryti</h1>
               <p className="text-xs text-muted-foreground">AI Book Creation Engine</p>
             </div>
-          </div>
+          </a>
 
           <div className="flex items-center gap-3">
             <Button variant="hero" size="sm" onClick={onCreateBook} className="hidden sm:inline-flex">

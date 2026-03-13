@@ -357,10 +357,10 @@ const LandingPage = ({ onCreateBook, bookCount }: LandingPageProps) => {
               <div className="p-2 rounded-lg bg-primary/10">
                 <BookOpen className="w-5 h-5 text-primary" />
               </div>
-              <span className="font-serif font-bold text-lg">BookForge</span>
+              <span className="font-serif font-bold text-lg">Authoryti</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} BookForge. AI-powered book creation.
+              © {new Date().getFullYear()} Authoryti. AI-powered book creation.
             </p>
           </div>
         </div>

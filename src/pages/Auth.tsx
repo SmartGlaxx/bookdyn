@@ -212,7 +212,7 @@ const Auth = () => {
               <BookOpen className="w-7 h-7 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-serif font-bold text-2xl">BookForge</h1>
+              <h1 className="font-serif font-bold text-2xl">Authoryti</h1>
               <p className="text-xs text-muted-foreground">AI Book Creation Engine</p>
             </div>
           </div>
