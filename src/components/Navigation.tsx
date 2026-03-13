@@ -81,15 +81,15 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
     <nav className="sticky top-0 z-50 glass border-b">
       <div className="container max-w-6xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <a href="https://authoryti.com" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-accent">
               <BookOpen className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-serif font-bold text-xl">BookForge</h1>
+              <h1 className="font-serif font-bold text-xl">Authoryti</h1>
               <p className="text-xs text-muted-foreground">AI Book Creation Engine</p>
             </div>
-          </div>
+          </a>
 
           <div className="flex items-center gap-3">
             <Button variant="hero" size="sm" onClick={onCreateBook} className="hidden sm:inline-flex">

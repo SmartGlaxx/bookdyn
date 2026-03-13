@@ -20,7 +20,7 @@ const plans = [
     period: "forever",
     credits: 5,
     words: "5,000",
-    description: "Try BookForge and see what AI can do for your writing.",
+    description: "Try Authoryti and see what AI can do for your writing.",
     features: [
       "5 credits/month (5K words)",
       "Basic AI generation",
@@ -30,7 +30,7 @@ const plans = [
     ],
     editingTier: "Basic Polish",
     editingIcon: PenTool,
-    cta: "Try BookForge Free",
+    cta: "Try Authoryti Free",
     variant: "outline" as const,
     popular: false,
     stripePriceId: null,
@@ -146,7 +146,7 @@ const Plans = () => {
   const handleSelectPlan = async (plan: typeof plans[0]) => {
     if (plan.id === "free") {
       // Free plan — just go to the app
-      toast({ title: "Welcome to BookForge!", description: "You're on the Free plan with 5 credits/month." });
+      toast({ title: "Welcome to Authoryti!", description: "You're on the Free plan with 5 credits/month." });
       navigate("/dashboard");
       return;
     }
@@ -192,7 +192,7 @@ const Plans = () => {
             <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-accent glow">
               <BookOpen className="w-7 h-7 text-primary-foreground" />
             </div>
-            <h1 className="font-serif font-bold text-2xl">BookForge</h1>
+            <h1 className="font-serif font-bold text-2xl">Authoryti</h1>
           </div>
 
           <h2 className="text-4xl md:text-5xl font-serif font-bold">

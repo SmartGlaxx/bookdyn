@@ -180,7 +180,7 @@ const Auth = () => {
               Create Books with <span className="text-gradient">AI Power</span>
             </h2>
             <p className="text-muted-foreground leading-relaxed">
-              Join thousands of writers using BookForge to turn ideas into complete, professionally structured books.
+              Join thousands of writers using Authoryti to turn ideas into complete, professionally structured books.
             </p>
             <div className="mt-8 p-4 rounded-xl bg-card/60 backdrop-blur-sm border border-border/50">
               <div className="flex gap-1 mb-2 justify-center">
@@ -188,7 +188,7 @@ const Auth = () => {
                   <Star key={i} className="w-3.5 h-3.5 fill-primary text-primary" />
                 ))}
               </div>
-              <p className="text-sm text-muted-foreground italic">"BookForge turned my rough ideas into a complete novel outline in minutes."</p>
+              <p className="text-sm text-muted-foreground italic">"Authoryti turned my rough ideas into a complete novel outline in minutes."</p>
               <p className="text-xs text-muted-foreground mt-2 font-medium">— Sarah Chen, Self-Published Author</p>
             </div>
           </div>
@@ -212,7 +212,7 @@ const Auth = () => {
               <BookOpen className="w-7 h-7 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-serif font-bold text-2xl">BookForge</h1>
+              <h1 className="font-serif font-bold text-2xl">Authoryti</h1>
               <p className="text-xs text-muted-foreground">AI Book Creation Engine</p>
             </div>
           </div>
