@@ -188,7 +188,7 @@ const Auth = () => {
                   <Star key={i} className="w-3.5 h-3.5 fill-primary text-primary" />
                 ))}
               </div>
-              <p className="text-sm text-muted-foreground italic">"BookForge turned my rough ideas into a complete novel outline in minutes."</p>
+              <p className="text-sm text-muted-foreground italic">"Authoryti turned my rough ideas into a complete novel outline in minutes."</p>
               <p className="text-xs text-muted-foreground mt-2 font-medium">— Sarah Chen, Self-Published Author</p>
             </div>
           </div>
