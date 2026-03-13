@@ -63,9 +63,9 @@ const steps = [
 
 /* ─── Testimonials ─── */
 const testimonials = [
-  { name: "Sarah Chen", role: "Self-Published Author", quote: "BookForge turned my rough ideas into a complete novel outline in minutes. The AI understood exactly the tone I wanted.", avatar: "SC" },
+  { name: "Sarah Chen", role: "Self-Published Author", quote: "Authoryti turned my rough ideas into a complete novel outline in minutes. The AI understood exactly the tone I wanted.", avatar: "SC" },
   { name: "Marcus Rivera", role: "Content Creator", quote: "I've used it to create three technical guides. The structure and depth of content is genuinely impressive.", avatar: "MR" },
-  { name: "Emily Watson", role: "Writing Coach", quote: "I recommend BookForge to all my students. It's the best tool for overcoming writer's block and structuring ideas.", avatar: "EW" },
+  { name: "Emily Watson", role: "Writing Coach", quote: "I recommend Authoryti to all my students. It's the best tool for overcoming writer's block and structuring ideas.", avatar: "EW" },
 ];
 
 interface LandingPageProps {
