@@ -30,7 +30,7 @@ const plans = [
     ],
     editingTier: "Basic Polish",
     editingIcon: PenTool,
-    cta: "Try BookForge Free",
+    cta: "Try Authoryti Free",
     variant: "outline" as const,
     popular: false,
     stripePriceId: null,
