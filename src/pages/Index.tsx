@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
-import LandingPage from "@/components/landing/LandingPage";
+import { BookOpen, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import BookCard from "@/components/BookCard";
 import CreateBookEngine from "@/components/CreateBookEngine";
 import BookDetailView from "@/components/BookDetailView";
