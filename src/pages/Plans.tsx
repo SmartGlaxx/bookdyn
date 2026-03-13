@@ -20,7 +20,7 @@ const plans = [
     period: "forever",
     credits: 5,
     words: "5,000",
-    description: "Try BookForge and see what AI can do for your writing.",
+    description: "Try Authoryti and see what AI can do for your writing.",
     features: [
       "5 credits/month (5K words)",
       "Basic AI generation",
