@@ -52,10 +52,39 @@ const Index = () => {
             </div>
           </div>
         ) : books.length === 0 ? (
-          <LandingPage
-            onCreateBook={() => setShowEngine(true)}
-            bookCount={books.length}
-          />
+          <div className="container max-w-6xl mx-auto px-4 py-8">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-serif font-bold">Your Library</h2>
+                <p className="text-muted-foreground mt-1">No books yet</p>
+              </div>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center py-24 text-center space-y-6"
+            >
+              <div className="p-6 rounded-full bg-primary/10">
+                <BookOpen className="w-12 h-12 text-primary" />
+              </div>
+              <div className="space-y-2 max-w-md">
+                <h3 className="text-2xl font-serif font-bold">Create Your First Book</h3>
+                <p className="text-muted-foreground">
+                  Transform your ideas into a complete, professionally structured book with AI-powered generation.
+                </p>
+              </div>
+              <Button
+                variant="hero"
+                size="lg"
+                onClick={() => setShowEngine(true)}
+                className="group"
+              >
+                <Sparkles className="w-5 h-5 transition-transform group-hover:scale-110" />
+                Get Started
+              </Button>
+            </motion.div>
+          </div>
         ) : (
           <div className="container max-w-6xl mx-auto px-4 py-8">
             <div className="flex items-center justify-between mb-8">
