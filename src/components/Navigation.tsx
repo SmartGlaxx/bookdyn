@@ -81,7 +81,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
     <nav className="sticky top-0 z-50 glass border-b">
       <div className="container max-w-6xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <a href="https://authoryti.com" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-accent">
               <BookOpen className="w-6 h-6 text-primary-foreground" />
             </div>
