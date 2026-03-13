@@ -100,7 +100,7 @@ const LandingPage = ({ onCreateBook, bookCount }: LandingPageProps) => {
             >
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-card/50 backdrop-blur-sm">
                 <Sparkles className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-muted-foreground">AI-Powered Book Creation Engine</span>
+                <span className="text-sm font-medium text-muted-foreground">AI-Powered Book Creation</span>
               </div>
 
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif font-bold tracking-tight leading-[1.1]">

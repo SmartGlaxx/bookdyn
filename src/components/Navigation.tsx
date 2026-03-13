@@ -88,7 +88,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
             </div>
             <div>
               <h1 className="font-serif font-bold text-xl">Authoryti</h1>
-              <p className="text-xs text-muted-foreground">AI Book Creation Engine</p>
+              <p className="text-xs text-muted-foreground">AI-Powered Book Creation</p>
             </div>
           </a>
 
