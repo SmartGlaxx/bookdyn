@@ -146,7 +146,7 @@ const Plans = () => {
   const handleSelectPlan = async (plan: typeof plans[0]) => {
     if (plan.id === "free") {
       // Free plan — just go to the app
-      toast({ title: "Welcome to BookForge!", description: "You're on the Free plan with 5 credits/month." });
+      toast({ title: "Welcome to Authoryti!", description: "You're on the Free plan with 5 credits/month." });
       navigate("/dashboard");
       return;
     }
