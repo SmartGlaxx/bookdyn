@@ -1,20 +1,11 @@
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import LandingPage from "@/components/landing/LandingPage";
+import { useEffect } from "react";
 
 const Landing = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  useEffect(() => {
+    window.location.href = "https://authoryti.com";
+  }, []);
 
-  const handleCTA = () => {
-    if (user) {
-      navigate("/dashboard");
-    } else {
-      navigate("/auth?mode=signup");
-    }
-  };
-
-  return <LandingPage onCreateBook={handleCTA} bookCount={0} />;
+  return null;
 };
 
 export default Landing;
