@@ -63,6 +63,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
 
   const handleSignOut = async () => {
     await signOut();
+    window.location.href = "https://authoryti.com?logout=true";
   };
 
   const handleManageSubscription = () => {
