@@ -28,6 +28,12 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get("mode") === "signup" ? false : true;
 
+  // Persist plan selection from marketing site for post-signup checkout
+  const planParam = searchParams.get("plan");
+  if (planParam && ["starter", "pro", "unlimited"].includes(planParam)) {
+    sessionStorage.setItem("pending_plan", planParam);
+  }
+
   const [isLogin, setIsLogin] = useState(defaultTab);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

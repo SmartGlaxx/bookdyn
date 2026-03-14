@@ -41,6 +41,24 @@ const Onboarding = () => {
         .eq("id", user.id);
 
       if (error) throw error;
+
+      // Check if user came from marketing site with a plan selection
+      const pendingPlan = sessionStorage.getItem("pending_plan");
+      if (pendingPlan && ["starter", "pro", "unlimited"].includes(pendingPlan)) {
+        sessionStorage.removeItem("pending_plan");
+        try {
+          const { data, error: checkoutError } = await supabase.functions.invoke("create-checkout", {
+            body: { planId: pendingPlan },
+          });
+          if (!checkoutError && data?.url) {
+            window.location.href = data.url;
+            return;
+          }
+        } catch {
+          // Fall through to dashboard if checkout fails
+        }
+      }
+
       navigate("/dashboard", { replace: true });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
