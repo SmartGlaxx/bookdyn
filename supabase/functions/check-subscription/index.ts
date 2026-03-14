@@ -77,8 +77,15 @@ serve(async (req) => {
       .eq("id", user.id)
       .single();
 
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    if (customers.data.length === 0) {
+    const customers = await stripe.customers.list({ email: user.email, limit: 10 });
+    
+    // Only match Stripe customers that have this user's supabase_user_id in metadata
+    // This prevents email-based plan inheritance from unrelated Stripe customers
+    const matchedCustomer = customers.data.find(
+      (c) => c.metadata?.supabase_user_id === user.id
+    );
+    
+    if (!matchedCustomer) {
       await supabaseClient
         .from("profiles")
         .update({ plan: "free", credits_limit: 5, credits_used: 0 })
@@ -89,7 +96,7 @@ serve(async (req) => {
       });
     }
 
-    const customerId = customers.data[0].id;
+    const customerId = matchedCustomer.id;
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
