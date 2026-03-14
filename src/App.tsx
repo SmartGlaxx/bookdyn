@@ -52,7 +52,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (user) {
-    window.location.href = "https://authoryti.com";
+    window.location.href = "https://authoryti.com?authenticated=true";
     return null;
   }
 
