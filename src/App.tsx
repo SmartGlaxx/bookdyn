@@ -52,8 +52,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (user) {
-    window.location.href = "https://authoryti.com?authenticated=true";
-    return null;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
