@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Plans from "./pages/Plans";
@@ -12,50 +14,88 @@ import ResetPassword from "./pages/ResetPassword";
 import ManageSubscription from "./pages/ManageSubscription";
 import DevDocs from "./pages/DevDocs";
 import NotFound from "./pages/NotFound";
+import CheckEmail from "./pages/CheckEmail";
+import Onboarding from "./pages/Onboarding";
 import { BookOpen } from "lucide-react";
 
 const queryClient = new QueryClient();
 
+const LoadingScreen = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="animate-pulse flex items-center gap-3">
+      <BookOpen className="w-8 h-8 text-primary" />
+      <span className="text-lg font-medium">Loading...</span>
+    </div>
+  </div>
+);
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(true);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse flex items-center gap-3">
-          <BookOpen className="w-8 h-8 text-primary" />
-          <span className="text-lg font-medium">Loading...</span>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("onboarding_completed")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        setOnboardingCompleted((data as any)?.onboarding_completed ?? false);
+        setOnboardingChecked(true);
+      });
+  }, [user]);
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+  if (loading || (user && !onboardingChecked)) return <LoadingScreen />;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (!onboardingCompleted) return <Navigate to="/onboarding" replace />;
 
   return <>{children}</>;
+};
+
+const OnboardingRoute = () => {
+  const { user, loading } = useAuth();
+  const [checked, setChecked] = useState(false);
+  const [completed, setCompleted] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("onboarding_completed")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        setCompleted((data as any)?.onboarding_completed ?? false);
+        setChecked(true);
+      });
+  }, [user]);
+
+  if (loading || (user && !checked)) return <LoadingScreen />;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (completed) return <Navigate to="/dashboard" replace />;
+
+  return <Onboarding />;
 };
 
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse flex items-center gap-3">
-          <BookOpen className="w-8 h-8 text-primary" />
-          <span className="text-lg font-medium">Loading...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (user) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  if (loading) return <LoadingScreen />;
+  if (user) return <Navigate to="/dashboard" replace />;
 
   return <>{children}</>;
+};
+
+const RootRedirect = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) return <LoadingScreen />;
+  if (user) return <Navigate to="/dashboard" replace />;
+
+  window.location.href = "https://authoryti.com";
+  return null;
 };
 
 const App = () => (
@@ -65,8 +105,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
+          <Route path="/" element={<RootRedirect />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/check-email" element={<CheckEmail />} />
+          <Route path="/onboarding" element={<OnboardingRoute />} />
           <Route path="/plans" element={<Plans />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route

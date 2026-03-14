@@ -64,7 +64,7 @@ const Auth = () => {
     );
   }
 
-  if (user) return <Navigate to="/plans" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
 
   const verifyTurnstile = async (): Promise<boolean> => {
     if (!turnstileToken) {
@@ -151,8 +151,10 @@ const Auth = () => {
       } else {
         const { data, error } = await signUp(email, password, fullName);
         if (error) toast({ title: "Sign up failed", description: error.message, variant: "destructive" });
-        else if (data?.user && !data.session) setShowVerification(true);
-        else toast({ title: "Account created!", description: "Choose a plan to get started." });
+        else if (data?.user && !data.session) {
+          window.location.href = "/check-email";
+        }
+        else toast({ title: "Account created!", description: "Welcome to Authoryti!" });
       }
     } finally {
       setIsSubmitting(false);

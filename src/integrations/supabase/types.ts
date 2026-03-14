@@ -126,6 +126,7 @@ export type Database = {
           daily_words_reset_at: string
           full_name: string
           id: string
+          onboarding_completed: boolean
           plan: string
           updated_at: string
         }
@@ -138,6 +139,7 @@ export type Database = {
           daily_words_reset_at?: string
           full_name?: string
           id: string
+          onboarding_completed?: boolean
           plan?: string
           updated_at?: string
         }
@@ -150,6 +152,7 @@ export type Database = {
           daily_words_reset_at?: string
           full_name?: string
           id?: string
+          onboarding_completed?: boolean
           plan?: string
           updated_at?: string
         }

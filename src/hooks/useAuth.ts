@@ -41,7 +41,7 @@ export function useAuth() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/plans`,
+        emailRedirectTo: `${window.location.origin}/onboarding`,
         data: {
           full_name: fullName || "",
         },
@@ -60,7 +60,7 @@ export function useAuth() {
 
   const signInWithGoogle = useCallback(async () => {
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: `${window.location.origin}/plans`,
+      redirect_uri: `${window.location.origin}/onboarding`,
     });
     const error = result?.error ? (result.error instanceof Error ? result.error : new Error(String(result.error))) : null;
     return { data: null, error };
