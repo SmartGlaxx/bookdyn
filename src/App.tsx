@@ -8,7 +8,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Plans from "./pages/Plans";
 import Landing from "./pages/Landing";
 import ResetPassword from "./pages/ResetPassword";
 import ManageSubscription from "./pages/ManageSubscription";

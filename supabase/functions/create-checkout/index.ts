@@ -60,7 +60,7 @@ serve(async (req) => {
         plan_id: planId,
       },
       success_url: `${origin}/dashboard?checkout=success`,
-      cancel_url: `${origin}/plans?checkout=cancelled`,
+      cancel_url: `${origin}/dashboard?checkout=cancelled`,
     });
 
     return new Response(JSON.stringify({ url: session.url }), {
