@@ -9,20 +9,11 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const setCrossDomainCookie = (loggedIn: boolean) => {
-      if (loggedIn) {
-        document.cookie = "authoryti_auth=true; domain=.authoryti.com; path=/; max-age=2592000; SameSite=Lax; Secure";
-      } else {
-        document.cookie = "authoryti_auth=; domain=.authoryti.com; path=/; max-age=0; SameSite=Lax; Secure";
-      }
-    };
-
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-        setCrossDomainCookie(!!session?.user);
       }
     );
 
@@ -30,7 +21,6 @@ export function useAuth() {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
-      setCrossDomainCookie(!!session?.user);
     });
 
     return () => subscription.unsubscribe();
