@@ -64,7 +64,7 @@ const Auth = () => {
     );
   }
 
-  if (user) return <Navigate to="/dashboard" replace />;
+  if (user) return <Navigate to="/plans" replace />;
 
   const verifyTurnstile = async (): Promise<boolean> => {
     if (!turnstileToken) {
