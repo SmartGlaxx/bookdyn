@@ -41,7 +41,7 @@ export function useAuth() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: `${window.location.origin}/plans`,
         data: {
           full_name: fullName || "",
         },
