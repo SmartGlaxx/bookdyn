@@ -108,7 +108,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/check-email" element={<CheckEmail />} />
           <Route path="/onboarding" element={<OnboardingRoute />} />
-          <Route path="/plans" element={<Plans />} />
+          <Route path="/plans" element={<Navigate to="/dashboard" replace />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/dashboard"
