@@ -122,12 +122,16 @@ export type Database = {
           credits_limit: number
           credits_reset_at: string
           credits_used: number
+          current_period_end: string | null
           daily_words_generated: number
           daily_words_reset_at: string
           full_name: string
           id: string
           onboarding_completed: boolean
+          pending_plan: string | null
+          pending_plan_at: string | null
           plan: string
+          stripe_subscription_id: string | null
           updated_at: string
         }
         Insert: {
@@ -135,12 +139,16 @@ export type Database = {
           credits_limit?: number
           credits_reset_at?: string
           credits_used?: number
+          current_period_end?: string | null
           daily_words_generated?: number
           daily_words_reset_at?: string
           full_name?: string
           id: string
           onboarding_completed?: boolean
+          pending_plan?: string | null
+          pending_plan_at?: string | null
           plan?: string
+          stripe_subscription_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -148,12 +156,16 @@ export type Database = {
           credits_limit?: number
           credits_reset_at?: string
           credits_used?: number
+          current_period_end?: string | null
           daily_words_generated?: number
           daily_words_reset_at?: string
           full_name?: string
           id?: string
           onboarding_completed?: boolean
+          pending_plan?: string | null
+          pending_plan_at?: string | null
           plan?: string
+          stripe_subscription_id?: string | null
           updated_at?: string
         }
         Relationships: []
