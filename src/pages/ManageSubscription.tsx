@@ -31,6 +31,8 @@ interface SubscriptionData {
   current_period_start: string | null;
   plan: string;
   price_id: string;
+  pending_plan?: string | null;
+  pending_plan_at?: string | null;
 }
 
 interface PaymentMethodData {
