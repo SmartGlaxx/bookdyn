@@ -398,7 +398,6 @@ function getLanguageGuidelines(band: number): string {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (error) {
-    const corsHeaders = getCorsHeaders(req);
     console.error("generate-content error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
