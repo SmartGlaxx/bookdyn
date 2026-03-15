@@ -25,6 +25,13 @@ const PLAN_PRICE_AMOUNT: Record<string, number> = {
   unlimited: 7900,
 };
 
+const PLAN_ORDER: Record<string, number> = {
+  free: 0,
+  starter: 1,
+  pro: 2,
+  unlimited: 3,
+};
+
 function safeTimestamp(ts: number | null | undefined): string | null {
   if (!ts || typeof ts !== "number" || ts <= 0) return null;
   try {
@@ -36,21 +43,18 @@ function safeTimestamp(ts: number | null | undefined): string | null {
   }
 }
 
-// Calculate the next monthly billing date from a billing_cycle_anchor timestamp
 function getNextBillingDate(anchorTs: number): string {
   const anchor = new Date(anchorTs * 1000);
   const now = new Date();
   const anchorDay = anchor.getUTCDate();
-  
-  // Start from current month, find next billing date that's in the future
+
   let year = now.getUTCFullYear();
   let month = now.getUTCMonth();
-  
+
   for (let i = 0; i < 13; i++) {
     const targetMonth = month + i;
     const targetYear = year + Math.floor(targetMonth / 12);
     const targetMon = targetMonth % 12;
-    // Clamp day to last day of month
     const daysInMonth = new Date(targetYear, targetMon + 1, 0).getDate();
     const day = Math.min(anchorDay, daysInMonth);
     const candidate = new Date(Date.UTC(targetYear, targetMon, day, anchor.getUTCHours(), anchor.getUTCMinutes(), anchor.getUTCSeconds()));
@@ -80,8 +84,7 @@ async function getStripeAndUser(req: Request) {
 
   const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
   const customers = await stripe.customers.list({ email: userData.user.email, limit: 10 });
-  
-  // Only match the Stripe customer that belongs to THIS user (by supabase_user_id metadata)
+
   const matchedCustomer = customers.data.find(
     (c) => c.metadata?.supabase_user_id === userData.user.id
   ) || null;
@@ -123,16 +126,26 @@ serve(async (req) => {
         const priceId = sub.items.data[0]?.price?.id;
         const planInfo = priceId ? PRICE_TO_PLAN[priceId] : null;
         const pm = sub.default_payment_method as Stripe.PaymentMethod | null;
+        const periodEnd = safeTimestamp((sub as any).current_period_end) || ((sub as any).billing_cycle_anchor ? getNextBillingDate((sub as any).billing_cycle_anchor) : null);
+
+        // Get pending plan info from profile
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("pending_plan, pending_plan_at")
+          .eq("id", user.id)
+          .single();
 
         result = {
           subscription: {
             id: sub.id,
             status: sub.status,
             cancel_at_period_end: sub.cancel_at_period_end,
-            current_period_end: safeTimestamp((sub as any).current_period_end) || ((sub as any).billing_cycle_anchor ? getNextBillingDate((sub as any).billing_cycle_anchor) : null),
+            current_period_end: periodEnd,
             current_period_start: safeTimestamp((sub as any).current_period_start),
             plan: planInfo?.plan || "unknown",
             price_id: priceId,
+            pending_plan: profile?.pending_plan || null,
+            pending_plan_at: profile?.pending_plan_at || null,
           },
           payment_method: pm ? {
             brand: pm.card?.brand || "unknown",
@@ -164,7 +177,6 @@ serve(async (req) => {
         const newAmount = PLAN_PRICE_AMOUNT[new_plan] || 0;
         const isUpgrade = newAmount > currentAmount;
 
-        // billing_cycle_anchor exists but current_period_end doesn't in newer Stripe API
         const anchor = (sub as any).billing_cycle_anchor;
         const periodEnd = anchor ? getNextBillingDate(anchor) : null;
 
@@ -194,32 +206,113 @@ serve(async (req) => {
 
         const sub = subscriptions.data[0];
         const currentPriceId = sub.items.data[0]?.price?.id;
-        const currentAmount = currentPriceId && PRICE_TO_PLAN[currentPriceId]
-          ? PLAN_PRICE_AMOUNT[PRICE_TO_PLAN[currentPriceId].plan] || 0 : 0;
-        const newAmount = PLAN_PRICE_AMOUNT[new_plan] || 0;
-        const isUpgrade = newAmount > currentAmount;
+        const currentPlan = currentPriceId && PRICE_TO_PLAN[currentPriceId]
+          ? PRICE_TO_PLAN[currentPriceId] : null;
+        const currentOrder = PLAN_ORDER[currentPlan?.plan || "free"] ?? 0;
+        const newOrder = PLAN_ORDER[new_plan] ?? 0;
+        const isUpgrade = newOrder > currentOrder;
 
-        const updatedSub = await stripe.subscriptions.update(sub.id, {
-          items: [{ id: sub.items.data[0].id, price: newPriceId }],
+        const anchor = (sub as any).billing_cycle_anchor;
+        const periodEnd = anchor ? getNextBillingDate(anchor) : null;
+
+        if (isUpgrade) {
+          // UPGRADE: immediate with proration
+          const updatedSub = await stripe.subscriptions.update(sub.id, {
+            items: [{ id: sub.items.data[0].id, price: newPriceId }],
+            proration_behavior: "create_prorations",
+          });
+
+          const planInfo = PRICE_TO_PLAN[newPriceId];
+          if (planInfo) {
+            await supabaseClient
+              .from("profiles")
+              .update({
+                plan: planInfo.plan,
+                credits_limit: planInfo.credits,
+                credits_used: 0,
+                pending_plan: null,
+                pending_plan_at: null,
+                stripe_subscription_id: sub.id,
+                current_period_end: periodEnd,
+              })
+              .eq("id", user.id);
+          }
+
+          result = {
+            success: true,
+            plan: planInfo?.plan,
+            is_upgrade: true,
+            immediate: true,
+            period_end: periodEnd,
+          };
+        } else {
+          // DOWNGRADE: schedule for end of cycle (no proration)
+          await stripe.subscriptions.update(sub.id, {
+            items: [{ id: sub.items.data[0].id, price: newPriceId }],
+            proration_behavior: "none",
+            billing_cycle_anchor: "unchanged",
+          });
+
+          // Set pending_plan in profiles — actual plan change happens via webhook at renewal
+          await supabaseClient
+            .from("profiles")
+            .update({
+              pending_plan: new_plan,
+              pending_plan_at: periodEnd,
+            })
+            .eq("id", user.id);
+
+          result = {
+            success: true,
+            plan: new_plan,
+            is_upgrade: false,
+            immediate: false,
+            period_end: periodEnd,
+          };
+        }
+        break;
+      }
+
+      case "cancel_downgrade": {
+        // Cancel a pending downgrade — revert Stripe subscription to current plan's price
+        if (!customer) throw new Error("No subscription found");
+
+        const { data: profile } = await supabaseClient
+          .from("profiles")
+          .select("plan, pending_plan")
+          .eq("id", user.id)
+          .single();
+
+        if (!profile?.pending_plan) throw new Error("No pending downgrade to cancel");
+
+        const currentPriceId = PLAN_PRICES[profile.plan];
+        if (!currentPriceId) throw new Error("Cannot determine current plan price");
+
+        const subscriptions = await stripe.subscriptions.list({
+          customer: customer.id,
+          status: "active",
+          limit: 1,
+        });
+        if (subscriptions.data.length === 0) throw new Error("No active subscription");
+
+        const sub = subscriptions.data[0];
+
+        // Revert Stripe subscription back to current plan
+        await stripe.subscriptions.update(sub.id, {
+          items: [{ id: sub.items.data[0].id, price: currentPriceId }],
           proration_behavior: "none",
         });
 
-        const planInfo = PRICE_TO_PLAN[newPriceId];
-        if (planInfo) {
-          // Only update the plan label — credits_limit stays at current value
-          // until the next billing cycle actually starts (handled by check-subscription)
-          await supabaseClient
-            .from("profiles")
-            .update({ plan: planInfo.plan })
-            .eq("id", user.id);
-        }
+        // Clear pending_plan
+        await supabaseClient
+          .from("profiles")
+          .update({
+            pending_plan: null,
+            pending_plan_at: null,
+          })
+          .eq("id", user.id);
 
-        result = {
-          success: true,
-          plan: planInfo?.plan,
-          is_upgrade: isUpgrade,
-          period_end: safeTimestamp(updatedSub.current_period_end),
-        };
+        result = { success: true };
         break;
       }
 
