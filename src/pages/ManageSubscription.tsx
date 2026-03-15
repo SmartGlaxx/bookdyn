@@ -6,6 +6,7 @@ import {
   RefreshCw, Crown, Sparkles, Zap, Download,
   ExternalLink, AlertTriangle, RotateCcw, ArrowUp, ArrowDown
 } from "lucide-react";
+import PricingModal from "@/components/PricingModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
