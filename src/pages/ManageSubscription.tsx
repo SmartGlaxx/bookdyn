@@ -4,16 +4,14 @@ import { motion } from "framer-motion";
 import {
   ArrowLeft, CreditCard, Receipt, ArrowUpDown, XCircle,
   RefreshCw, Crown, Sparkles, Zap, Download,
-  ExternalLink, AlertTriangle, RotateCcw, ArrowUp, ArrowDown
+  ExternalLink, AlertTriangle, RotateCcw,
 } from "lucide-react";
+import PricingModal from "@/components/PricingModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
-} from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -30,6 +28,8 @@ interface SubscriptionData {
   current_period_start: string | null;
   plan: string;
   price_id: string;
+  pending_plan?: string | null;
+  pending_plan_at?: string | null;
 }
 
 interface PaymentMethodData {
@@ -47,15 +47,6 @@ interface InvoiceData {
   created: string | null;
   invoice_pdf: string | null;
   hosted_invoice_url: string | null;
-}
-
-interface PlanChangePreview {
-  is_upgrade: boolean;
-  new_plan: string;
-  new_price: number;
-  current_plan: string;
-  current_price: number;
-  period_end: string | null;
 }
 
 const PLANS = [
@@ -84,12 +75,9 @@ const ManageSubscription = () => {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodData | null>(null);
   const [invoices, setInvoices] = useState<InvoiceData[]>([]);
-  const [profile, setProfile] = useState<{ plan: string; credits_used: number; credits_limit: number } | null>(null);
+  const [profile, setProfile] = useState<{ plan: string; credits_used: number; credits_limit: number; pending_plan?: string | null; pending_plan_at?: string | null } | null>(null);
 
-  const [changePlanOpen, setChangePlanOpen] = useState(false);
-  const [upgradePlanOpen, setUpgradePlanOpen] = useState(false);
-  const [confirmChangeOpen, setConfirmChangeOpen] = useState(false);
-  const [planPreview, setPlanPreview] = useState<PlanChangePreview | null>(null);
+  const [pricingOpen, setPricingOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -124,37 +112,6 @@ const ManageSubscription = () => {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const handlePreviewPlanChange = async (newPlan: string) => {
-    setActionLoading(newPlan);
-    try {
-      const preview = await invoke("preview_plan_change", { new_plan: newPlan });
-      setPlanPreview(preview);
-      setChangePlanOpen(false);
-      setConfirmChangeOpen(true);
-    } catch (err: any) {
-      toast({ title: "Failed to preview plan change", description: err.message, variant: "destructive" });
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleConfirmChangePlan = async () => {
-    if (!planPreview) return;
-    setActionLoading("confirm_change");
-    try {
-      const result = await invoke("change_plan", { new_plan: planPreview.new_plan });
-      const planName = planPreview.new_plan.charAt(0).toUpperCase() + planPreview.new_plan.slice(1);
-      toast({ title: "Plan updated!", description: `Your plan will switch to ${planName} at the start of your next billing cycle.` });
-      setConfirmChangeOpen(false);
-      setPlanPreview(null);
-      await loadData();
-    } catch (err: any) {
-      toast({ title: "Failed to change plan", description: err.message, variant: "destructive" });
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
   const handleCancel = async () => {
     setActionLoading("cancel");
     try {
@@ -187,7 +144,6 @@ const ManageSubscription = () => {
   };
 
   const handleUpdatePayment = async () => {
-    // For now, use the customer portal for payment method updates (requires Stripe.js for in-app)
     setActionLoading("payment");
     try {
       const portalData = await supabase.functions.invoke("customer-portal");
@@ -220,6 +176,7 @@ const ManageSubscription = () => {
   }
 
   const isFree = !subscription || profile?.plan === "free";
+  const hasPendingDowngrade = !!subscription?.pending_plan;
 
   return (
     <div className="min-h-screen bg-background">
@@ -285,18 +242,28 @@ const ManageSubscription = () => {
                   </div>
                 )}
 
+                {hasPendingDowngrade && !subscription?.cancel_at_period_end && (
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-warning/10 text-foreground text-sm">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-warning" />
+                    <span>
+                      Switching to <strong className="capitalize">{subscription?.pending_plan}</strong> on {formatDate(subscription?.pending_plan_at)}.
+                      You keep full access until then.
+                    </span>
+                  </div>
+                )}
+
                 <Separator />
 
                 <div className="flex flex-wrap gap-3">
-                  {isFree ? (
-                    <Button variant="hero" onClick={() => setUpgradePlanOpen(true)}>
-                      <Sparkles className="w-4 h-4 mr-2" /> Upgrade Plan
-                    </Button>
-                  ) : (
+                  <Button variant={isFree ? "hero" : "outline"} onClick={() => setPricingOpen(true)}>
+                    {isFree ? (
+                      <><Sparkles className="w-4 h-4 mr-2" /> Upgrade Plan</>
+                    ) : (
+                      <><ArrowUpDown className="w-4 h-4 mr-2" /> Change Plan</>
+                    )}
+                  </Button>
+                  {!isFree && (
                     <>
-                      <Button variant="outline" onClick={() => setChangePlanOpen(true)}>
-                        <ArrowUpDown className="w-4 h-4 mr-2" /> Change Plan
-                      </Button>
                       {subscription?.cancel_at_period_end ? (
                         <Button variant="outline" onClick={handleReactivate} disabled={actionLoading === "reactivate"}>
                           <RotateCcw className="w-4 h-4 mr-2" />
@@ -395,158 +362,8 @@ const ManageSubscription = () => {
         </div>
       </div>
 
-      {/* Upgrade Plan Dialog (for free users) */}
-      <Dialog open={upgradePlanOpen} onOpenChange={setUpgradePlanOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Upgrade Your Plan</DialogTitle>
-            <DialogDescription>
-              Choose a plan to get started with more credits and features.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-4">
-            {PLANS.map((plan) => (
-              <button
-                key={plan.id}
-                disabled={!!actionLoading}
-                onClick={async () => {
-                  setActionLoading(plan.id);
-                  try {
-                    const { data, error } = await supabase.functions.invoke("create-checkout", {
-                      body: { planId: plan.id },
-                    });
-                    if (error) throw error;
-                    if (data?.url) {
-                      window.location.href = data.url;
-                    } else {
-                      throw new Error("No checkout URL returned");
-                    }
-                  } catch (err: any) {
-                    toast({ title: "Checkout failed", description: err.message, variant: "destructive" });
-                  } finally {
-                    setActionLoading(null);
-                  }
-                }}
-                className="w-full flex items-center justify-between p-4 rounded-xl border border-border hover:border-primary/30 hover:bg-muted/50 cursor-pointer transition-all text-left disabled:opacity-60"
-              >
-                <div className="flex items-center gap-3">
-                  <plan.icon className="w-5 h-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">{plan.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {plan.credits ? `${plan.credits} credits/mo` : "Unlimited credits"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold">${plan.price}/mo</span>
-                  {actionLoading === plan.id && <RefreshCw className="w-4 h-4 animate-spin" />}
-                </div>
-              </button>
-            ))}
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setUpgradePlanOpen(false)}>Cancel</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Change Plan Dialog (for existing subscribers) */}
-      <Dialog open={changePlanOpen} onOpenChange={setChangePlanOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Change Plan</DialogTitle>
-            <DialogDescription>
-              Select a new plan to see pricing details before confirming.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-4">
-            {PLANS.map((plan) => {
-              const isCurrentPlan = plan.id === subscription?.plan;
-              return (
-                <button
-                  key={plan.id}
-                  disabled={isCurrentPlan || !!actionLoading}
-                  onClick={() => handlePreviewPlanChange(plan.id)}
-                  className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all text-left
-                    ${isCurrentPlan
-                      ? "border-primary/50 bg-primary/5 cursor-default"
-                      : "border-border hover:border-primary/30 hover:bg-muted/50 cursor-pointer"
-                    } disabled:opacity-60`}
-                >
-                  <div className="flex items-center gap-3">
-                    <plan.icon className={`w-5 h-5 ${isCurrentPlan ? "text-primary" : "text-muted-foreground"}`} />
-                    <div>
-                      <p className="font-medium">{plan.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {plan.credits ? `${plan.credits} credits/mo` : "Unlimited credits"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">${plan.price}/mo</span>
-                    {isCurrentPlan && <Badge variant="secondary" className="text-xs">Current</Badge>}
-                    {actionLoading === plan.id && <RefreshCw className="w-4 h-4 animate-spin" />}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setChangePlanOpen(false)}>Cancel</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Confirm Plan Change Dialog */}
-      <AlertDialog open={confirmChangeOpen} onOpenChange={setConfirmChangeOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              {planPreview?.is_upgrade ? (
-                <><ArrowUp className="w-5 h-5 text-primary" /> Upgrade Plan</>
-              ) : (
-                <><ArrowDown className="w-5 h-5 text-muted-foreground" /> Downgrade Plan</>
-              )}
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
-                  <span className="text-sm">{planPreview?.current_plan?.charAt(0).toUpperCase()}{planPreview?.current_plan?.slice(1)} → {planPreview?.new_plan?.charAt(0).toUpperCase()}{planPreview?.new_plan?.slice(1)}</span>
-                  <span className="font-semibold text-sm">
-                    ${((planPreview?.current_price || 0) / 100).toFixed(0)}/mo → ${((planPreview?.new_price || 0) / 100).toFixed(0)}/mo
-                  </span>
-                </div>
-
-                <div className="text-sm space-y-1">
-                  <p>
-                    Your plan will change to{" "}
-                    <span className="font-semibold">
-                      {planPreview?.new_plan?.charAt(0).toUpperCase()}{planPreview?.new_plan?.slice(1)}
-                    </span>{" "}
-                    starting your next billing cycle on{" "}
-                    <span className="font-semibold">{formatDate(planPreview?.period_end)}</span>.
-                  </p>
-                  <p className="text-muted-foreground">
-                    You'll continue with your current plan features until then. No charges or credits will be applied today.
-                  </p>
-                </div>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setPlanPreview(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmChangePlan}
-              disabled={actionLoading === "confirm_change"}
-            >
-              {actionLoading === "confirm_change" ? "Processing..." : (
-                planPreview?.is_upgrade ? "Confirm Upgrade" : "Confirm Downgrade"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Pricing Modal (replaces old upgrade + change plan dialogs) */}
+      <PricingModal open={pricingOpen} onOpenChange={setPricingOpen} />
 
       {/* Cancel Confirmation */}
       <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
