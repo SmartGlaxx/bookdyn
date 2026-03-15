@@ -64,10 +64,10 @@ serve(async (req) => {
     if (!authHeader) throw new Error("No authorization header");
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !userData.user?.email) throw new Error("Unauthorized");
+    const { data: claimsData, error: userError } = await supabaseClient.auth.getClaims(token);
+    if (userError || !claimsData?.claims) throw new Error("Unauthorized");
 
-    const user = userData.user;
+    const user = { id: claimsData.claims.sub as string, email: claimsData.claims.email as string };
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
     // Get current profile

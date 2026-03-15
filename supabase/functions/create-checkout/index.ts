@@ -31,10 +31,10 @@ serve(async (req) => {
     if (!authHeader) throw new Error("No auth header");
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: authError } = await supabaseClient.auth.getUser(token);
-    if (authError || !userData.user?.email) throw new Error("Unauthorized");
+    const { data: claimsData, error: authError } = await supabaseClient.auth.getClaims(token);
+    if (authError || !claimsData?.claims) throw new Error("Unauthorized");
 
-    const user = userData.user;
+    const user = { id: claimsData.claims.sub as string, email: claimsData.claims.email as string };
     const { planId } = await req.json();
     const priceId = PLAN_PRICES[planId];
     if (!priceId) throw new Error("Invalid plan");
