@@ -71,6 +71,22 @@ serve(async (req) => {
       const session = event.data.object as Stripe.Checkout.Session;
       const userId = session.metadata?.supabase_user_id;
       const planId = session.metadata?.plan_id;
+      const customerId = session.customer as string;
+
+      // Ensure customer has supabase_user_id in metadata
+      if (userId && customerId) {
+        try {
+          const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
+          if (!customer.metadata?.supabase_user_id) {
+            await stripe.customers.update(customerId, {
+              metadata: { supabase_user_id: userId },
+            });
+            console.log(`[WEBHOOK] Set supabase_user_id on customer ${customerId}`);
+          }
+        } catch (e) {
+          console.error(`[WEBHOOK] Failed to update customer metadata:`, e);
+        }
+      }
 
       if (userId && planId && PLAN_CREDITS[planId]) {
         const { credits, plan } = PLAN_CREDITS[planId];
