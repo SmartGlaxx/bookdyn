@@ -41,11 +41,23 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Check for existing Stripe customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    // Check for existing Stripe customer with matching supabase_user_id
+    const customers = await stripe.customers.list({ email: user.email, limit: 10 });
     let customerId: string | undefined;
-    if (customers.data.length > 0) {
+    
+    // Find customer with matching supabase_user_id, or first one
+    const matchedCustomer = customers.data.find(
+      (c) => c.metadata?.supabase_user_id === user.id
+    );
+    
+    if (matchedCustomer) {
+      customerId = matchedCustomer.id;
+    } else if (customers.data.length > 0) {
+      // Update existing customer with supabase_user_id metadata
       customerId = customers.data[0].id;
+      await stripe.customers.update(customerId, {
+        metadata: { supabase_user_id: user.id },
+      });
     }
 
     const origin = req.headers.get("origin") || "https://localhost:3000";
