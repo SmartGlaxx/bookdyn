@@ -240,7 +240,6 @@ function getStructureGuidelines(band: number): string {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    const corsHeaders = getCorsHeaders(req);
     console.error("generate-outline error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
