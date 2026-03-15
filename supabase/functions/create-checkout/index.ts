@@ -62,7 +62,7 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://localhost:3000";
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       mode: "subscription",
@@ -71,9 +71,19 @@ serve(async (req) => {
         supabase_user_id: user.id,
         plan_id: planId,
       },
+      subscription_metadata: {
+        supabase_user_id: user.id,
+      },
       success_url: `${origin}/dashboard?checkout=success`,
       cancel_url: `${origin}/dashboard?checkout=cancelled`,
-    });
+    };
+
+    // If no existing customer, set metadata on the new customer that Stripe will create
+    if (!customerId) {
+      sessionParams.customer_creation = "always";
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
