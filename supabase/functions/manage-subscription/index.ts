@@ -79,9 +79,14 @@ async function getStripeAndUser(req: Request) {
   if (userError || !userData.user?.email) throw new Error("Unauthorized");
 
   const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-  const customers = await stripe.customers.list({ email: userData.user.email, limit: 1 });
+  const customers = await stripe.customers.list({ email: userData.user.email, limit: 10 });
+  
+  // Only match the Stripe customer that belongs to THIS user (by supabase_user_id metadata)
+  const matchedCustomer = customers.data.find(
+    (c) => c.metadata?.supabase_user_id === userData.user.id
+  ) || null;
 
-  return { stripe, user: userData.user, supabaseClient, customer: customers.data[0] || null };
+  return { stripe, user: userData.user, supabaseClient, customer: matchedCustomer };
 }
 
 serve(async (req) => {
