@@ -2,21 +2,12 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.90.1";
 
 // ── Security Config ──
-const ALLOWED_ORIGINS = [
-  "https://id-preview--50948d4c-97c6-4338-a33a-59e9cf03b7c0.lovable.app",
-  "http://localhost:5173",
-  "http://localhost:3000",
-];
 const MAX_PAYLOAD_BYTES = 50_000;
 
-function getCorsHeaders(req: Request) {
-  const origin = req.headers.get("origin") || "";
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
-  return {
-    "Access-Control-Allow-Origin": allowed,
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  };
-}
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
 
 function wafCheck(req: Request): string | null {
   const ua = (req.headers.get("user-agent") || "").toLowerCase();
@@ -64,7 +55,6 @@ interface CharacterReference {
 }
 
 serve(async (req) => {
-  const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -158,7 +148,6 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ imageUrl }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
-    const corsHeaders = getCorsHeaders(req);
     console.error("generate-image error:", error);
     return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
