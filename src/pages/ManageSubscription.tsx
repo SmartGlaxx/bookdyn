@@ -87,12 +87,9 @@ const ManageSubscription = () => {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodData | null>(null);
   const [invoices, setInvoices] = useState<InvoiceData[]>([]);
-  const [profile, setProfile] = useState<{ plan: string; credits_used: number; credits_limit: number } | null>(null);
+  const [profile, setProfile] = useState<{ plan: string; credits_used: number; credits_limit: number; pending_plan?: string | null; pending_plan_at?: string | null } | null>(null);
 
   const [changePlanOpen, setChangePlanOpen] = useState(false);
-  const [upgradePlanOpen, setUpgradePlanOpen] = useState(false);
-  const [confirmChangeOpen, setConfirmChangeOpen] = useState(false);
-  const [planPreview, setPlanPreview] = useState<PlanChangePreview | null>(null);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
