@@ -17,3 +17,18 @@ verify_jwt = false
 
 [functions.generate-image]
 verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.check-subscription]
+verify_jwt = false
+
+[functions.customer-portal]
+verify_jwt = false
+
+[functions.manage-subscription]
+verify_jwt = false
+
+[functions.verify-turnstile]
+verify_jwt = false
