@@ -41,16 +41,28 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Check for existing Stripe customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    // Check for existing Stripe customer with matching supabase_user_id
+    const customers = await stripe.customers.list({ email: user.email, limit: 10 });
     let customerId: string | undefined;
-    if (customers.data.length > 0) {
+    
+    // Find customer with matching supabase_user_id, or first one
+    const matchedCustomer = customers.data.find(
+      (c) => c.metadata?.supabase_user_id === user.id
+    );
+    
+    if (matchedCustomer) {
+      customerId = matchedCustomer.id;
+    } else if (customers.data.length > 0) {
+      // Update existing customer with supabase_user_id metadata
       customerId = customers.data[0].id;
+      await stripe.customers.update(customerId, {
+        metadata: { supabase_user_id: user.id },
+      });
     }
 
     const origin = req.headers.get("origin") || "https://localhost:3000";
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       mode: "subscription",
@@ -59,9 +71,19 @@ serve(async (req) => {
         supabase_user_id: user.id,
         plan_id: planId,
       },
+      subscription_metadata: {
+        supabase_user_id: user.id,
+      },
       success_url: `${origin}/dashboard?checkout=success`,
       cancel_url: `${origin}/dashboard?checkout=cancelled`,
-    });
+    };
+
+    // If no existing customer, set metadata on the new customer that Stripe will create
+    if (!customerId) {
+      sessionParams.customer_creation = "always";
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
