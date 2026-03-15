@@ -71,8 +71,8 @@ serve(async (req) => {
         supabase_user_id: user.id,
         plan_id: planId,
       },
-      subscription_metadata: {
-        supabase_user_id: user.id,
+      subscription_data: {
+        metadata: { supabase_user_id: user.id },
       },
       success_url: `${origin}/dashboard?checkout=success`,
       cancel_url: `${origin}/dashboard?checkout=cancelled`,
