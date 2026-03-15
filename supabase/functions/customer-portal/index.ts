@@ -25,11 +25,11 @@ serve(async (req) => {
     if (!authHeader) throw new Error("No authorization header");
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !userData.user?.email) throw new Error("Unauthorized");
+    const { data: claimsData, error: userError } = await supabaseClient.auth.getClaims(token);
+    if (userError || !claimsData?.claims) throw new Error("Unauthorized");
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: userData.user.email, limit: 1 });
+    const customers = await stripe.customers.list({ email: claimsData.claims.email as string, limit: 1 });
     if (customers.data.length === 0) throw new Error("No Stripe customer found");
 
     const origin = req.headers.get("origin") || "https://localhost:3000";
