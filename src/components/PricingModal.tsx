@@ -429,38 +429,6 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
         </DialogContent>
       </Dialog>
 
-      {/* Confirm Downgrade Dialog */}
-      <AlertDialog open={!!confirmDowngrade} onOpenChange={(open) => !open && setConfirmDowngrade(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <ArrowDown className="w-5 h-5 text-muted-foreground" /> Downgrade Plan
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <p>
-                  Your plan will change to{" "}
-                  <strong className="capitalize">{confirmDowngrade?.plan}</strong>{" "}
-                  on <strong>{formatDate(confirmDowngrade?.periodEnd)}</strong>.
-                </p>
-                <p className="text-muted-foreground">
-                  You'll keep full access to your current plan until then. No charges or credits change today.
-                </p>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep Current Plan</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => confirmDowngrade && executeDowngrade(confirmDowngrade.plan)}
-              disabled={!!loadingPlan}
-            >
-              {loadingPlan ? "Processing..." : "Confirm Downgrade"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Confirm Cancel to Free Dialog */}
       <AlertDialog open={confirmFreeDowngrade} onOpenChange={setConfirmFreeDowngrade}>
         <AlertDialogContent>
