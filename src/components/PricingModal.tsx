@@ -241,25 +241,7 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
     }
   };
 
-  const executeDowngrade = async (planId: string) => {
-    setLoadingPlan(planId);
-    try {
-      const result = await supabase.functions.invoke("manage-subscription", {
-        body: { action: "change_plan", new_plan: planId },
-      });
-      if (result.data?.error) throw new Error(result.data.error);
-      toast({
-        title: "Downgrade scheduled",
-        description: `Your plan will change to ${planId.charAt(0).toUpperCase() + planId.slice(1)} on ${formatDate(result.data?.period_end || periodEnd)}.`,
-      });
-      setConfirmDowngrade(null);
-      await loadProfile();
-    } catch (err: any) {
-      toast({ title: "Downgrade failed", description: err.message, variant: "destructive" });
-    } finally {
-      setLoadingPlan(null);
-    }
-  };
+  // executeDowngrade removed — Stripe's hosted page handles downgrade scheduling natively
 
   const executeCancelToFree = async () => {
     setLoadingPlan("free");
