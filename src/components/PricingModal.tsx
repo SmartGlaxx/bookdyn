@@ -524,6 +524,47 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Pending Plan Conflict Resolution Dialog */}
+      <AlertDialog open={!!pendingConflict} onOpenChange={(open) => !open && setPendingConflict(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-warning" /> Pending Plan Change
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  You currently have a pending switch to{" "}
+                  <strong className="capitalize">{pendingPlan}</strong> on{" "}
+                  <strong>{formatDate(pendingPlanAt)}</strong>.
+                </p>
+                <p className="text-muted-foreground">
+                  To switch to <strong className="capitalize">{pendingConflict?.targetPlan}</strong> instead,
+                  we need to cancel your pending change first.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              Keep my pending {pendingPlan} switch
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConflictResolve}
+              disabled={cancellingDowngrade}
+            >
+              {cancellingDowngrade ? (
+                <span className="flex items-center gap-1.5">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing...
+                </span>
+              ) : (
+                `Cancel pending & switch to ${pendingConflict?.targetPlan || ""}`
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
