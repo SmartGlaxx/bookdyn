@@ -118,6 +118,8 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
   const [confirmFreeDowngrade, setConfirmFreeDowngrade] = useState(false);
   // Cancel pending downgrade
   const [cancellingDowngrade, setCancellingDowngrade] = useState(false);
+  // Pending plan conflict resolution
+  const [pendingConflict, setPendingConflict] = useState<{ targetPlan: string } | null>(null);
 
   const loadProfile = useCallback(async () => {
     if (!user) return;
@@ -133,7 +135,6 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
         setPeriodEnd(data.subscription.current_period_end || null);
         setHasSubscription(true);
       } else {
-        // No subscription — read profile
         const { data: profile } = await supabase
           .from("profiles")
           .select("plan, pending_plan, pending_plan_at")
@@ -155,11 +156,50 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
     if (open) loadProfile();
   }, [open, loadProfile]);
 
-  const handlePlanAction = async (planId: string) => {
-    if (!user) return;
+  const redirectToStripePortal = async (planId: string) => {
+    setLoadingPlan(planId);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-subscription", {
+        body: { action: "create_portal_update", new_plan: planId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No portal URL returned");
+      }
+    } catch (err: any) {
+      toast({ title: "Failed to open plan change", description: err.message, variant: "destructive" });
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
+
+  const proceedWithPlanChange = async (planId: string) => {
     const targetOrder = PLAN_ORDER[planId] ?? 0;
     const currentOrder = PLAN_ORDER[currentPlan] ?? 0;
 
+    if (planId === "free") {
+      setConfirmFreeDowngrade(true);
+      return;
+    }
+
+    // Upgrade → redirect to Stripe's hosted confirmation page
+    if (targetOrder > currentOrder) {
+      await redirectToStripePortal(planId);
+      return;
+    }
+
+    // Downgrade → show confirmation then schedule
+    if (targetOrder < currentOrder) {
+      setConfirmDowngrade({ plan: planId, periodEnd });
+      return;
+    }
+  };
+
+  const handlePlanAction = async (planId: string) => {
+    if (!user) return;
     if (planId === currentPlan) return;
 
     // Free user upgrading → checkout
@@ -183,37 +223,34 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
       return;
     }
 
-    // Downgrade to free = cancel subscription
-    if (planId === "free") {
-      setConfirmFreeDowngrade(true);
+    // If there's a pending plan change and the user picks a different plan, show conflict resolution
+    if (pendingPlan && planId !== pendingPlan) {
+      setPendingConflict({ targetPlan: planId });
       return;
     }
 
-    // Upgrade (higher plan)
-    if (targetOrder > currentOrder) {
-      setLoadingPlan(planId);
-      try {
-        const result = await supabase.functions.invoke("manage-subscription", {
-          body: { action: "change_plan", new_plan: planId },
-        });
-        if (result.data?.error) throw new Error(result.data.error);
-        toast({
-          title: "Upgraded!",
-          description: `You're now on the ${planId.charAt(0).toUpperCase() + planId.slice(1)} plan. Prorated charges applied.`,
-        });
-        await loadProfile();
-      } catch (err: any) {
-        toast({ title: "Upgrade failed", description: err.message, variant: "destructive" });
-      } finally {
-        setLoadingPlan(null);
-      }
-      return;
-    }
+    await proceedWithPlanChange(planId);
+  };
 
-    // Downgrade (lower plan) — show confirmation
-    if (targetOrder < currentOrder) {
-      setConfirmDowngrade({ plan: planId, periodEnd });
-      return;
+  const handleConflictResolve = async () => {
+    if (!pendingConflict) return;
+    const targetPlan = pendingConflict.targetPlan;
+    setCancellingDowngrade(true);
+    try {
+      // Cancel the pending downgrade first
+      const result = await supabase.functions.invoke("manage-subscription", {
+        body: { action: "cancel_downgrade" },
+      });
+      if (result.data?.error) throw new Error(result.data.error);
+      setPendingPlan(null);
+      setPendingPlanAt(null);
+      setPendingConflict(null);
+      // Now proceed with the new plan change
+      await proceedWithPlanChange(targetPlan);
+    } catch (err: any) {
+      toast({ title: "Failed to cancel pending change", description: err.message, variant: "destructive" });
+    } finally {
+      setCancellingDowngrade(false);
     }
   };
 

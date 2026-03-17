@@ -393,6 +393,38 @@ serve(async (req) => {
         break;
       }
 
+      case "create_portal_update": {
+        const { new_plan } = params;
+        const newPriceId = PLAN_PRICES[new_plan];
+        if (!newPriceId) throw new Error("Invalid plan");
+        if (!customer) throw new Error("No subscription found");
+
+        const subscriptions = await stripe.subscriptions.list({
+          customer: customer.id,
+          status: "active",
+          limit: 1,
+        });
+        if (subscriptions.data.length === 0) throw new Error("No active subscription");
+
+        const sub = subscriptions.data[0];
+        const origin = req.headers.get("origin") || "https://localhost:3000";
+
+        const portalSession = await stripe.billingPortal.sessions.create({
+          customer: customer.id,
+          return_url: `${origin}/manage-subscription?updated=true`,
+          flow_data: {
+            type: "subscription_update_confirm",
+            subscription_update_confirm: {
+              subscription: sub.id,
+              items: [{ id: sub.items.data[0].id, price: newPriceId, quantity: 1 }],
+            },
+          },
+        });
+
+        result = { url: portalSession.url };
+        break;
+      }
+
       case "confirm_payment_method": {
         const { payment_method_id } = params;
         if (!customer) throw new Error("No customer found");
