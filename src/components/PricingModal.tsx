@@ -112,8 +112,6 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
   const [hasSubscription, setHasSubscription] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
 
-  // Confirm downgrade dialog
-  const [confirmDowngrade, setConfirmDowngrade] = useState<{ plan: string; periodEnd: string | null } | null>(null);
   // Confirm downgrade to free
   const [confirmFreeDowngrade, setConfirmFreeDowngrade] = useState(false);
   // Cancel pending downgrade
@@ -177,25 +175,14 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
   };
 
   const proceedWithPlanChange = async (planId: string) => {
-    const targetOrder = PLAN_ORDER[planId] ?? 0;
-    const currentOrder = PLAN_ORDER[currentPlan] ?? 0;
-
     if (planId === "free") {
       setConfirmFreeDowngrade(true);
       return;
     }
 
-    // Upgrade → redirect to Stripe's hosted confirmation page
-    if (targetOrder > currentOrder) {
-      await redirectToStripePortal(planId);
-      return;
-    }
-
-    // Downgrade → show confirmation then schedule
-    if (targetOrder < currentOrder) {
-      setConfirmDowngrade({ plan: planId, periodEnd });
-      return;
-    }
+    // Both upgrades AND downgrades go to Stripe's hosted confirmation page
+    // Stripe natively handles proration for upgrades and end-of-period scheduling for downgrades
+    await redirectToStripePortal(planId);
   };
 
   const handlePlanAction = async (planId: string) => {
@@ -254,25 +241,7 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
     }
   };
 
-  const executeDowngrade = async (planId: string) => {
-    setLoadingPlan(planId);
-    try {
-      const result = await supabase.functions.invoke("manage-subscription", {
-        body: { action: "change_plan", new_plan: planId },
-      });
-      if (result.data?.error) throw new Error(result.data.error);
-      toast({
-        title: "Downgrade scheduled",
-        description: `Your plan will change to ${planId.charAt(0).toUpperCase() + planId.slice(1)} on ${formatDate(result.data?.period_end || periodEnd)}.`,
-      });
-      setConfirmDowngrade(null);
-      await loadProfile();
-    } catch (err: any) {
-      toast({ title: "Downgrade failed", description: err.message, variant: "destructive" });
-    } finally {
-      setLoadingPlan(null);
-    }
-  };
+  // executeDowngrade removed — Stripe's hosted page handles downgrade scheduling natively
 
   const executeCancelToFree = async () => {
     setLoadingPlan("free");
@@ -459,38 +428,6 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Confirm Downgrade Dialog */}
-      <AlertDialog open={!!confirmDowngrade} onOpenChange={(open) => !open && setConfirmDowngrade(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <ArrowDown className="w-5 h-5 text-muted-foreground" /> Downgrade Plan
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <p>
-                  Your plan will change to{" "}
-                  <strong className="capitalize">{confirmDowngrade?.plan}</strong>{" "}
-                  on <strong>{formatDate(confirmDowngrade?.periodEnd)}</strong>.
-                </p>
-                <p className="text-muted-foreground">
-                  You'll keep full access to your current plan until then. No charges or credits change today.
-                </p>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep Current Plan</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => confirmDowngrade && executeDowngrade(confirmDowngrade.plan)}
-              disabled={!!loadingPlan}
-            >
-              {loadingPlan ? "Processing..." : "Confirm Downgrade"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Confirm Cancel to Free Dialog */}
       <AlertDialog open={confirmFreeDowngrade} onOpenChange={setConfirmFreeDowngrade}>

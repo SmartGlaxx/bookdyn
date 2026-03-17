@@ -82,14 +82,16 @@ async function getStripeAndUser(req: Request) {
   const { data: claimsData, error: userError } = await supabaseClient.auth.getClaims(token);
   if (userError || !claimsData?.claims) throw new Error("Unauthorized");
 
+  const user = { id: claimsData.claims.sub as string, email: claimsData.claims.email as string };
+
   const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-  const customers = await stripe.customers.list({ email: claimsData.claims.email as string, limit: 10 });
+  const customers = await stripe.customers.list({ email: user.email, limit: 10 });
 
   const matchedCustomer = customers.data.find(
-    (c) => c.metadata?.supabase_user_id === userData.user.id
+    (c) => c.metadata?.supabase_user_id === user.id
   ) || null;
 
-  return { stripe, user: userData.user, supabaseClient, customer: matchedCustomer };
+  return { stripe, user, supabaseClient, customer: matchedCustomer };
 }
 
 serve(async (req) => {
