@@ -112,8 +112,6 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
   const [hasSubscription, setHasSubscription] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
 
-  // Confirm downgrade dialog
-  const [confirmDowngrade, setConfirmDowngrade] = useState<{ plan: string; periodEnd: string | null } | null>(null);
   // Confirm downgrade to free
   const [confirmFreeDowngrade, setConfirmFreeDowngrade] = useState(false);
   // Cancel pending downgrade
