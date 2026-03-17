@@ -175,25 +175,14 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
   };
 
   const proceedWithPlanChange = async (planId: string) => {
-    const targetOrder = PLAN_ORDER[planId] ?? 0;
-    const currentOrder = PLAN_ORDER[currentPlan] ?? 0;
-
     if (planId === "free") {
       setConfirmFreeDowngrade(true);
       return;
     }
 
-    // Upgrade → redirect to Stripe's hosted confirmation page
-    if (targetOrder > currentOrder) {
-      await redirectToStripePortal(planId);
-      return;
-    }
-
-    // Downgrade → show confirmation then schedule
-    if (targetOrder < currentOrder) {
-      setConfirmDowngrade({ plan: planId, periodEnd });
-      return;
-    }
+    // Both upgrades AND downgrades go to Stripe's hosted confirmation page
+    // Stripe natively handles proration for upgrades and end-of-period scheduling for downgrades
+    await redirectToStripePortal(planId);
   };
 
   const handlePlanAction = async (planId: string) => {
