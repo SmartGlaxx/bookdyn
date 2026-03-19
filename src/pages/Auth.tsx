@@ -279,7 +279,7 @@ const Auth = () => {
                           <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10 h-11" autoComplete="email" />
                         </div>
                       </div>
-                      <div ref={turnstileRef} className="flex justify-center overflow-hidden max-w-full [&>*]:max-w-full [&>*]:scale-[0.85] [&>*]:origin-center sm:[&>*]:scale-100" />
+                      <div ref={turnstileRef} className="flex justify-center overflow-hidden max-w-full [&_iframe]:!max-w-full [&>div]:!max-w-full" style={{ transform: 'scale(0.82)', transformOrigin: 'center' }} />
                       <Button type="submit" className="w-full h-11" variant="hero" disabled={isSubmitting}>
                         {isSubmitting ? "Sending..." : "Send Reset Link"}
                         <ArrowRight className="w-4 h-4" />
@@ -358,7 +358,7 @@ const Auth = () => {
                           </div>
                         )}
 
-                        <div ref={turnstileRef} className="flex justify-center overflow-hidden max-w-full [&>*]:max-w-full [&>*]:scale-[0.85] [&>*]:origin-center sm:[&>*]:scale-100" />
+                        <div ref={turnstileRef} className="flex justify-center overflow-hidden max-w-full [&_iframe]:!max-w-full [&>div]:!max-w-full" style={{ transform: 'scale(0.82)', transformOrigin: 'center' }} />
 
                         <Button type="submit" className="w-full h-11" variant="hero" disabled={isSubmitting}>
                           {isSubmitting ? (
