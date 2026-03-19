@@ -358,7 +358,7 @@ const Auth = () => {
                           </div>
                         )}
 
-                        <div ref={turnstileRef} className="flex justify-center" />
+                        <div ref={turnstileRef} className="flex justify-center overflow-hidden max-w-full [&>*]:max-w-full [&>*]:scale-[0.85] [&>*]:origin-center sm:[&>*]:scale-100" />
 
                         <Button type="submit" className="w-full h-11" variant="hero" disabled={isSubmitting}>
                           {isSubmitting ? (
