@@ -358,7 +358,7 @@ const Auth = () => {
                           </div>
                         )}
 
-                        <div ref={turnstileRef} className="flex justify-center overflow-hidden max-w-full [&_iframe]:!max-w-full [&>div]:!max-w-full" style={{ transform: 'scale(0.82)', transformOrigin: 'center' }} />
+                        <div className="flex justify-center w-full overflow-hidden"><div ref={turnstileRef} className="shrink-0" style={{ width: 'min(100%, 300px)', transform: 'scale(0.82)', transformOrigin: 'center top' }} /></div>
 
                         <Button type="submit" className="w-full h-11" variant="hero" disabled={isSubmitting}>
                           {isSubmitting ? (
