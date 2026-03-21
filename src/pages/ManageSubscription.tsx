@@ -164,9 +164,13 @@ const ManageSubscription = () => {
   const handleUpdatePayment = async () => {
     setActionLoading("payment");
     try {
-      const portalData = await supabase.functions.invoke("customer-portal");
-      if (portalData.data?.url) {
-        window.open(portalData.data.url, "_blank");
+      const { data, error } = await supabase.functions.invoke("manage-subscription", {
+        body: { action: "open_portal" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.url) {
+        window.open(data.url, "_blank");
       } else {
         toast({ title: "Unable to open payment settings", description: "Please try again later.", variant: "destructive" });
       }
