@@ -112,6 +112,24 @@ const ManageSubscription = () => {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  // After returning from Stripe portal/checkout, refresh data and check subscription
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("updated") === "true" || params.get("checkout") === "success") {
+      // Clean up URL
+      window.history.replaceState({}, "", "/manage-subscription");
+      // Trigger check-subscription to sync profile from Stripe
+      const syncPlan = async () => {
+        try {
+          await supabase.functions.invoke("check-subscription");
+        } catch {}
+        // Reload local data after sync
+        await loadData();
+      };
+      syncPlan();
+    }
+  }, []);
+
   const handleCancel = async () => {
     setActionLoading("cancel");
     try {
