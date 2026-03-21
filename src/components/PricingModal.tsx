@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Sparkles, Crown, Zap, Check, ArrowRight, ArrowUp, ArrowDown,
+  Sparkles, Crown, Zap, Check, ArrowUp, ArrowDown,
   AlertTriangle, X, RotateCcw, Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -168,7 +168,13 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
         throw new Error("No portal URL returned");
       }
     } catch (err: any) {
-      toast({ title: "Failed to open plan change", description: err.message, variant: "destructive" });
+      toast({
+        title: "Failed to open plan change",
+        description: err.message,
+        variant: "destructive",
+      });
+      // Re-load profile to ensure state is consistent after error
+      await loadProfile();
     } finally {
       setLoadingPlan(null);
     }
@@ -191,6 +197,7 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
 
     // Free user upgrading → checkout
     if (currentPlan === "free" || !hasSubscription) {
+      if (planId === "free") return; // Already free
       setLoadingPlan(planId);
       try {
         const { data, error } = await supabase.functions.invoke("create-checkout", {
