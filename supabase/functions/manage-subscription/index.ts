@@ -19,19 +19,6 @@ const PRICE_TO_PLAN: Record<string, { plan: string; credits: number }> = {
   "price_1T8T4vBjVtw2b7Oi2KQ4OlAI": { plan: "unlimited", credits: 999999 },
 };
 
-const PLAN_PRICE_AMOUNT: Record<string, number> = {
-  starter: 900,
-  pro: 2900,
-  unlimited: 7900,
-};
-
-const PLAN_ORDER: Record<string, number> = {
-  free: 0,
-  starter: 1,
-  pro: 2,
-  unlimited: 3,
-};
-
 function safeTimestamp(ts: number | null | undefined): string | null {
   if (!ts || typeof ts !== "number" || ts <= 0) return null;
   try {
@@ -159,159 +146,20 @@ serve(async (req) => {
         break;
       }
 
-      case "preview_plan_change": {
-        const { new_plan } = params;
-        const newPriceId = PLAN_PRICES[new_plan];
-        if (!newPriceId) throw new Error("Invalid plan");
-        if (!customer) throw new Error("No subscription found");
-
-        const subscriptions = await stripe.subscriptions.list({
-          customer: customer.id,
-          status: "active",
-          limit: 1,
-        });
-        if (subscriptions.data.length === 0) throw new Error("No active subscription");
-
-        const sub = subscriptions.data[0];
-        const currentPriceId = sub.items.data[0]?.price?.id;
-        const currentPlan = currentPriceId ? PRICE_TO_PLAN[currentPriceId] : null;
-        const currentAmount = currentPlan ? PLAN_PRICE_AMOUNT[currentPlan.plan] || 0 : 0;
-        const newAmount = PLAN_PRICE_AMOUNT[new_plan] || 0;
-        const isUpgrade = newAmount > currentAmount;
-
-        const anchor = (sub as any).billing_cycle_anchor;
-        const periodEnd = anchor ? getNextBillingDate(anchor) : null;
-
-        result = {
-          is_upgrade: isUpgrade,
-          new_plan,
-          new_price: newAmount,
-          current_plan: currentPlan?.plan,
-          current_price: currentAmount,
-          period_end: periodEnd,
-        };
-        break;
-      }
-
-      case "change_plan": {
-        const { new_plan } = params;
-        const newPriceId = PLAN_PRICES[new_plan];
-        if (!newPriceId) throw new Error("Invalid plan");
-        if (!customer) throw new Error("No subscription found");
-
-        const subscriptions = await stripe.subscriptions.list({
-          customer: customer.id,
-          status: "active",
-          limit: 1,
-        });
-        if (subscriptions.data.length === 0) throw new Error("No active subscription");
-
-        const sub = subscriptions.data[0];
-        const currentPriceId = sub.items.data[0]?.price?.id;
-        const currentPlan = currentPriceId && PRICE_TO_PLAN[currentPriceId]
-          ? PRICE_TO_PLAN[currentPriceId] : null;
-        const currentOrder = PLAN_ORDER[currentPlan?.plan || "free"] ?? 0;
-        const newOrder = PLAN_ORDER[new_plan] ?? 0;
-        const isUpgrade = newOrder > currentOrder;
-
-        const anchor = (sub as any).billing_cycle_anchor;
-        const periodEnd = anchor ? getNextBillingDate(anchor) : null;
-
-        if (isUpgrade) {
-          // UPGRADE: immediate with proration
-          const updatedSub = await stripe.subscriptions.update(sub.id, {
-            items: [{ id: sub.items.data[0].id, price: newPriceId }],
-            proration_behavior: "create_prorations",
-          });
-
-          const planInfo = PRICE_TO_PLAN[newPriceId];
-          if (planInfo) {
-            await supabaseClient
-              .from("profiles")
-              .update({
-                plan: planInfo.plan,
-                credits_limit: planInfo.credits,
-                credits_used: 0,
-                pending_plan: null,
-                pending_plan_at: null,
-                stripe_subscription_id: sub.id,
-                current_period_end: periodEnd,
-              })
-              .eq("id", user.id);
-          }
-
-          result = {
-            success: true,
-            plan: planInfo?.plan,
-            is_upgrade: true,
-            immediate: true,
-            period_end: periodEnd,
-          };
-        } else {
-          // DOWNGRADE: schedule for end of cycle (no proration)
-          await stripe.subscriptions.update(sub.id, {
-            items: [{ id: sub.items.data[0].id, price: newPriceId }],
-            proration_behavior: "none",
-            billing_cycle_anchor: "unchanged",
-          });
-
-          // Set pending_plan in profiles — actual plan change happens via webhook at renewal
-          await supabaseClient
-            .from("profiles")
-            .update({
-              pending_plan: new_plan,
-              pending_plan_at: periodEnd,
-            })
-            .eq("id", user.id);
-
-          result = {
-            success: true,
-            plan: new_plan,
-            is_upgrade: false,
-            immediate: false,
-            period_end: periodEnd,
-          };
-        }
-        break;
-      }
-
       case "cancel_downgrade": {
-        // Cancel a pending downgrade — revert Stripe subscription to current plan's price
-        if (!customer) throw new Error("No subscription found");
-
+        // Clear pending downgrade from our DB
+        // The portal/webhook handles actual Stripe subscription state
         const { data: profile } = await supabaseClient
           .from("profiles")
-          .select("plan, pending_plan")
+          .select("pending_plan")
           .eq("id", user.id)
           .single();
 
         if (!profile?.pending_plan) throw new Error("No pending downgrade to cancel");
 
-        const currentPriceId = PLAN_PRICES[profile.plan];
-        if (!currentPriceId) throw new Error("Cannot determine current plan price");
-
-        const subscriptions = await stripe.subscriptions.list({
-          customer: customer.id,
-          status: "active",
-          limit: 1,
-        });
-        if (subscriptions.data.length === 0) throw new Error("No active subscription");
-
-        const sub = subscriptions.data[0];
-
-        // Revert Stripe subscription back to current plan
-        await stripe.subscriptions.update(sub.id, {
-          items: [{ id: sub.items.data[0].id, price: currentPriceId }],
-          proration_behavior: "none",
-        });
-
-        // Clear pending_plan
         await supabaseClient
           .from("profiles")
-          .update({
-            pending_plan: null,
-            pending_plan_at: null,
-          })
+          .update({ pending_plan: null, pending_plan_at: null })
           .eq("id", user.id);
 
         result = { success: true };
@@ -399,31 +247,75 @@ serve(async (req) => {
         const { new_plan } = params;
         const newPriceId = PLAN_PRICES[new_plan];
         if (!newPriceId) throw new Error("Invalid plan");
-        if (!customer) throw new Error("No subscription found");
+        if (!customer) throw new Error("No customer found");
 
+        const origin = req.headers.get("origin") || "https://localhost:3000";
+        const returnUrl = `${origin}/manage-subscription?updated=true`;
+
+        // Check if the user has an active subscription
         const subscriptions = await stripe.subscriptions.list({
           customer: customer.id,
           status: "active",
           limit: 1,
         });
-        if (subscriptions.data.length === 0) throw new Error("No active subscription");
 
-        const sub = subscriptions.data[0];
-        const origin = req.headers.get("origin") || "https://localhost:3000";
+        if (subscriptions.data.length > 0) {
+          const sub = subscriptions.data[0];
 
-        const portalSession = await stripe.billingPortal.sessions.create({
+          // Try 1: Stripe's hosted subscription_update_confirm flow
+          // This shows the nice "Confirm your updates" page with proration details
+          try {
+            const portalSession = await stripe.billingPortal.sessions.create({
+              customer: customer.id,
+              return_url: returnUrl,
+              flow_data: {
+                type: "subscription_update_confirm",
+                subscription_update_confirm: {
+                  subscription: sub.id,
+                  items: [{ id: sub.items.data[0].id, price: newPriceId, quantity: 1 }],
+                },
+              },
+            });
+            result = { url: portalSession.url };
+            break;
+          } catch (portalError: any) {
+            console.log(`[manage-subscription] Portal subscription_update_confirm failed: ${portalError.message}`);
+            // Fall through to fallback
+          }
+
+          // Try 2: General Billing Portal (lets user manage their sub in Stripe's UI)
+          try {
+            const portalSession = await stripe.billingPortal.sessions.create({
+              customer: customer.id,
+              return_url: returnUrl,
+            });
+            result = { url: portalSession.url, fallback: "portal" };
+            break;
+          } catch (generalPortalError: any) {
+            console.log(`[manage-subscription] General portal failed: ${generalPortalError.message}`);
+            // Fall through to checkout fallback
+          }
+        }
+
+        // Try 3: Create a new checkout session for the target plan
+        // This handles cases where the existing sub has incompatible currency
+        // or where the portal is not configured for plan switching
+        console.log(`[manage-subscription] Using checkout fallback for plan change to ${new_plan}`);
+        const session = await stripe.checkout.sessions.create({
           customer: customer.id,
-          return_url: `${origin}/manage-subscription?updated=true`,
-          flow_data: {
-            type: "subscription_update_confirm",
-            subscription_update_confirm: {
-              subscription: sub.id,
-              items: [{ id: sub.items.data[0].id, price: newPriceId, quantity: 1 }],
-            },
+          mode: "subscription",
+          line_items: [{ price: newPriceId, quantity: 1 }],
+          metadata: {
+            supabase_user_id: user.id,
+            plan_id: new_plan,
           },
+          subscription_data: {
+            metadata: { supabase_user_id: user.id },
+          },
+          success_url: `${origin}/manage-subscription?updated=true`,
+          cancel_url: `${origin}/manage-subscription`,
         });
-
-        result = { url: portalSession.url };
+        result = { url: session.url, fallback: "checkout" };
         break;
       }
 
@@ -448,6 +340,20 @@ serve(async (req) => {
         }
 
         result = { success: true };
+        break;
+      }
+
+      // Open general Billing Portal for payment method updates, invoices, etc.
+      case "open_portal": {
+        if (!customer) throw new Error("No customer found");
+        const origin = req.headers.get("origin") || "https://localhost:3000";
+
+        const portalSession = await stripe.billingPortal.sessions.create({
+          customer: customer.id,
+          return_url: `${origin}/manage-subscription`,
+        });
+
+        result = { url: portalSession.url };
         break;
       }
 
