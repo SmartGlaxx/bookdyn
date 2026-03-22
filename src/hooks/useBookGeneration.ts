@@ -187,7 +187,32 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
 
     // Get the user's session token for auth
     const { data: { session } } = await supabase.auth.getSession();
-    const accessToken = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const accessToken = session?.access_token;
+    
+    if (!accessToken) {
+      console.error("[BookGen] No active session found — cannot authenticate content generation");
+      throw new Error("Session expired. Please refresh the page and try again.");
+    }
+
+    // Send only the current chapter data to keep payload small
+    const currentChapter = bookData.outline?.chapters?.[chapterIndex];
+    const strippedBook = {
+      id: bookData.id,
+      title: bookData.title,
+      subtitle: bookData.subtitle,
+      bookType: bookData.bookType,
+      theme: bookData.theme,
+      genre: bookData.genre,
+      audience: bookData.audience,
+      pov: bookData.pov,
+      toneProfile: bookData.toneProfile,
+      controls: bookData.controls,
+      outline: {
+        chapters: currentChapter ? [currentChapter] : [],
+      },
+    };
+
+    console.log(`[BookGen] Requesting content for Ch${chapterIndex + 1} Sub${subsectionIndex + 1}`);
 
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-content`, {
       method: "POST",
@@ -197,8 +222,8 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
         "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
       },
       body: JSON.stringify({
-        book: bookData,
-        chapterIndex,
+        book: strippedBook,
+        chapterIndex: 0, // Always 0 since we only send the current chapter
         subsectionIndex,
         previousSummary,
         previousRawContent,
@@ -212,6 +237,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       const msg = errorData.error || `Error: ${response.status}`;
+      console.error(`[BookGen] Content generation failed (${response.status}):`, msg);
       if (response.status === 402) {
         throw new Error(msg.includes("Daily") ? msg : `Credit limit reached: ${msg}. Please upgrade your plan.`);
       }
@@ -260,6 +286,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
       if (abortRef.current) break;
     }
 
+    console.log(`[BookGen] Content received for Ch${chapterIndex + 1} Sub${subsectionIndex + 1}: ${fullContent.split(/\s+/).length} words`);
     return fullContent;
   }, []);
 
