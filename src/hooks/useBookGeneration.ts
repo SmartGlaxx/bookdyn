@@ -349,6 +349,8 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
     abortRef.current = false;
     pauseRef.current = false;
 
+    console.log("[BookGen] Starting generation for:", book.title, "| Status:", book.status, "| ChapterIdx:", book.currentChapterIndex);
+
     let currentBook = book;
     let outline = book.outline;
     let characters: CharacterReference[] = book.outline?.characters || [];
@@ -356,18 +358,24 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
 
     // Phase 1: Generate outline if needed
     if (!outline || outline.chapters.length === 0) {
+      console.log("[BookGen] Phase 1: Generating outline...");
       setState(s => ({ ...s, phase: "planning" }));
       onUpdateBook(book.id, { status: "planning" });
       
       outline = await generateOutline();
-      if (!outline) return;
+      if (!outline) {
+        console.error("[BookGen] Outline generation failed — aborting");
+        return;
+      }
       
+      console.log("[BookGen] Outline generated:", outline.chapters.length, "chapters");
       currentBook = { ...currentBook, outline };
     }
 
     // Phase 1.5: Generate character profiles for all book types
     const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
     if (!outline.characters || outline.characters.length === 0) {
+      console.log("[BookGen] Phase 1.5: Generating characters...");
       characters = await generateCharacters(outline);
       visualStyleGuide = outline.visualStyleGuide || "";
       
@@ -377,12 +385,14 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
         visualStyleGuide,
       };
       currentBook = { ...currentBook, outline };
+      console.log("[BookGen] Characters generated:", characters.length);
     } else if (outline.characters) {
       characters = outline.characters;
       visualStyleGuide = outline.visualStyleGuide || "";
     }
 
     // Phase 2: Write content
+    console.log("[BookGen] Phase 2: Starting writing loop from chapter", book.currentChapterIndex, "of", outline.chapters.length);
     onUpdateBook(book.id, { status: "writing" });
 
     let previousSummary = "";

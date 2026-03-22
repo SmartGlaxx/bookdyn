@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.90.1";
 
 // ── Security Config ──
-const MAX_PAYLOAD_BYTES = 50_000; // 50KB
+const MAX_PAYLOAD_BYTES = 200_000; // 200KB
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
