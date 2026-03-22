@@ -262,35 +262,46 @@ serve(async (req) => {
         if (subscriptions.data.length > 0) {
           const sub = subscriptions.data[0];
 
-          // Try 1: Stripe's hosted subscription_update_confirm flow
-          // This shows the nice "Confirm your updates" page with proration details
-          try {
-            const portalSession = await stripe.billingPortal.sessions.create({
-              customer: customer.id,
-              return_url: returnUrl,
-              flow_data: {
-                type: "subscription_update_confirm",
-                subscription_update_confirm: {
-                  subscription: sub.id,
-                  items: [{ id: sub.items.data[0].id, price: newPriceId, quantity: 1 }],
-                },
-              },
-            });
-            result = { url: portalSession.url };
-            break;
-          } catch (portalError: any) {
-            console.log(`[manage-subscription] Portal subscription_update_confirm failed: ${portalError.message}`);
-            // Fall through to fallback
+          // User has an active subscription — swap the price directly via API
+          // This handles proration automatically and avoids creating duplicate subscriptions
+          const currentPriceId = sub.items.data[0]?.price?.id;
+          if (currentPriceId === newPriceId) {
+            throw new Error("You're already on this plan");
           }
 
-          // Skip general portal fallback — it shows a generic "Current subscriptions" 
-          // page that doesn't help with plan changes. Go straight to checkout.
+          const isUpgrade = (() => {
+            const order = Object.values(PLAN_PRICES);
+            return order.indexOf(newPriceId) > order.indexOf(currentPriceId || "");
+          })();
+
+          console.log(`[manage-subscription] Updating subscription ${sub.id} from ${currentPriceId} to ${newPriceId} (${isUpgrade ? "upgrade" : "downgrade"})`);
+
+          await stripe.subscriptions.update(sub.id, {
+            items: [{ id: sub.items.data[0].id, price: newPriceId }],
+            proration_behavior: isUpgrade ? "create_prorations" : "none",
+            // For downgrades, we could use billing_cycle_anchor but keeping it simple
+          });
+
+          // Update profile immediately
+          const newPlanInfo = PRICE_TO_PLAN[newPriceId];
+          if (newPlanInfo) {
+            await supabaseClient
+              .from("profiles")
+              .update({
+                plan: newPlanInfo.plan,
+                credits_limit: newPlanInfo.credits,
+                pending_plan: null,
+                pending_plan_at: null,
+              })
+              .eq("id", user.id);
+          }
+
+          result = { success: true, updated: true, plan: new_plan };
+          break;
         }
 
-        // Try 3: Create a new checkout session for the target plan
-        // This handles cases where the existing sub has incompatible currency
-        // or where the portal is not configured for plan switching
-        console.log(`[manage-subscription] Using checkout fallback for plan change to ${new_plan}`);
+        // No active subscription — user needs checkout to resubscribe
+        console.log(`[manage-subscription] No active sub, using checkout for ${new_plan}`);
         const session = await stripe.checkout.sessions.create({
           customer: customer.id,
           mode: "subscription",
@@ -305,7 +316,7 @@ serve(async (req) => {
           success_url: `${origin}/manage-subscription?updated=true`,
           cancel_url: `${origin}/manage-subscription`,
         });
-        result = { url: session.url, fallback: "checkout" };
+        result = { url: session.url };
         break;
       }
 
