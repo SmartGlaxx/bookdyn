@@ -120,6 +120,7 @@ serve(async (req) => {
     // WAF check
     const wafResult = wafCheck(req);
     if (wafResult) {
+      console.error("[generate-content] WAF blocked request");
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -128,7 +129,9 @@ serve(async (req) => {
 
     // Payload size check
     const contentLength = parseInt(req.headers.get("content-length") || "0");
+    console.log(`[generate-content] Request received, content-length: ${contentLength}`);
     if (contentLength > MAX_PAYLOAD_BYTES) {
+      console.error(`[generate-content] Payload too large: ${contentLength} > ${MAX_PAYLOAD_BYTES}`);
       return new Response(JSON.stringify({ error: "Payload too large" }), {
         status: 413,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -138,6 +141,7 @@ serve(async (req) => {
     // Auth check
     const auth = await getAuthUser(req);
     if (!auth) {
+      console.error("[generate-content] Auth failed — no valid user from token");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
