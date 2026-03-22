@@ -283,18 +283,8 @@ serve(async (req) => {
             // Fall through to fallback
           }
 
-          // Try 2: General Billing Portal (lets user manage their sub in Stripe's UI)
-          try {
-            const portalSession = await stripe.billingPortal.sessions.create({
-              customer: customer.id,
-              return_url: returnUrl,
-            });
-            result = { url: portalSession.url, fallback: "portal" };
-            break;
-          } catch (generalPortalError: any) {
-            console.log(`[manage-subscription] General portal failed: ${generalPortalError.message}`);
-            // Fall through to checkout fallback
-          }
+          // Skip general portal fallback — it shows a generic "Current subscriptions" 
+          // page that doesn't help with plan changes. Go straight to checkout.
         }
 
         // Try 3: Create a new checkout session for the target plan
