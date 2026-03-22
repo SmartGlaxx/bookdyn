@@ -162,6 +162,19 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+
+      // If the backend updated the subscription directly (no redirect needed)
+      if (data?.updated) {
+        toast({
+          title: "Plan updated!",
+          description: `You're now on the ${data.plan?.charAt(0).toUpperCase() + data.plan?.slice(1)} plan.`,
+        });
+        await loadProfile();
+        onOpenChange(false);
+        return;
+      }
+
+      // Otherwise, redirect to Stripe (checkout for resubscription)
       if (data?.url) {
         window.location.href = data.url;
       } else {
@@ -169,11 +182,10 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
       }
     } catch (err: any) {
       toast({
-        title: "Failed to open plan change",
+        title: "Failed to change plan",
         description: err.message,
         variant: "destructive",
       });
-      // Re-load profile to ensure state is consistent after error
       await loadProfile();
     } finally {
       setLoadingPlan(null);
