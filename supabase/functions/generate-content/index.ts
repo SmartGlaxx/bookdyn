@@ -58,7 +58,10 @@ function validateInput(body: any): string | null {
 // ── Auth helper ──
 async function getAuthUser(req: Request) {
   const authHeader = req.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) return null;
+  if (!authHeader?.startsWith("Bearer ")) {
+    console.error("[generate-content] No bearer token in authorization header");
+    return null;
+  }
   
   const token = authHeader.replace("Bearer ", "");
   const supabase = createClient(
@@ -67,10 +70,33 @@ async function getAuthUser(req: Request) {
     { global: { headers: { Authorization: authHeader } } }
   );
   
-  const { data, error } = await supabase.auth.getClaims(token);
-  if (error || !data?.claims) return null;
-  const user = { id: data.claims.sub as string, email: data.claims.email as string };
-  return { user, supabase };
+  try {
+    const { data, error } = await supabase.auth.getClaims(token);
+    if (error || !data?.claims) {
+      console.error("[generate-content] getClaims failed:", error?.message || "no claims");
+      // Fallback to getUser if getClaims fails
+      const { data: userData, error: userError } = await supabase.auth.getUser(token);
+      if (userError || !userData?.user) {
+        console.error("[generate-content] getUser fallback also failed:", userError?.message);
+        return null;
+      }
+      const user = { id: userData.user.id, email: userData.user.email || "" };
+      return { user, supabase };
+    }
+    const user = { id: data.claims.sub as string, email: data.claims.email as string };
+    return { user, supabase };
+  } catch (err) {
+    console.error("[generate-content] Auth error:", err);
+    // Fallback to getUser
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser(token);
+      if (userError || !userData?.user) return null;
+      const user = { id: userData.user.id, email: userData.user.email || "" };
+      return { user, supabase };
+    } catch {
+      return null;
+    }
+  }
 }
 
 // ── Rate limit helper ──
