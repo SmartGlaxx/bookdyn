@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.90.1";
 
 // ── Security Config ──
-const MAX_PAYLOAD_BYTES = 50_000; // 50KB
+const MAX_PAYLOAD_BYTES = 200_000; // 200KB
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -58,7 +58,10 @@ function validateInput(body: any): string | null {
 // ── Auth helper ──
 async function getAuthUser(req: Request) {
   const authHeader = req.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) return null;
+  if (!authHeader?.startsWith("Bearer ")) {
+    console.error("[generate-content] No bearer token in authorization header");
+    return null;
+  }
   
   const token = authHeader.replace("Bearer ", "");
   const supabase = createClient(
@@ -67,10 +70,33 @@ async function getAuthUser(req: Request) {
     { global: { headers: { Authorization: authHeader } } }
   );
   
-  const { data, error } = await supabase.auth.getClaims(token);
-  if (error || !data?.claims) return null;
-  const user = { id: data.claims.sub as string, email: data.claims.email as string };
-  return { user, supabase };
+  try {
+    const { data, error } = await supabase.auth.getClaims(token);
+    if (error || !data?.claims) {
+      console.error("[generate-content] getClaims failed:", error?.message || "no claims");
+      // Fallback to getUser if getClaims fails
+      const { data: userData, error: userError } = await supabase.auth.getUser(token);
+      if (userError || !userData?.user) {
+        console.error("[generate-content] getUser fallback also failed:", userError?.message);
+        return null;
+      }
+      const user = { id: userData.user.id, email: userData.user.email || "" };
+      return { user, supabase };
+    }
+    const user = { id: data.claims.sub as string, email: data.claims.email as string };
+    return { user, supabase };
+  } catch (err) {
+    console.error("[generate-content] Auth error:", err);
+    // Fallback to getUser
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser(token);
+      if (userError || !userData?.user) return null;
+      const user = { id: userData.user.id, email: userData.user.email || "" };
+      return { user, supabase };
+    } catch {
+      return null;
+    }
+  }
 }
 
 // ── Rate limit helper ──
@@ -120,6 +146,7 @@ serve(async (req) => {
     // WAF check
     const wafResult = wafCheck(req);
     if (wafResult) {
+      console.error("[generate-content] WAF blocked request");
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -128,7 +155,9 @@ serve(async (req) => {
 
     // Payload size check
     const contentLength = parseInt(req.headers.get("content-length") || "0");
+    console.log(`[generate-content] Request received, content-length: ${contentLength}`);
     if (contentLength > MAX_PAYLOAD_BYTES) {
+      console.error(`[generate-content] Payload too large: ${contentLength} > ${MAX_PAYLOAD_BYTES}`);
       return new Response(JSON.stringify({ error: "Payload too large" }), {
         status: 413,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -138,6 +167,7 @@ serve(async (req) => {
     // Auth check
     const auth = await getAuthUser(req);
     if (!auth) {
+      console.error("[generate-content] Auth failed — no valid user from token");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

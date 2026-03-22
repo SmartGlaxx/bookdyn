@@ -187,7 +187,32 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
 
     // Get the user's session token for auth
     const { data: { session } } = await supabase.auth.getSession();
-    const accessToken = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const accessToken = session?.access_token;
+    
+    if (!accessToken) {
+      console.error("[BookGen] No active session found — cannot authenticate content generation");
+      throw new Error("Session expired. Please refresh the page and try again.");
+    }
+
+    // Send only the current chapter data to keep payload small
+    const currentChapter = bookData.outline?.chapters?.[chapterIndex];
+    const strippedBook = {
+      id: bookData.id,
+      title: bookData.title,
+      subtitle: bookData.subtitle,
+      bookType: bookData.bookType,
+      theme: bookData.theme,
+      genre: bookData.genre,
+      audience: bookData.audience,
+      pov: bookData.pov,
+      toneProfile: bookData.toneProfile,
+      controls: bookData.controls,
+      outline: {
+        chapters: currentChapter ? [currentChapter] : [],
+      },
+    };
+
+    console.log(`[BookGen] Requesting content for Ch${chapterIndex + 1} Sub${subsectionIndex + 1}`);
 
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-content`, {
       method: "POST",
@@ -197,8 +222,8 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
         "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
       },
       body: JSON.stringify({
-        book: bookData,
-        chapterIndex,
+        book: strippedBook,
+        chapterIndex: 0, // Always 0 since we only send the current chapter
         subsectionIndex,
         previousSummary,
         previousRawContent,
@@ -212,6 +237,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       const msg = errorData.error || `Error: ${response.status}`;
+      console.error(`[BookGen] Content generation failed (${response.status}):`, msg);
       if (response.status === 402) {
         throw new Error(msg.includes("Daily") ? msg : `Credit limit reached: ${msg}. Please upgrade your plan.`);
       }
@@ -260,6 +286,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
       if (abortRef.current) break;
     }
 
+    console.log(`[BookGen] Content received for Ch${chapterIndex + 1} Sub${subsectionIndex + 1}: ${fullContent.split(/\s+/).length} words`);
     return fullContent;
   }, []);
 
@@ -322,6 +349,8 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
     abortRef.current = false;
     pauseRef.current = false;
 
+    console.log("[BookGen] Starting generation for:", book.title, "| Status:", book.status, "| ChapterIdx:", book.currentChapterIndex);
+
     let currentBook = book;
     let outline = book.outline;
     let characters: CharacterReference[] = book.outline?.characters || [];
@@ -329,18 +358,24 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
 
     // Phase 1: Generate outline if needed
     if (!outline || outline.chapters.length === 0) {
+      console.log("[BookGen] Phase 1: Generating outline...");
       setState(s => ({ ...s, phase: "planning" }));
       onUpdateBook(book.id, { status: "planning" });
       
       outline = await generateOutline();
-      if (!outline) return;
+      if (!outline) {
+        console.error("[BookGen] Outline generation failed — aborting");
+        return;
+      }
       
+      console.log("[BookGen] Outline generated:", outline.chapters.length, "chapters");
       currentBook = { ...currentBook, outline };
     }
 
     // Phase 1.5: Generate character profiles for all book types
     const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
     if (!outline.characters || outline.characters.length === 0) {
+      console.log("[BookGen] Phase 1.5: Generating characters...");
       characters = await generateCharacters(outline);
       visualStyleGuide = outline.visualStyleGuide || "";
       
@@ -350,12 +385,14 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
         visualStyleGuide,
       };
       currentBook = { ...currentBook, outline };
+      console.log("[BookGen] Characters generated:", characters.length);
     } else if (outline.characters) {
       characters = outline.characters;
       visualStyleGuide = outline.visualStyleGuide || "";
     }
 
     // Phase 2: Write content
+    console.log("[BookGen] Phase 2: Starting writing loop from chapter", book.currentChapterIndex, "of", outline.chapters.length);
     onUpdateBook(book.id, { status: "writing" });
 
     let previousSummary = "";
