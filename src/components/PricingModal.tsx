@@ -210,9 +210,46 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
       return;
     }
 
-    // Both upgrades AND downgrades go to Stripe's hosted confirmation page
-    // Stripe natively handles proration for upgrades and end-of-period scheduling for downgrades
-    await redirectToStripePortal(planId);
+    // Fetch proration preview before confirming
+    setPreviewLoading(true);
+    setLoadingPlan(planId);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-subscription", {
+        body: { action: "preview_upgrade", new_plan: planId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const planMeta = PLANS.find(p => p.id === planId);
+      setUpgradePreview({
+        planId,
+        planName: planMeta?.name || planId,
+        amountDue: data.amount_due || 0,
+        currency: data.currency || "usd",
+        isUpgrade: data.is_upgrade !== false,
+        nextBillingDate: data.next_billing_date,
+        nextAmount: data.next_amount,
+        effectiveDate: data.effective_date,
+      });
+    } catch (err: any) {
+      toast({ title: "Failed to preview plan change", description: err.message, variant: "destructive" });
+    } finally {
+      setPreviewLoading(false);
+      setLoadingPlan(null);
+    }
+  };
+
+  const confirmUpgrade = async () => {
+    if (!upgradePreview) return;
+    setUpgradePreview(null);
+    await redirectToStripePortal(upgradePreview.planId);
+  };
+
+  const formatCents = (cents: number, currency: string) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency.toUpperCase(),
+    }).format(cents / 100);
   };
 
   const handlePlanAction = async (planId: string) => {
