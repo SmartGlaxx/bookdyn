@@ -118,6 +118,18 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
   const [cancellingDowngrade, setCancellingDowngrade] = useState(false);
   // Pending plan conflict resolution
   const [pendingConflict, setPendingConflict] = useState<{ targetPlan: string } | null>(null);
+  // Proration preview confirmation
+  const [upgradePreview, setUpgradePreview] = useState<{
+    planId: string;
+    planName: string;
+    amountDue: number;
+    currency: string;
+    isUpgrade: boolean;
+    nextBillingDate?: string;
+    nextAmount?: number;
+    effectiveDate?: string;
+  } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const loadProfile = useCallback(async () => {
     if (!user) return;
