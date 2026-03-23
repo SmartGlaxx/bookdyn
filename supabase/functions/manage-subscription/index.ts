@@ -243,6 +243,78 @@ serve(async (req) => {
         break;
       }
 
+      case "preview_upgrade": {
+        const { new_plan: previewPlan } = params;
+        const previewPriceId = PLAN_PRICES[previewPlan];
+        if (!previewPriceId) throw new Error("Invalid plan");
+        if (!customer) throw new Error("No customer found");
+
+        const subs = await stripe.subscriptions.list({
+          customer: customer.id,
+          status: "active",
+          limit: 1,
+        });
+
+        if (subs.data.length === 0) {
+          // No active sub — just return the full price (new checkout)
+          const planData = PRICE_TO_PLAN[previewPriceId];
+          const planInfo = PLANS_META[previewPlan];
+          result = {
+            is_new_subscription: true,
+            amount_due: planInfo?.amount || 0,
+            currency: "usd",
+            plan_name: previewPlan,
+          };
+          break;
+        }
+
+        const sub = subs.data[0];
+        const currentPriceId = sub.items.data[0]?.price?.id;
+
+        if (currentPriceId === previewPriceId) {
+          throw new Error("You're already on this plan");
+        }
+
+        const isUpgrade = (() => {
+          const order = Object.values(PLAN_PRICES);
+          return order.indexOf(previewPriceId) > order.indexOf(currentPriceId || "");
+        })();
+
+        if (isUpgrade) {
+          // Use Stripe's invoice preview to get exact proration amount
+          const preview = await stripe.invoices.createPreview({
+            customer: customer.id,
+            subscription: sub.id,
+            subscription_items: [{ id: sub.items.data[0].id, price: previewPriceId }],
+            subscription_proration_behavior: "create_prorations",
+          });
+
+          const periodEndTs = (sub as any).current_period_end;
+          const nextBilling = periodEndTs ? safeTimestamp(periodEndTs) : null;
+
+          result = {
+            is_upgrade: true,
+            amount_due: preview.amount_due, // in cents
+            currency: preview.currency,
+            plan_name: previewPlan,
+            next_billing_date: nextBilling,
+            next_amount: PLANS_META[previewPlan]?.amount || 0, // monthly amount in cents
+          };
+        } else {
+          // Downgrade — no immediate charge
+          const periodEndTs = (sub as any).current_period_end;
+          result = {
+            is_upgrade: false,
+            amount_due: 0,
+            currency: "usd",
+            plan_name: previewPlan,
+            effective_date: periodEndTs ? safeTimestamp(periodEndTs) : null,
+            next_amount: PLANS_META[previewPlan]?.amount || 0,
+          };
+        }
+        break;
+      }
+
       case "create_portal_update": {
         const { new_plan } = params;
         const newPriceId = PLAN_PRICES[new_plan];
