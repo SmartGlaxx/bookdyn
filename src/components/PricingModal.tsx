@@ -570,6 +570,63 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Upgrade/Downgrade Confirmation with Proration Preview */}
+      <AlertDialog open={!!upgradePreview} onOpenChange={(open) => !open && setUpgradePreview(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              {upgradePreview?.isUpgrade ? (
+                <><ArrowUp className="w-5 h-5 text-primary" /> Confirm Upgrade</>
+              ) : (
+                <><ArrowDown className="w-5 h-5 text-warning" /> Confirm Downgrade</>
+              )}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                {upgradePreview?.isUpgrade ? (
+                  <>
+                    <p>
+                      Upgrading to <strong>{upgradePreview.planName}</strong> will charge{" "}
+                      <strong className="text-foreground">{formatCents(upgradePreview.amountDue, upgradePreview.currency)}</strong>{" "}
+                      today (prorated for the remainder of this billing period).
+                    </p>
+                    {upgradePreview.nextAmount && upgradePreview.nextAmount > 0 && (
+                      <p className="text-muted-foreground">
+                        Your next full charge of{" "}
+                        <strong>{formatCents(upgradePreview.nextAmount, upgradePreview.currency)}/month</strong>{" "}
+                        will be on <strong>{formatDate(upgradePreview.nextBillingDate)}</strong>.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      Switching to <strong>{upgradePreview?.planName}</strong> — no charge today.
+                    </p>
+                    <p className="text-muted-foreground">
+                      Your current plan will remain active until{" "}
+                      <strong>{formatDate(upgradePreview?.effectiveDate)}</strong>,
+                      then you'll move to {upgradePreview?.planName} at{" "}
+                      <strong>{formatCents(upgradePreview?.nextAmount || 0, upgradePreview?.currency || "usd")}/month</strong>.
+                    </p>
+                  </>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmUpgrade}
+              className={upgradePreview?.isUpgrade ? "" : ""}
+            >
+              {upgradePreview?.isUpgrade
+                ? `Pay ${formatCents(upgradePreview?.amountDue || 0, upgradePreview?.currency || "usd")} & Upgrade`
+                : `Confirm Downgrade`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
