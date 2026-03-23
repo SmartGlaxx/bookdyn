@@ -6,6 +6,33 @@ import { toast } from "sonner";
 const MAX_RETRIES = 3;
 const RETRY_BASE_DELAY = 2000; // 2 seconds
 
+const MAX_CONTEXT_CHARS = 2500;
+const MAX_SUMMARY_CHARS = 1200;
+const MAX_ANCHOR_CHARS = 600;
+
+function trimContext(text?: string, maxChars: number = MAX_CONTEXT_CHARS): string | undefined {
+  if (!text) return undefined;
+  return text.length <= maxChars ? text : text.slice(-maxChars);
+}
+
+function getGenerationChapterSlice(bookData: Book, chapterIndex: number) {
+  const chapter = bookData.outline?.chapters?.[chapterIndex];
+
+  if (!chapter) return [];
+
+  return [{
+    chapterNumber: chapter.chapterNumber,
+    title: chapter.title,
+    summary: trimContext(chapter.summary, MAX_SUMMARY_CHARS),
+    subsections: chapter.subsections.map((subsection) => ({
+      title: subsection.title,
+      goal: subsection.goal,
+      imageOpportunity: subsection.imageOpportunity,
+      status: subsection.status,
+    })),
+  }];
+}
+
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   retries: number = MAX_RETRIES,
@@ -195,7 +222,6 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
     }
 
     // Send only the current chapter data to keep payload small
-    const currentChapter = bookData.outline?.chapters?.[chapterIndex];
     const strippedBook = {
       id: bookData.id,
       title: bookData.title,
@@ -208,7 +234,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
       toneProfile: bookData.toneProfile,
       controls: bookData.controls,
       outline: {
-        chapters: currentChapter ? [currentChapter] : [],
+        chapters: getGenerationChapterSlice(bookData, chapterIndex),
       },
     };
 
@@ -225,9 +251,9 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
         book: strippedBook,
         chapterIndex: 0, // Always 0 since we only send the current chapter
         subsectionIndex,
-        previousSummary,
-        previousRawContent,
-        tonalAnchors: bookData.tonalAnchors || [],
+        previousSummary: trimContext(previousSummary, MAX_SUMMARY_CHARS),
+        previousRawContent: trimContext(previousRawContent),
+        tonalAnchors: (bookData.tonalAnchors || []).slice(-2).map((anchor) => trimContext(anchor, MAX_ANCHOR_CHARS) || "").filter(Boolean),
         ieltsBand,
         targetWordsPerSubsection: clampedWordsPerSubsection,
         teaserStyle: bookData.controls?.teaserStyle || "none",
