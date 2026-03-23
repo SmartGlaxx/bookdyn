@@ -19,6 +19,13 @@ const PRICE_TO_PLAN: Record<string, { plan: string; credits: number }> = {
   "price_1T8T4vBjVtw2b7Oi2KQ4OlAI": { plan: "unlimited", credits: 999999 },
 };
 
+// Monthly prices in cents for preview display
+const PLANS_META: Record<string, { amount: number }> = {
+  starter: { amount: 900 },
+  pro: { amount: 2900 },
+  unlimited: { amount: 7900 },
+};
+
 function safeTimestamp(ts: number | null | undefined): string | null {
   if (!ts || typeof ts !== "number" || ts <= 0) return null;
   try {
