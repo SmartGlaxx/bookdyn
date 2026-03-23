@@ -118,6 +118,18 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
   const [cancellingDowngrade, setCancellingDowngrade] = useState(false);
   // Pending plan conflict resolution
   const [pendingConflict, setPendingConflict] = useState<{ targetPlan: string } | null>(null);
+  // Proration preview confirmation
+  const [upgradePreview, setUpgradePreview] = useState<{
+    planId: string;
+    planName: string;
+    amountDue: number;
+    currency: string;
+    isUpgrade: boolean;
+    nextBillingDate?: string;
+    nextAmount?: number;
+    effectiveDate?: string;
+  } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const loadProfile = useCallback(async () => {
     if (!user) return;
@@ -198,9 +210,46 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
       return;
     }
 
-    // Both upgrades AND downgrades go to Stripe's hosted confirmation page
-    // Stripe natively handles proration for upgrades and end-of-period scheduling for downgrades
-    await redirectToStripePortal(planId);
+    // Fetch proration preview before confirming
+    setPreviewLoading(true);
+    setLoadingPlan(planId);
+    try {
+      const { data, error } = await supabase.functions.invoke("manage-subscription", {
+        body: { action: "preview_upgrade", new_plan: planId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const planMeta = PLANS.find(p => p.id === planId);
+      setUpgradePreview({
+        planId,
+        planName: planMeta?.name || planId,
+        amountDue: data.amount_due || 0,
+        currency: data.currency || "usd",
+        isUpgrade: data.is_upgrade !== false,
+        nextBillingDate: data.next_billing_date,
+        nextAmount: data.next_amount,
+        effectiveDate: data.effective_date,
+      });
+    } catch (err: any) {
+      toast({ title: "Failed to preview plan change", description: err.message, variant: "destructive" });
+    } finally {
+      setPreviewLoading(false);
+      setLoadingPlan(null);
+    }
+  };
+
+  const confirmUpgrade = async () => {
+    if (!upgradePreview) return;
+    setUpgradePreview(null);
+    await redirectToStripePortal(upgradePreview.planId);
+  };
+
+  const formatCents = (cents: number, currency: string) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency.toUpperCase(),
+    }).format(cents / 100);
   };
 
   const handlePlanAction = async (planId: string) => {
@@ -517,6 +566,63 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
               ) : (
                 `Cancel pending & switch to ${pendingConflict?.targetPlan || ""}`
               )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* Upgrade/Downgrade Confirmation with Proration Preview */}
+      <AlertDialog open={!!upgradePreview} onOpenChange={(open) => !open && setUpgradePreview(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              {upgradePreview?.isUpgrade ? (
+                <><ArrowUp className="w-5 h-5 text-primary" /> Confirm Upgrade</>
+              ) : (
+                <><ArrowDown className="w-5 h-5 text-warning" /> Confirm Downgrade</>
+              )}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                {upgradePreview?.isUpgrade ? (
+                  <>
+                    <p>
+                      Upgrading to <strong>{upgradePreview.planName}</strong> will charge{" "}
+                      <strong className="text-foreground">{formatCents(upgradePreview.amountDue, upgradePreview.currency)}</strong>{" "}
+                      today (prorated for the remainder of this billing period).
+                    </p>
+                    {upgradePreview.nextAmount && upgradePreview.nextAmount > 0 && (
+                      <p className="text-muted-foreground">
+                        Your next full charge of{" "}
+                        <strong>{formatCents(upgradePreview.nextAmount, upgradePreview.currency)}/month</strong>{" "}
+                        will be on <strong>{formatDate(upgradePreview.nextBillingDate)}</strong>.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p>
+                      Switching to <strong>{upgradePreview?.planName}</strong> — no charge today.
+                    </p>
+                    <p className="text-muted-foreground">
+                      Your current plan will remain active until{" "}
+                      <strong>{formatDate(upgradePreview?.effectiveDate)}</strong>,
+                      then you'll move to {upgradePreview?.planName} at{" "}
+                      <strong>{formatCents(upgradePreview?.nextAmount || 0, upgradePreview?.currency || "usd")}/month</strong>.
+                    </p>
+                  </>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmUpgrade}
+              className={upgradePreview?.isUpgrade ? "" : ""}
+            >
+              {upgradePreview?.isUpgrade
+                ? `Pay ${formatCents(upgradePreview?.amountDue || 0, upgradePreview?.currency || "usd")} & Upgrade`
+                : `Confirm Downgrade`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
