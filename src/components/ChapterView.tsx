@@ -15,6 +15,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2, Circle, Loader2, FileText, ChevronDown } from "lucide-react";
 interface ChapterViewProps {
   book: Book;
+  onGenerateChapter?: (chapterIndex: number) => void;
 }
 const statusConfig: Record<"pending" | "writing" | "completed", {
   icon: typeof Circle;
@@ -40,7 +41,8 @@ const statusConfig: Record<"pending" | "writing" | "completed", {
   }
 };
 export function ChapterView({
-  book
+  book,
+  onGenerateChapter,
 }: ChapterViewProps) {
   const [selectedChapter, setSelectedChapter] = useState(0);
   const [expandedChapter, setExpandedChapter] = useState<number | null>(null);
