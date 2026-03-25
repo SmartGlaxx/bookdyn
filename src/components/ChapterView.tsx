@@ -298,6 +298,12 @@ export function ChapterView({
                   {completedSubsections}/{totalSubsections} sections · {chapterProgress}%
                 </div>
               </div>
+              {onGenerateChapter && currentChapter.status !== "completed" && (
+                <Button variant="hero" size="sm" onClick={() => onGenerateChapter(selectedChapter)}>
+                  <Play className="w-3.5 h-3.5" />
+                  Write
+                </Button>
+              )}
               <Button variant="ghost" size="icon" onClick={() => setSelectedChapter(Math.min(chapters.length - 1, selectedChapter + 1))} disabled={selectedChapter === chapters.length - 1}>
                 <ChevronRight className="w-4 h-4" />
               </Button>
