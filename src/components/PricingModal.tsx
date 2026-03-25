@@ -91,7 +91,7 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
   return (
     <Dialog open={open} onOpenChange={() => {/* prevent background close */}}>
       <DialogContent
-        className="sm:max-w-md max-h-[90vh] overflow-y-auto"
+        className="sm:max-w-md max-h-[90vh] overflow-y-auto [&>button[class*='absolute']]:hidden"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
