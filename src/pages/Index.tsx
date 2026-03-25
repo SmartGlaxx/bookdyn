@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import BookCard from "@/components/BookCard";
 import CreateBookEngine from "@/components/CreateBookEngine";
 import BookDetailView from "@/components/BookDetailView";
-import { TurboTracker } from "@/components/TurboTracker";
-import { useTurbo } from "@/hooks/useTurbo";
 import { useBooks } from "@/hooks/useBooks";
 import { Book, CreateBookInput } from "@/types/book";
 import { Loader2 } from "lucide-react";
@@ -18,7 +16,7 @@ const Index = () => {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   
   const { books, isLoading, addBook, deleteBook, updateBook } = useBooks();
-  const turbo = useTurbo();
+  
 
   // Work in progress books (not completed)
   const wipBooks = books.filter(b => b.status !== "completed" && b.outline);
@@ -79,24 +77,6 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Turbo tracker for new users */}
-            {!turbo.isLoading && (
-              <div className="mb-8 max-w-md">
-                <TurboTracker
-                  streakDays={turbo.streakDays}
-                  streakProgress={turbo.streakProgress}
-                  totalWordsWritten={turbo.totalWordsWritten}
-                  wordsProgress={turbo.wordsProgress}
-                  turboUnlocked={turbo.turboUnlocked}
-                  turboWordsRemaining={turbo.turboWordsRemaining}
-                  turboWordsCapacity={turbo.turboWordsCapacity}
-                  turboWordsProgress={turbo.turboWordsProgress}
-                  streakGoal={turbo.STREAK_GOAL}
-                  wordsGoal={turbo.WORDS_GOAL}
-                  plan={turbo.plan}
-                />
-              </div>
-            )}
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -125,9 +105,7 @@ const Index = () => {
           </div>
         ) : (
           <div className="container max-w-6xl mx-auto px-4 py-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Main content */}
-              <div className="lg:col-span-2 space-y-8">
+            <div className="space-y-8">
                 {/* Work in Progress */}
                 {wipBooks.length > 0 && (
                   <div>
@@ -184,28 +162,6 @@ const Index = () => {
                     </motion.div>
                   </div>
                 )}
-              </div>
-
-              {/* Sidebar: Turbo Tracker */}
-              <div className="lg:col-span-1">
-                {!turbo.isLoading && (
-                  <div className="sticky top-24">
-                    <TurboTracker
-                      streakDays={turbo.streakDays}
-                      streakProgress={turbo.streakProgress}
-                      totalWordsWritten={turbo.totalWordsWritten}
-                      wordsProgress={turbo.wordsProgress}
-                      turboUnlocked={turbo.turboUnlocked}
-                      turboWordsRemaining={turbo.turboWordsRemaining}
-                      turboWordsCapacity={turbo.turboWordsCapacity}
-                      turboWordsProgress={turbo.turboWordsProgress}
-                      streakGoal={turbo.STREAK_GOAL}
-                      wordsGoal={turbo.WORDS_GOAL}
-                      plan={turbo.plan}
-                    />
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         )}
