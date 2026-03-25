@@ -12,9 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Book, Chapter as ChapterType } from "@/types/book";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2, Circle, Loader2, FileText, ChevronDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2, Circle, Loader2, FileText, ChevronDown, Play } from "lucide-react";
 interface ChapterViewProps {
   book: Book;
+  onGenerateChapter?: (chapterIndex: number) => void;
 }
 const statusConfig: Record<"pending" | "writing" | "completed", {
   icon: typeof Circle;
@@ -40,7 +41,8 @@ const statusConfig: Record<"pending" | "writing" | "completed", {
   }
 };
 export function ChapterView({
-  book
+  book,
+  onGenerateChapter,
 }: ChapterViewProps) {
   const [selectedChapter, setSelectedChapter] = useState(0);
   const [expandedChapter, setExpandedChapter] = useState<number | null>(null);
@@ -296,6 +298,12 @@ export function ChapterView({
                   {completedSubsections}/{totalSubsections} sections · {chapterProgress}%
                 </div>
               </div>
+              {onGenerateChapter && currentChapter.status !== "completed" && (
+                <Button variant="hero" size="sm" onClick={() => onGenerateChapter(selectedChapter)}>
+                  <Play className="w-3.5 h-3.5" />
+                  Write
+                </Button>
+              )}
               <Button variant="ghost" size="icon" onClick={() => setSelectedChapter(Math.min(chapters.length - 1, selectedChapter + 1))} disabled={selectedChapter === chapters.length - 1}>
                 <ChevronRight className="w-4 h-4" />
               </Button>

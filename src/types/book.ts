@@ -34,7 +34,7 @@ export type BookType =
 export type BookStatus = "planning" | "ready_to_write" | "writing" | "completed" | "paused";
 export type POV = "first-person" | "second-person" | "third-person-limited" | "third-person-omniscient";
 export type ToneLevel = "formal" | "conversational" | "humorous" | "dramatic" | "poetic" | "technical" | "authoritative" | "reflective" | "neutral";
-export type AutomationLevel = "assisted" | "semi-autonomous" | "fully-autonomous";
+export type AutomationLevel = "guided" | "assisted" | "semi-auto" | "auto-draft";
 export type DepthLevel = "overview" | "intermediate" | "comprehensive" | "academic";
 export type TemporalEra = "ancient" | "medieval" | "renaissance" | "industrial" | "modern" | "contemporary" | "near-future" | "far-future" | "timeless";
 export type TimelineStructure = "linear" | "non-linear" | "circular" | "fragmented";
@@ -359,10 +359,11 @@ export const TONE_OPTIONS: { value: ToneLevel; label: string; emoji: string; des
   { value: "neutral", label: "Neutral", emoji: "⚖️", description: "Balanced and objective" },
 ];
 
-export const AUTOMATION_OPTIONS: { value: AutomationLevel; label: string; description: string }[] = [
-  { value: "assisted", label: "Assisted", description: "Manual approval at each step" },
-  { value: "semi-autonomous", label: "Semi-Autonomous", description: "Approval at chapter milestones" },
-  { value: "fully-autonomous", label: "Fully Autonomous", description: "Automatic generation with minimal input" },
+export const AUTOMATION_OPTIONS: { value: AutomationLevel; label: string; description: string; locked?: boolean }[] = [
+  { value: "guided", label: "Guided", description: "Step-by-step generation with approval at each section. Best quality." },
+  { value: "assisted", label: "Assisted", description: "Generates paragraphs/sections, you review before continuing." },
+  { value: "semi-auto", label: "Semi-Auto", description: "Generates full chapters, you approve per chapter." },
+  { value: "auto-draft", label: "Auto Draft", description: "Generates large portions automatically. Requires Turbo unlock.", locked: true },
 ];
 
 export const DEPTH_OPTIONS: { value: DepthLevel; label: string; description: string }[] = [
@@ -538,7 +539,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
       titlesRequired: true,
       targetWordCount: 50000,
     },
-    automationLevel: "semi-autonomous",
+    automationLevel: "guided",
     depthLevel: "intermediate",
     imageGeneration: false,
     autoResume: true,

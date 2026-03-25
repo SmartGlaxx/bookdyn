@@ -82,6 +82,12 @@ const phaseConfig: Record<GenerationPhase, {
     description: "Generation paused",
     color: "text-amber-500",
   },
+  "awaiting-approval": { 
+    icon: CheckCircle, 
+    label: "Awaiting Approval", 
+    description: "Review the generated content and approve to continue",
+    color: "text-blue-500",
+  },
   error: { 
     icon: AlertCircle, 
     label: "Error", 
