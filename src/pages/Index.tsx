@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import BookCard from "@/components/BookCard";
 import CreateBookEngine from "@/components/CreateBookEngine";
 import BookDetailView from "@/components/BookDetailView";
+import { TurboTracker } from "@/components/TurboTracker";
+import { useTurbo } from "@/hooks/useTurbo";
 import { useBooks } from "@/hooks/useBooks";
 import { Book, CreateBookInput } from "@/types/book";
 import { Loader2 } from "lucide-react";
@@ -16,6 +18,12 @@ const Index = () => {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   
   const { books, isLoading, addBook, deleteBook, updateBook } = useBooks();
+  const turbo = useTurbo();
+
+  // Work in progress books (not completed)
+  const wipBooks = books.filter(b => b.status !== "completed" && b.outline);
+  const completedBooks = books.filter(b => b.status === "completed");
+  const planningBooks = books.filter(b => !b.outline || b.status === "planning");
 
   // Handle credit purchase success redirect
   useEffect(() => {
@@ -71,6 +79,24 @@ const Index = () => {
               </div>
             </div>
 
+            {/* Turbo tracker for new users */}
+            {!turbo.isLoading && (
+              <div className="mb-8 max-w-md">
+                <TurboTracker
+                  streakDays={turbo.streakDays}
+                  streakProgress={turbo.streakProgress}
+                  totalWordsWritten={turbo.totalWordsWritten}
+                  wordsProgress={turbo.wordsProgress}
+                  turboUnlocked={turbo.turboUnlocked}
+                  turboWordsRemaining={turbo.turboWordsRemaining}
+                  turboWordsCapacity={turbo.turboWordsCapacity}
+                  turboWordsProgress={turbo.turboWordsProgress}
+                  streakGoal={turbo.STREAK_GOAL}
+                  wordsGoal={turbo.WORDS_GOAL}
+                />
+              </div>
+            )}
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -82,7 +108,7 @@ const Index = () => {
               <div className="space-y-2 max-w-md">
                 <h3 className="text-2xl font-serif font-bold">Create Your First Book</h3>
                 <p className="text-muted-foreground">
-                  Transform your ideas into a complete, professionally structured book with AI-powered generation.
+                  Transform your ideas into a complete, professionally structured book with AI-powered co-pilot generation.
                 </p>
               </div>
               <Button
@@ -98,30 +124,87 @@ const Index = () => {
           </div>
         ) : (
           <div className="container max-w-6xl mx-auto px-4 py-8">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-3xl font-serif font-bold">Your Library</h2>
-                <p className="text-muted-foreground mt-1">
-                  {books.length} book{books.length !== 1 ? "s" : ""} in progress
-                </p>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Main content */}
+              <div className="lg:col-span-2 space-y-8">
+                {/* Work in Progress */}
+                {wipBooks.length > 0 && (
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h2 className="text-2xl font-serif font-bold">Continue Writing</h2>
+                        <p className="text-muted-foreground text-sm mt-1">
+                          {wipBooks.length} book{wipBooks.length !== 1 ? "s" : ""} in progress
+                        </p>
+                      </div>
+                    </div>
+                    <motion.div
+                      className="grid sm:grid-cols-2 gap-4"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                    >
+                      {wipBooks.map((book, index) => (
+                        <BookCard
+                          key={book.id}
+                          book={book}
+                          index={index}
+                          onSelect={setSelectedBook}
+                          onDelete={handleDeleteBook}
+                        />
+                      ))}
+                    </motion.div>
+                  </div>
+                )}
+
+                {/* Planning */}
+                {planningBooks.length > 0 && (
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-xl font-serif font-bold text-muted-foreground">Planning</h2>
+                    </div>
+                    <motion.div className="grid sm:grid-cols-2 gap-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                      {planningBooks.map((book, index) => (
+                        <BookCard key={book.id} book={book} index={index} onSelect={setSelectedBook} onDelete={handleDeleteBook} />
+                      ))}
+                    </motion.div>
+                  </div>
+                )}
+
+                {/* Completed */}
+                {completedBooks.length > 0 && (
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-xl font-serif font-bold text-muted-foreground">Completed</h2>
+                    </div>
+                    <motion.div className="grid sm:grid-cols-2 gap-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                      {completedBooks.map((book, index) => (
+                        <BookCard key={book.id} book={book} index={index} onSelect={setSelectedBook} onDelete={handleDeleteBook} />
+                      ))}
+                    </motion.div>
+                  </div>
+                )}
+              </div>
+
+              {/* Sidebar: Turbo Tracker */}
+              <div className="lg:col-span-1">
+                {!turbo.isLoading && (
+                  <div className="sticky top-24">
+                    <TurboTracker
+                      streakDays={turbo.streakDays}
+                      streakProgress={turbo.streakProgress}
+                      totalWordsWritten={turbo.totalWordsWritten}
+                      wordsProgress={turbo.wordsProgress}
+                      turboUnlocked={turbo.turboUnlocked}
+                      turboWordsRemaining={turbo.turboWordsRemaining}
+                      turboWordsCapacity={turbo.turboWordsCapacity}
+                      turboWordsProgress={turbo.turboWordsProgress}
+                      streakGoal={turbo.STREAK_GOAL}
+                      wordsGoal={turbo.WORDS_GOAL}
+                    />
+                  </div>
+                )}
               </div>
             </div>
-
-            <motion.div
-              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              {books.map((book, index) => (
-                <BookCard
-                  key={book.id}
-                  book={book}
-                  index={index}
-                  onSelect={setSelectedBook}
-                  onDelete={handleDeleteBook}
-                />
-              ))}
-            </motion.div>
           </div>
         )}
       </main>
