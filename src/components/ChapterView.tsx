@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Book, Chapter as ChapterType } from "@/types/book";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2, Circle, Loader2, FileText, ChevronDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2, Circle, Loader2, FileText, ChevronDown, Play } from "lucide-react";
 interface ChapterViewProps {
   book: Book;
   onGenerateChapter?: (chapterIndex: number) => void;
