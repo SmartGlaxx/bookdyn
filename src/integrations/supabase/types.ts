@@ -127,11 +127,19 @@ export type Database = {
           daily_words_reset_at: string
           full_name: string
           id: string
+          last_activity_date: string | null
           onboarding_completed: boolean
           pending_plan: string | null
           pending_plan_at: string | null
           plan: string
+          streak_days: number
+          streak_start_date: string | null
           stripe_subscription_id: string | null
+          total_words_written: number
+          turbo_cycles_completed: number
+          turbo_unlocked: boolean
+          turbo_words_capacity: number
+          turbo_words_remaining: number
           updated_at: string
         }
         Insert: {
@@ -144,11 +152,19 @@ export type Database = {
           daily_words_reset_at?: string
           full_name?: string
           id: string
+          last_activity_date?: string | null
           onboarding_completed?: boolean
           pending_plan?: string | null
           pending_plan_at?: string | null
           plan?: string
+          streak_days?: number
+          streak_start_date?: string | null
           stripe_subscription_id?: string | null
+          total_words_written?: number
+          turbo_cycles_completed?: number
+          turbo_unlocked?: boolean
+          turbo_words_capacity?: number
+          turbo_words_remaining?: number
           updated_at?: string
         }
         Update: {
@@ -161,11 +177,19 @@ export type Database = {
           daily_words_reset_at?: string
           full_name?: string
           id?: string
+          last_activity_date?: string | null
           onboarding_completed?: boolean
           pending_plan?: string | null
           pending_plan_at?: string | null
           plan?: string
+          streak_days?: number
+          streak_start_date?: string | null
           stripe_subscription_id?: string | null
+          total_words_written?: number
+          turbo_cycles_completed?: number
+          turbo_unlocked?: boolean
+          turbo_words_capacity?: number
+          turbo_words_remaining?: number
           updated_at?: string
         }
         Relationships: []
@@ -191,6 +215,39 @@ export type Database = {
         }
         Relationships: []
       }
+      turbo_progress: {
+        Row: {
+          activity_date: string
+          created_at: string
+          credits_used: number
+          id: string
+          sessions_count: number
+          updated_at: string
+          user_id: string
+          words_written: number
+        }
+        Insert: {
+          activity_date?: string
+          created_at?: string
+          credits_used?: number
+          id?: string
+          sessions_count?: number
+          updated_at?: string
+          user_id: string
+          words_written?: number
+        }
+        Update: {
+          activity_date?: string
+          created_at?: string
+          credits_used?: number
+          id?: string
+          sessions_count?: number
+          updated_at?: string
+          user_id?: string
+          words_written?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -210,6 +267,10 @@ export type Database = {
         Returns: boolean
       }
       cleanup_old_request_logs: { Args: never; Returns: undefined }
+      record_writing_activity: {
+        Args: { _credits: number; _user_id: string; _words: number }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
