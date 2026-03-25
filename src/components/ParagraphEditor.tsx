@@ -73,16 +73,18 @@ export function ParagraphEditor({
   const handleRewrite = async () => {
     setIsRewriting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-content", {
+      const { data, error } = await supabase.functions.invoke("rewrite-paragraph", {
         body: {
-          prompt: `Rewrite the following paragraph while maintaining the same meaning, tone, and context. Keep it natural and flowing within the chapter "${chapterTitle}", section "${subsectionTitle}" of the book "${bookTitle}".\n\nOriginal paragraph:\n${paragraph}\n\nRewrite it with improved prose, varied sentence structure, and richer vocabulary. Return ONLY the rewritten paragraph, nothing else.`,
-          type: "rewrite",
+          paragraph,
+          bookTitle,
+          chapterTitle,
+          subsectionTitle,
         },
       });
 
       if (error) throw error;
 
-      const rewritten = data?.content || data?.text || data;
+      const rewritten = data?.content;
       if (typeof rewritten === "string" && rewritten.trim()) {
         const newContent = updateParagraph(rewritten.trim());
         onContentUpdate(newContent);
