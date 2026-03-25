@@ -17,6 +17,16 @@ const Index = () => {
   
   const { books, isLoading, addBook, deleteBook, updateBook } = useBooks();
 
+  // Handle credit purchase success redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const creditsPurchased = params.get("credits_purchased");
+    if (creditsPurchased) {
+      window.history.replaceState({}, "", "/dashboard");
+      toast.success(`${Number(creditsPurchased).toLocaleString()} credits added to your account!`);
+    }
+  }, []);
+
   const handleCreateBook = async (input: CreateBookInput) => {
     try {
       const newBook = await addBook(input);
