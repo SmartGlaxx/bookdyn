@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Zap, Loader2, Coins, X, Check, Lock, Sparkles, Crown, Rocket,
+  Zap, Loader2, Coins, Check, Lock, Sparkles, Crown, Rocket,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import {
@@ -119,18 +119,11 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
   return (
     <Dialog open={open} onOpenChange={() => {/* prevent background close */}}>
       <DialogContent
-        className="sm:max-w-2xl max-h-[90vh] overflow-y-auto [&>button[class*='absolute']]:hidden"
+        className="sm:max-w-2xl max-h-[90vh] overflow-y-auto"
         onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
-        <button
-          onClick={() => onOpenChange(false)}
-          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 z-10"
-        >
-          <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
-        </button>
 
         <DialogHeader className="text-center pb-2">
           <DialogTitle className="text-2xl font-serif">
