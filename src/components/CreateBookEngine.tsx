@@ -368,7 +368,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                       </Select>
                     </FieldGroup>
 
-                    <FieldGroup label="Automation" tooltip="Controls generation flow. Auto Draft requires Turbo unlock.">
+                    <FieldGroup label="Automation" tooltip="Controls generation flow. Auto Draft requires Pro+ plan and Turbo unlock.">
                       <Select
                         value={formData.controls?.automationLevel || "guided"}
                         onValueChange={(v) => {
@@ -378,23 +378,26 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                       >
                         <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent className="bg-popover z-50">
-                          {AUTOMATION_OPTIONS.map((opt) => (
-                            <SelectItem 
-                              key={opt.value} 
-                              value={opt.value}
-                              disabled={opt.locked}
-                            >
-                              <div className="flex items-center gap-2">
-                                <div>
-                                  <div className="flex items-center gap-1">
-                                    {opt.label}
-                                    {opt.locked && <span className="text-[10px] text-muted-foreground">🔒</span>}
+                          {AUTOMATION_OPTIONS.map((opt) => {
+                            const isLocked = opt.value === "auto-draft";
+                            return (
+                              <SelectItem 
+                                key={opt.value} 
+                                value={opt.value}
+                                disabled={isLocked}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div>
+                                    <div className="flex items-center gap-1">
+                                      {opt.label}
+                                      {isLocked && <span className="text-[10px] text-muted-foreground">🔒 Pro+</span>}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">{opt.description}</div>
                                   </div>
-                                  <div className="text-xs text-muted-foreground">{opt.description}</div>
                                 </div>
-                              </div>
-                            </SelectItem>
-                          ))}
+                              </SelectItem>
+                            );
+                          })}
                         </SelectContent>
                       </Select>
                     </FieldGroup>
