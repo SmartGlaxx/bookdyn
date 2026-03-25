@@ -5,20 +5,20 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 const PRICE_TO_PLAN: Record<string, { plan: string; credits: number }> = {
   "price_1T8T3zBjVtw2b7OiBecRD1Oa": { plan: "starter", credits: 100 },
   "price_1T8T4YBjVtw2b7OimimbNZ22": { plan: "pro", credits: 500 },
-  "price_1T8T4vBjVtw2b7Oi2KQ4OlAI": { plan: "unlimited", credits: 999999 },
+  "price_1T8T4vBjVtw2b7Oi2KQ4OlAI": { plan: "elite", credits: 2000 },
 };
 
 const PLAN_CREDITS: Record<string, { credits: number; plan: string }> = {
   starter: { credits: 100, plan: "starter" },
   pro: { credits: 500, plan: "pro" },
-  unlimited: { credits: 999999, plan: "unlimited" },
+  elite: { credits: 2000, plan: "elite" },
 };
 
 const PLAN_ORDER: Record<string, number> = {
   free: 0,
   starter: 1,
   pro: 2,
-  unlimited: 3,
+  elite: 3,
 };
 
 function safeTimestamp(ts: number | null | undefined): string | null {
@@ -72,7 +72,6 @@ serve(async (req) => {
       const userId = session.metadata?.supabase_user_id;
       const customerId = session.customer as string;
 
-      // Ensure customer has supabase_user_id in metadata
       if (userId && customerId) {
         try {
           const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer;
@@ -87,11 +86,10 @@ serve(async (req) => {
         }
       }
 
-      // Handle credit pack purchase (one-time payment)
+      // Handle credit pack purchase
       if (session.metadata?.type === "credit_purchase" && userId) {
         const purchasedCredits = parseInt(session.metadata.credits || "0", 10);
         if (purchasedCredits > 0) {
-          // Add credits to existing balance (increase credits_limit)
           const { data: profile } = await supabase
             .from("profiles")
             .select("credits_limit, credits_used")
@@ -109,10 +107,11 @@ serve(async (req) => {
         }
       }
 
-      // Handle subscription checkout (legacy)
+      // Handle subscription checkout — support both old "unlimited" and new "elite" plan IDs
       const planId = session.metadata?.plan_id;
-      if (userId && planId && PLAN_CREDITS[planId]) {
-        const { credits, plan } = PLAN_CREDITS[planId];
+      const normalizedPlanId = planId === "unlimited" ? "elite" : planId;
+      if (userId && normalizedPlanId && PLAN_CREDITS[normalizedPlanId]) {
+        const { credits, plan } = PLAN_CREDITS[normalizedPlanId];
         const subId = session.subscription as string | null;
 
         let periodEnd: string | null = null;
@@ -150,7 +149,6 @@ serve(async (req) => {
         const periodEnd = safeTimestamp((subscription as any).current_period_end);
 
         if (planInfo) {
-          // Get current profile to determine if upgrade or downgrade
           const { data: profile } = await supabase
             .from("profiles")
             .select("plan, pending_plan")
@@ -160,12 +158,10 @@ serve(async (req) => {
           const currentOrder = PLAN_ORDER[profile?.plan || "free"] ?? 0;
           const newOrder = PLAN_ORDER[planInfo.plan] ?? 0;
 
-          // Check if price changed (plan switch at renewal vs immediate upgrade)
           const priceChanged = previousAttributes.items !== undefined;
 
           if (priceChanged) {
             if (newOrder > currentOrder) {
-              // UPGRADE: apply immediately
               await supabase
                 .from("profiles")
                 .update({
@@ -180,8 +176,6 @@ serve(async (req) => {
                 .eq("id", userId);
               console.log(`[WEBHOOK] subscription.updated UPGRADE: user=${userId} plan=${planInfo.plan}`);
             } else if (newOrder < currentOrder) {
-              // DOWNGRADE at renewal: this fires when the billing cycle actually rolls over
-              // If there was a pending_plan matching this, apply it now
               if (profile?.pending_plan === planInfo.plan) {
                 await supabase
                   .from("profiles")
@@ -196,7 +190,6 @@ serve(async (req) => {
                   .eq("id", userId);
                 console.log(`[WEBHOOK] subscription.updated DOWNGRADE applied: user=${userId} plan=${planInfo.plan}`);
               } else {
-                // Direct downgrade at renewal (no pending_plan was set, or different)
                 await supabase
                   .from("profiles")
                   .update({
@@ -212,7 +205,6 @@ serve(async (req) => {
               }
             }
           } else {
-            // No price change — just update period end (renewal, etc.)
             await supabase
               .from("profiles")
               .update({
@@ -239,7 +231,6 @@ serve(async (req) => {
           const planInfo = getPlanFromSubscription(subscription);
           const periodEnd = safeTimestamp((subscription as any).current_period_end);
 
-          // Check if there's a pending downgrade that should now apply
           const { data: profile } = await supabase
             .from("profiles")
             .select("plan, pending_plan, pending_plan_at")
@@ -247,8 +238,8 @@ serve(async (req) => {
             .single();
 
           if (profile?.pending_plan && planInfo) {
-            // Pending downgrade takes effect at renewal
-            const pendingInfo = PLAN_CREDITS[profile.pending_plan];
+            const normalizedPending = profile.pending_plan === "unlimited" ? "elite" : profile.pending_plan;
+            const pendingInfo = PLAN_CREDITS[normalizedPending];
             if (pendingInfo) {
               await supabase
                 .from("profiles")
@@ -264,7 +255,6 @@ serve(async (req) => {
               console.log(`[WEBHOOK] invoice.paid: applied pending downgrade user=${userId} plan=${pendingInfo.plan}`);
             }
           } else {
-            // Normal renewal — reset credits
             await supabase
               .from("profiles")
               .update({
@@ -288,7 +278,6 @@ serve(async (req) => {
         const attemptCount = invoice.attempt_count || 0;
         console.log(`[WEBHOOK] invoice.payment_failed: user=${userId} attempt=${attemptCount}`);
 
-        // After 3 failed attempts, downgrade to free
         if (attemptCount >= 3) {
           await supabase
             .from("profiles")

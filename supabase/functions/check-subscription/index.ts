@@ -10,7 +10,7 @@ const corsHeaders = {
 const PRICE_TO_PLAN: Record<string, { plan: string; credits: number }> = {
   "price_1T8T3zBjVtw2b7OiBecRD1Oa": { plan: "starter", credits: 100 },
   "price_1T8T4YBjVtw2b7OimimbNZ22": { plan: "pro", credits: 500 },
-  "price_1T8T4vBjVtw2b7Oi2KQ4OlAI": { plan: "unlimited", credits: 999999 },
+  "price_1T8T4vBjVtw2b7Oi2KQ4OlAI": { plan: "elite", credits: 2000 },
 };
 
 function safeTimestamp(ts: number | null | undefined): string | null {
@@ -24,13 +24,11 @@ function safeTimestamp(ts: number | null | undefined): string | null {
   }
 }
 
-// Calculate the current period start from billing_cycle_anchor
 function getCurrentPeriodStart(anchorTs: number): Date {
   const anchor = new Date(anchorTs * 1000);
   const now = new Date();
   const anchorDay = anchor.getUTCDate();
 
-  // Walk backwards from current month to find the most recent billing date in the past
   for (let i = 0; i < 13; i++) {
     const targetMonth = now.getUTCMonth() - i;
     const targetYear = now.getUTCFullYear() + Math.floor(targetMonth / 12);
@@ -70,7 +68,6 @@ serve(async (req) => {
     const user = { id: claimsData.claims.sub as string, email: claimsData.claims.email as string };
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Get current profile
     const { data: profile } = await supabaseClient
       .from("profiles")
       .select("plan, credits_used, credits_limit, credits_reset_at")
@@ -79,8 +76,6 @@ serve(async (req) => {
 
     const customers = await stripe.customers.list({ email: user.email, limit: 10 });
     
-    // Only match Stripe customers that have this user's supabase_user_id in metadata
-    // This prevents email-based plan inheritance from unrelated Stripe customers
     const matchedCustomer = customers.data.find(
       (c) => c.metadata?.supabase_user_id === user.id
     );
@@ -123,13 +118,11 @@ serve(async (req) => {
       const periodStart = anchor ? getCurrentPeriodStart(anchor) : new Date();
       const lastReset = profile?.credits_reset_at ? new Date(profile.credits_reset_at) : new Date(0);
 
-      // Only update credits_limit (and reset credits_used) when a NEW billing period has started
       const isNewPeriod = periodStart > lastReset;
 
       const updateData: Record<string, any> = { plan: planInfo.plan };
 
       if (isNewPeriod) {
-        // New billing period — apply the current Stripe plan's credits and reset usage
         updateData.credits_limit = planInfo.credits;
         updateData.credits_used = 0;
         updateData.credits_reset_at = periodStart.toISOString();

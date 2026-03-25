@@ -10,20 +10,19 @@ const corsHeaders = {
 const PLAN_PRICES: Record<string, string> = {
   starter: "price_1T8T3zBjVtw2b7OiBecRD1Oa",
   pro: "price_1T8T4YBjVtw2b7OimimbNZ22",
-  unlimited: "price_1T8T4vBjVtw2b7Oi2KQ4OlAI",
+  elite: "price_1T8T4vBjVtw2b7Oi2KQ4OlAI",
 };
 
 const PRICE_TO_PLAN: Record<string, { plan: string; credits: number }> = {
   "price_1T8T3zBjVtw2b7OiBecRD1Oa": { plan: "starter", credits: 100 },
   "price_1T8T4YBjVtw2b7OimimbNZ22": { plan: "pro", credits: 500 },
-  "price_1T8T4vBjVtw2b7Oi2KQ4OlAI": { plan: "unlimited", credits: 999999 },
+  "price_1T8T4vBjVtw2b7Oi2KQ4OlAI": { plan: "elite", credits: 2000 },
 };
 
-// Monthly prices in cents for preview display
 const PLANS_META: Record<string, { amount: number }> = {
   starter: { amount: 900 },
   pro: { amount: 2900 },
-  unlimited: { amount: 7900 },
+  elite: { amount: 7900 },
 };
 
 function safeTimestamp(ts: number | null | undefined): string | null {
@@ -124,7 +123,6 @@ serve(async (req) => {
         const pm = sub.default_payment_method as Stripe.PaymentMethod | null;
         const periodEnd = safeTimestamp((sub as any).current_period_end) || ((sub as any).billing_cycle_anchor ? getNextBillingDate((sub as any).billing_cycle_anchor) : null);
 
-        // Get pending plan info from profile
         const { data: profile } = await supabaseClient
           .from("profiles")
           .select("pending_plan, pending_plan_at")
@@ -154,8 +152,6 @@ serve(async (req) => {
       }
 
       case "cancel_downgrade": {
-        // Clear pending downgrade from our DB
-        // The portal/webhook handles actual Stripe subscription state
         const { data: profile } = await supabaseClient
           .from("profiles")
           .select("pending_plan")
@@ -263,8 +259,6 @@ serve(async (req) => {
         });
 
         if (subs.data.length === 0) {
-          // No active sub — just return the full price (new checkout)
-          const planData = PRICE_TO_PLAN[previewPriceId];
           const planInfo = PLANS_META[previewPlan];
           result = {
             is_new_subscription: true,
@@ -288,7 +282,6 @@ serve(async (req) => {
         })();
 
         if (isUpgrade) {
-          // Use Stripe's invoice preview to get exact proration amount
           const preview = await stripe.invoices.createPreview({
             customer: customer.id,
             subscription: sub.id,
@@ -301,14 +294,13 @@ serve(async (req) => {
 
           result = {
             is_upgrade: true,
-            amount_due: preview.amount_due, // in cents
+            amount_due: preview.amount_due,
             currency: preview.currency,
             plan_name: previewPlan,
             next_billing_date: nextBilling,
-            next_amount: PLANS_META[previewPlan]?.amount || 0, // monthly amount in cents
+            next_amount: PLANS_META[previewPlan]?.amount || 0,
           };
         } else {
-          // Downgrade — no immediate charge
           const periodEndTs = (sub as any).current_period_end;
           result = {
             is_upgrade: false,
@@ -331,7 +323,6 @@ serve(async (req) => {
         const origin = req.headers.get("origin") || "https://localhost:3000";
         const returnUrl = `${origin}/manage-subscription?updated=true`;
 
-        // Check if the user has an active subscription
         const subscriptions = await stripe.subscriptions.list({
           customer: customer.id,
           status: "active",
@@ -341,8 +332,6 @@ serve(async (req) => {
         if (subscriptions.data.length > 0) {
           const sub = subscriptions.data[0];
 
-          // User has an active subscription — swap the price directly via API
-          // This handles proration automatically and avoids creating duplicate subscriptions
           const currentPriceId = sub.items.data[0]?.price?.id;
           if (currentPriceId === newPriceId) {
             throw new Error("You're already on this plan");
@@ -358,10 +347,8 @@ serve(async (req) => {
           await stripe.subscriptions.update(sub.id, {
             items: [{ id: sub.items.data[0].id, price: newPriceId }],
             proration_behavior: isUpgrade ? "create_prorations" : "none",
-            // For downgrades, we could use billing_cycle_anchor but keeping it simple
           });
 
-          // Update profile immediately
           const newPlanInfo = PRICE_TO_PLAN[newPriceId];
           if (newPlanInfo) {
             await supabaseClient
@@ -379,7 +366,6 @@ serve(async (req) => {
           break;
         }
 
-        // No active subscription — user needs checkout to resubscribe
         console.log(`[manage-subscription] No active sub, using checkout for ${new_plan}`);
         const session = await stripe.checkout.sessions.create({
           customer: customer.id,
@@ -423,7 +409,6 @@ serve(async (req) => {
         break;
       }
 
-      // Open general Billing Portal for payment method updates, invoices, etc.
       case "open_portal": {
         if (!customer) throw new Error("No customer found");
         const origin = req.headers.get("origin") || "https://localhost:3000";
