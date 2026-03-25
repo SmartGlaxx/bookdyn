@@ -279,21 +279,6 @@ const ManageSubscription = () => {
                     <Coins className="w-4 h-4 mr-2" /> Buy Credits
                   </Button>
                 </div>
-                  {!isFree && (
-                    <>
-                      {subscription?.cancel_at_period_end ? (
-                        <Button variant="outline" onClick={handleReactivate} disabled={actionLoading === "reactivate"}>
-                          <RotateCcw className="w-4 h-4 mr-2" />
-                          {actionLoading === "reactivate" ? "Reactivating..." : "Reactivate"}
-                        </Button>
-                      ) : (
-                        <Button variant="ghost" className="text-destructive" onClick={() => setCancelOpen(true)}>
-                          <XCircle className="w-4 h-4 mr-2" /> Cancel
-                        </Button>
-                      )}
-                    </>
-                  )}
-                </div>
               </CardContent>
             </Card>
           </motion.div>
