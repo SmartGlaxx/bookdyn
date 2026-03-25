@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft, CreditCard, Receipt, ArrowUpDown, XCircle,
+  ArrowLeft, CreditCard, Receipt, XCircle,
   RefreshCw, Crown, Sparkles, Zap, Download,
-  ExternalLink, AlertTriangle, RotateCcw,
+  ExternalLink, AlertTriangle, RotateCcw, Coins,
 } from "lucide-react";
 import PricingModal from "@/components/PricingModal";
 import { Button } from "@/components/ui/button";
@@ -50,9 +50,7 @@ interface InvoiceData {
 }
 
 const PLANS = [
-  { id: "starter", name: "Starter", price: 9, credits: 100, icon: Sparkles },
-  { id: "pro", name: "Pro", price: 29, credits: 500, icon: Crown },
-  { id: "unlimited", name: "Unlimited", price: 79, credits: null, icon: Crown },
+  { id: "free", name: "Free", price: 0, credits: 5, icon: Zap },
 ];
 
 function formatDate(dateStr: string | null | undefined): string {
@@ -277,27 +275,9 @@ const ManageSubscription = () => {
                 <Separator />
 
                 <div className="flex flex-wrap gap-3">
-                  <Button variant={isFree ? "hero" : "outline"} onClick={() => setPricingOpen(true)}>
-                    {isFree ? (
-                      <><Sparkles className="w-4 h-4 mr-2" /> Upgrade Plan</>
-                    ) : (
-                      <><ArrowUpDown className="w-4 h-4 mr-2" /> Change Plan</>
-                    )}
+                  <Button variant="hero" onClick={() => setPricingOpen(true)}>
+                    <Coins className="w-4 h-4 mr-2" /> Buy Credits
                   </Button>
-                  {!isFree && (
-                    <>
-                      {subscription?.cancel_at_period_end ? (
-                        <Button variant="outline" onClick={handleReactivate} disabled={actionLoading === "reactivate"}>
-                          <RotateCcw className="w-4 h-4 mr-2" />
-                          {actionLoading === "reactivate" ? "Reactivating..." : "Reactivate"}
-                        </Button>
-                      ) : (
-                        <Button variant="ghost" className="text-destructive" onClick={() => setCancelOpen(true)}>
-                          <XCircle className="w-4 h-4 mr-2" /> Cancel
-                        </Button>
-                      )}
-                    </>
-                  )}
                 </div>
               </CardContent>
             </Card>

@@ -70,7 +70,6 @@ serve(async (req) => {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
       const userId = session.metadata?.supabase_user_id;
-      const planId = session.metadata?.plan_id;
       const customerId = session.customer as string;
 
       // Ensure customer has supabase_user_id in metadata
@@ -88,11 +87,34 @@ serve(async (req) => {
         }
       }
 
+      // Handle credit pack purchase (one-time payment)
+      if (session.metadata?.type === "credit_purchase" && userId) {
+        const purchasedCredits = parseInt(session.metadata.credits || "0", 10);
+        if (purchasedCredits > 0) {
+          // Add credits to existing balance (increase credits_limit)
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("credits_limit, credits_used")
+            .eq("id", userId)
+            .single();
+
+          if (profile) {
+            const newLimit = profile.credits_limit + purchasedCredits;
+            await supabase
+              .from("profiles")
+              .update({ credits_limit: newLimit })
+              .eq("id", userId);
+            console.log(`[WEBHOOK] credit_purchase: user=${userId} added=${purchasedCredits} new_limit=${newLimit}`);
+          }
+        }
+      }
+
+      // Handle subscription checkout (legacy)
+      const planId = session.metadata?.plan_id;
       if (userId && planId && PLAN_CREDITS[planId]) {
         const { credits, plan } = PLAN_CREDITS[planId];
         const subId = session.subscription as string | null;
 
-        // Get subscription details for period end
         let periodEnd: string | null = null;
         if (subId) {
           const sub = await stripe.subscriptions.retrieve(subId);

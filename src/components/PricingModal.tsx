@@ -1,99 +1,24 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Sparkles, Crown, Zap, Check, ArrowUp, ArrowDown,
-  AlertTriangle, X, RotateCcw, Loader2,
+  Zap, Loader2, Coins, X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
-const PLANS = [
-  {
-    id: "free",
-    name: "Free",
-    price: 0,
-    period: "/mo",
-    credits: "5 credits (5K words)",
-    icon: Zap,
-    highlights: [
-      "5 credits per month",
-      "Basic generation",
-      "1 book at a time",
-      "Standard queue",
-    ],
-  },
-  {
-    id: "starter",
-    name: "Starter",
-    price: 9,
-    period: "/mo",
-    credits: "100 credits (100K words)",
-    icon: Sparkles,
-    popular: true,
-    highlights: [
-      "Edits at half credit cost",
-      "Style & Tone Shift editing",
-      "Priority generation",
-      "Unlimited books",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: 29,
-    period: "/mo",
-    credits: "500 credits (500K words)",
-    icon: Crown,
-    highlights: [
-      "Edits at half credit cost",
-      "Advanced Plot Check editing",
-      "Fastest generation speed",
-      "Unlimited books",
-    ],
-  },
-  {
-    id: "unlimited",
-    name: "Unlimited",
-    price: 79,
-    period: "/mo",
-    credits: "Unlimited credits & words",
-    icon: Crown,
-    highlights: [
-      "Edits at half credit cost",
-      "Advanced Plot Check editing",
-      "Highest priority queue",
-      "Unlimited everything",
-    ],
-  },
-];
+// $1 = 30 credits = 30,000 words. Min $10, max $1000.
+const CREDITS_PER_DOLLAR = 30;
+const WORDS_PER_CREDIT = 1000;
+const MIN_AMOUNT = 10;
+const MAX_AMOUNT = 1000;
 
-const PLAN_ORDER: Record<string, number> = {
-  free: 0,
-  starter: 1,
-  pro: 2,
-  unlimited: 3,
-};
-
-function formatDate(dateStr: string | null | undefined): string {
-  if (!dateStr) return "N/A";
-  try {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "N/A";
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  } catch {
-    return "N/A";
-  }
-}
+const QUICK_AMOUNTS = [10, 25, 50, 100, 250, 500, 1000];
 
 interface PricingModalProps {
   open: boolean;
@@ -104,530 +29,181 @@ interface PricingModalProps {
 const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
-  const [currentPlan, setCurrentPlan] = useState<string>("free");
-  const [pendingPlan, setPendingPlan] = useState<string | null>(null);
-  const [pendingPlanAt, setPendingPlanAt] = useState<string | null>(null);
-  const [periodEnd, setPeriodEnd] = useState<string | null>(null);
-  const [hasSubscription, setHasSubscription] = useState(false);
-  const [profileLoading, setProfileLoading] = useState(true);
-
-  // Confirm downgrade to free
-  const [confirmFreeDowngrade, setConfirmFreeDowngrade] = useState(false);
-  // Cancel pending downgrade
-  const [cancellingDowngrade, setCancellingDowngrade] = useState(false);
-  // Pending plan conflict resolution
-  const [pendingConflict, setPendingConflict] = useState<{ targetPlan: string } | null>(null);
-  // Proration preview confirmation
-  const [upgradePreview, setUpgradePreview] = useState<{
-    planId: string;
-    planName: string;
-    amountDue: number;
-    currency: string;
-    isUpgrade: boolean;
-    nextBillingDate?: string;
-    nextAmount?: number;
-    effectiveDate?: string;
+  const [amount, setAmount] = useState(25);
+  const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState<{
+    credits_used: number;
+    credits_limit: number;
+    plan: string;
   } | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
 
-  const loadProfile = useCallback(async () => {
-    if (!user) return;
-    setProfileLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("manage-subscription", {
-        body: { action: "get_subscription" },
-      });
-      if (!error && data?.subscription) {
-        setCurrentPlan(data.subscription.plan);
-        setPendingPlan(data.subscription.pending_plan || null);
-        setPendingPlanAt(data.subscription.pending_plan_at || null);
-        setPeriodEnd(data.subscription.current_period_end || null);
-        setHasSubscription(true);
-      } else {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("plan, pending_plan, pending_plan_at")
-          .eq("id", user.id)
-          .single();
-        setCurrentPlan((profile as any)?.plan || "free");
-        setPendingPlan((profile as any)?.pending_plan || null);
-        setPendingPlanAt((profile as any)?.pending_plan_at || null);
-        setHasSubscription(false);
-      }
-    } catch {
-      // fallback
-    } finally {
-      setProfileLoading(false);
-    }
-  }, [user]);
+  const credits = amount * CREDITS_PER_DOLLAR;
+  const words = credits * WORDS_PER_CREDIT;
 
   useEffect(() => {
-    if (open) loadProfile();
-  }, [open, loadProfile]);
+    if (open && user) {
+      supabase
+        .from("profiles")
+        .select("credits_used, credits_limit, plan")
+        .eq("id", user.id)
+        .single()
+        .then(({ data }) => {
+          if (data) setProfile(data);
+        });
+    }
+  }, [open, user]);
 
-  const redirectToStripePortal = async (planId: string) => {
-    setLoadingPlan(planId);
+  const handlePurchase = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("manage-subscription", {
-        body: { action: "create_portal_update", new_plan: planId },
+      const { data, error } = await supabase.functions.invoke("create-credit-checkout", {
+        body: { amount },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-
-      // If the backend updated the subscription directly (no redirect needed)
-      if (data?.updated) {
-        toast({
-          title: "Plan updated!",
-          description: `You're now on the ${data.plan?.charAt(0).toUpperCase() + data.plan?.slice(1)} plan.`,
-        });
-        await loadProfile();
-        onOpenChange(false);
-        return;
-      }
-
-      // Otherwise, redirect to Stripe (checkout for resubscription)
       if (data?.url) {
         window.location.href = data.url;
       } else {
-        throw new Error("No portal URL returned");
+        throw new Error("No checkout URL returned");
       }
     } catch (err: any) {
       toast({
-        title: "Failed to change plan",
+        title: "Checkout failed",
         description: err.message,
         variant: "destructive",
       });
-      await loadProfile();
     } finally {
-      setLoadingPlan(null);
+      setLoading(false);
     }
+  }, [user, amount, toast]);
+
+  const formatWords = (w: number) => {
+    if (w >= 1_000_000) return `${(w / 1_000_000).toFixed(1)}M`;
+    if (w >= 1_000) return `${(w / 1_000).toFixed(0)}K`;
+    return w.toString();
   };
 
-  const proceedWithPlanChange = async (planId: string) => {
-    if (planId === "free") {
-      setConfirmFreeDowngrade(true);
-      return;
-    }
-
-    // Fetch proration preview before confirming
-    setPreviewLoading(true);
-    setLoadingPlan(planId);
-    try {
-      const { data, error } = await supabase.functions.invoke("manage-subscription", {
-        body: { action: "preview_upgrade", new_plan: planId },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      const planMeta = PLANS.find(p => p.id === planId);
-      setUpgradePreview({
-        planId,
-        planName: planMeta?.name || planId,
-        amountDue: data.amount_due || 0,
-        currency: data.currency || "usd",
-        isUpgrade: data.is_upgrade !== false,
-        nextBillingDate: data.next_billing_date,
-        nextAmount: data.next_amount,
-        effectiveDate: data.effective_date,
-      });
-    } catch (err: any) {
-      toast({ title: "Failed to preview plan change", description: err.message, variant: "destructive" });
-    } finally {
-      setPreviewLoading(false);
-      setLoadingPlan(null);
-    }
-  };
-
-  const confirmUpgrade = async () => {
-    if (!upgradePreview) return;
-    setUpgradePreview(null);
-    await redirectToStripePortal(upgradePreview.planId);
-  };
-
-  const formatCents = (cents: number, currency: string) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency.toUpperCase(),
-    }).format(cents / 100);
-  };
-
-  const handlePlanAction = async (planId: string) => {
-    if (!user) return;
-    if (planId === currentPlan) return;
-
-    // Free user upgrading → checkout
-    if (currentPlan === "free" || !hasSubscription) {
-      if (planId === "free") return; // Already free
-      setLoadingPlan(planId);
-      try {
-        const { data, error } = await supabase.functions.invoke("create-checkout", {
-          body: { planId },
-        });
-        if (error) throw error;
-        if (data?.url) {
-          window.location.href = data.url;
-        } else {
-          throw new Error("No checkout URL returned");
-        }
-      } catch (err: any) {
-        toast({ title: "Checkout failed", description: err.message, variant: "destructive" });
-      } finally {
-        setLoadingPlan(null);
-      }
-      return;
-    }
-
-    // If there's a pending plan change and the user picks a different plan, show conflict resolution
-    if (pendingPlan && planId !== pendingPlan) {
-      setPendingConflict({ targetPlan: planId });
-      return;
-    }
-
-    await proceedWithPlanChange(planId);
-  };
-
-  const handleConflictResolve = async () => {
-    if (!pendingConflict) return;
-    const targetPlan = pendingConflict.targetPlan;
-    setCancellingDowngrade(true);
-    try {
-      // Cancel the pending downgrade first
-      const result = await supabase.functions.invoke("manage-subscription", {
-        body: { action: "cancel_downgrade" },
-      });
-      if (result.data?.error) throw new Error(result.data.error);
-      setPendingPlan(null);
-      setPendingPlanAt(null);
-      setPendingConflict(null);
-      // Now proceed with the new plan change
-      await proceedWithPlanChange(targetPlan);
-    } catch (err: any) {
-      toast({ title: "Failed to cancel pending change", description: err.message, variant: "destructive" });
-    } finally {
-      setCancellingDowngrade(false);
-    }
-  };
-
-  // executeDowngrade removed — Stripe's hosted page handles downgrade scheduling natively
-
-  const executeCancelToFree = async () => {
-    setLoadingPlan("free");
-    try {
-      const result = await supabase.functions.invoke("manage-subscription", {
-        body: { action: "cancel_subscription" },
-      });
-      if (result.data?.error) throw new Error(result.data.error);
-      toast({
-        title: "Subscription canceled",
-        description: `You'll retain access until ${formatDate(result.data?.effective_date || periodEnd)}. After that, you'll move to Free.`,
-      });
-      setConfirmFreeDowngrade(false);
-      await loadProfile();
-    } catch (err: any) {
-      toast({ title: "Cancel failed", description: err.message, variant: "destructive" });
-    } finally {
-      setLoadingPlan(null);
-    }
-  };
-
-  const handleCancelDowngrade = async () => {
-    setCancellingDowngrade(true);
-    try {
-      const result = await supabase.functions.invoke("manage-subscription", {
-        body: { action: "cancel_downgrade" },
-      });
-      if (result.data?.error) throw new Error(result.data.error);
-      toast({ title: "Downgrade canceled", description: "You'll stay on your current plan." });
-      await loadProfile();
-    } catch (err: any) {
-      toast({ title: "Failed to cancel downgrade", description: err.message, variant: "destructive" });
-    } finally {
-      setCancellingDowngrade(false);
-    }
-  };
-
-  const getButtonLabel = (planId: string) => {
-    if (planId === currentPlan) return "Current Plan";
-    const targetOrder = PLAN_ORDER[planId] ?? 0;
-    const currentOrderVal = PLAN_ORDER[currentPlan] ?? 0;
-    if (currentPlan === "free" || !hasSubscription) return `Upgrade to ${PLANS.find(p => p.id === planId)?.name}`;
-    if (targetOrder > currentOrderVal) return `Upgrade to ${PLANS.find(p => p.id === planId)?.name}`;
-    return `Downgrade to ${PLANS.find(p => p.id === planId)?.name}`;
-  };
-
-  const getButtonVariant = (planId: string): "hero" | "outline" | "ghost" | "destructive" => {
-    if (planId === currentPlan) return "ghost";
-    const targetOrder = PLAN_ORDER[planId] ?? 0;
-    const currentOrderVal = PLAN_ORDER[currentPlan] ?? 0;
-    if (targetOrder > currentOrderVal) return "hero";
-    return "outline";
-  };
+  const remainingCredits = profile
+    ? Math.max(0, profile.credits_limit - profile.credits_used)
+    : null;
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader className="text-center pb-2">
-            <DialogTitle className="text-2xl font-serif flex items-center justify-center gap-2">
-              <Zap className="w-5 h-5 text-primary" />
-              Choose Your Plan
-            </DialogTitle>
-            <DialogDescription className="text-base">
-              {reason || "Pick the plan that fits your writing ambitions."}
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={() => {/* prevent background close */}}>
+      <DialogContent
+        className="sm:max-w-md max-h-[90vh] overflow-y-auto [&>button[class*='absolute']]:hidden"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        {/* Custom close button */}
+        <button
+          onClick={() => onOpenChange(false)}
+          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 z-10"
+        >
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </button>
 
-          {/* Pending downgrade banner */}
-          {pendingPlan && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center justify-between p-3 rounded-lg bg-warning/10 border border-warning/20 text-sm"
-            >
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
-                <span>
-                  Switching to <strong className="capitalize">{pendingPlan}</strong> on {formatDate(pendingPlanAt)}
-                </span>
-              </div>
+        <DialogHeader className="text-center pb-2">
+          <DialogTitle className="text-2xl font-serif flex items-center justify-center gap-2">
+            <Coins className="w-5 h-5 text-primary" />
+            Buy Credits
+          </DialogTitle>
+          <DialogDescription className="text-base">
+            {reason || "Top up your credits to keep writing. Credits never expire."}
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Current balance */}
+        {profile && (
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border/50 text-sm">
+            <span className="text-muted-foreground">Current balance</span>
+            <span className="font-semibold text-foreground">
+              {remainingCredits} credit{remainingCredits !== 1 ? "s" : ""} remaining
+            </span>
+          </div>
+        )}
+
+        <div className="space-y-6 mt-2">
+          {/* Quick amount buttons */}
+          <div className="flex flex-wrap gap-2 justify-center">
+            {QUICK_AMOUNTS.map((q) => (
               <Button
-                variant="ghost"
+                key={q}
+                variant={amount === q ? "default" : "outline"}
                 size="sm"
-                onClick={handleCancelDowngrade}
-                disabled={cancellingDowngrade}
-                className="text-xs"
+                onClick={() => setAmount(q)}
+                className="min-w-[60px]"
               >
-                {cancellingDowngrade ? <Loader2 className="w-3 h-3 animate-spin" /> : <><RotateCcw className="w-3 h-3 mr-1" /> Cancel</>}
+                ${q}
               </Button>
-            </motion.div>
-          )}
+            ))}
+          </div>
 
-          {profileLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          {/* Slider */}
+          <div className="space-y-3 px-1">
+            <Slider
+              value={[amount]}
+              onValueChange={(v) => setAmount(v[0])}
+              min={MIN_AMOUNT}
+              max={MAX_AMOUNT}
+              step={5}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>${MIN_AMOUNT}</span>
+              <span>${MAX_AMOUNT}</span>
             </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-              {PLANS.map((plan, i) => {
-                const isCurrent = plan.id === currentPlan;
-                const isPending = plan.id === pendingPlan;
+          </div>
 
-                return (
-                  <motion.div
-                    key={plan.id}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: i * 0.06 }}
-                    className={`relative rounded-xl border p-4 flex flex-col gap-3 ${
-                      isCurrent
-                        ? "border-primary/50 shadow-md ring-1 ring-primary/20 bg-primary/5"
-                        : isPending
-                        ? "border-warning/40 ring-1 ring-warning/20"
-                        : plan.popular
-                        ? "border-primary/30 shadow-sm"
-                        : "border-border/50"
-                    }`}
-                  >
-                    {isCurrent && (
-                      <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-0.5">
-                        Current Plan
-                      </Badge>
-                    )}
-                    {isPending && !isCurrent && (
-                      <Badge variant="warning" className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-xs px-2 py-0.5">
-                        Pending
-                      </Badge>
-                    )}
-                    {plan.popular && !isCurrent && !isPending && (
-                      <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-0.5">
-                        <Sparkles className="w-3 h-3 mr-1" /> Popular
-                      </Badge>
-                    )}
+          {/* Summary card */}
+          <motion.div
+            key={amount}
+            initial={{ opacity: 0.5, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.15 }}
+            className="rounded-xl border border-primary/20 bg-primary/5 p-5 text-center space-y-1"
+          >
+            <p className="text-3xl font-serif font-bold text-foreground">
+              ${amount}
+            </p>
+            <p className="text-lg font-semibold text-primary">
+              {credits.toLocaleString()} credits
+            </p>
+            <p className="text-sm text-muted-foreground">
+              ≈ {formatWords(words)} words of content
+            </p>
+          </motion.div>
 
-                    <div className="flex items-center gap-2">
-                      <plan.icon className="w-4 h-4 text-primary" />
-                      <span className="font-serif font-bold">{plan.name}</span>
-                    </div>
+          {/* Conversion info */}
+          <p className="text-xs text-muted-foreground text-center">
+            $1 = 30 credits (30,000 words) · Credits never expire · 5 free credits/month
+          </p>
 
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-serif font-bold">${plan.price}</span>
-                      <span className="text-sm text-muted-foreground">{plan.period}</span>
-                    </div>
-
-                    <p className="text-xs text-muted-foreground">{plan.credits}</p>
-
-                    <div className="space-y-1.5 flex-1">
-                      {plan.highlights.map((h) => (
-                        <div key={h} className="flex items-start gap-1.5">
-                          <Check className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
-                          <span className="text-xs text-foreground">{h}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <Button
-                      variant={getButtonVariant(plan.id)}
-                      size="sm"
-                      className="w-full"
-                      onClick={() => handlePlanAction(plan.id)}
-                      disabled={isCurrent || loadingPlan === plan.id}
-                    >
-                      {loadingPlan === plan.id ? (
-                        <span className="flex items-center gap-1.5">
-                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          Processing...
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1.5">
-                          {getButtonLabel(plan.id)}
-                          {!isCurrent && (
-                            (PLAN_ORDER[plan.id] ?? 0) > (PLAN_ORDER[currentPlan] ?? 0)
-                              ? <ArrowUp className="w-3.5 h-3.5" />
-                              : <ArrowDown className="w-3.5 h-3.5" />
-                          )}
-                        </span>
-                      )}
-                    </Button>
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Confirm Cancel to Free Dialog */}
-      <AlertDialog open={confirmFreeDowngrade} onOpenChange={setConfirmFreeDowngrade}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-destructive" /> Cancel Subscription?
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <p>
-                  Your subscription will remain active until{" "}
-                  <strong>{formatDate(periodEnd)}</strong>.
-                  After that, you'll be moved to the Free plan with 5 credits/month.
-                </p>
-                <p className="text-destructive/80 font-medium">
-                  You'll lose access to all paid features including priority generation, advanced editing, and unlimited books.
-                </p>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={executeCancelToFree}
-              disabled={!!loadingPlan}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {loadingPlan === "free" ? "Canceling..." : "Yes, Cancel Subscription"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Pending Plan Conflict Resolution Dialog */}
-      <AlertDialog open={!!pendingConflict} onOpenChange={(open) => !open && setPendingConflict(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-warning" /> Pending Plan Change
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <p>
-                  You currently have a pending switch to{" "}
-                  <strong className="capitalize">{pendingPlan}</strong> on{" "}
-                  <strong>{formatDate(pendingPlanAt)}</strong>.
-                </p>
-                <p className="text-muted-foreground">
-                  To switch to <strong className="capitalize">{pendingConflict?.targetPlan}</strong> instead,
-                  we need to cancel your pending change first.
-                </p>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>
-              Keep my pending {pendingPlan} switch
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConflictResolve}
-              disabled={cancellingDowngrade}
-            >
-              {cancellingDowngrade ? (
-                <span className="flex items-center gap-1.5">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Processing...
-                </span>
-              ) : (
-                `Cancel pending & switch to ${pendingConflict?.targetPlan || ""}`
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      {/* Upgrade/Downgrade Confirmation with Proration Preview */}
-      <AlertDialog open={!!upgradePreview} onOpenChange={(open) => !open && setUpgradePreview(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              {upgradePreview?.isUpgrade ? (
-                <><ArrowUp className="w-5 h-5 text-primary" /> Confirm Upgrade</>
-              ) : (
-                <><ArrowDown className="w-5 h-5 text-warning" /> Confirm Downgrade</>
-              )}
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                {upgradePreview?.isUpgrade ? (
-                  <>
-                    <p>
-                      Upgrading to <strong>{upgradePreview.planName}</strong> will charge{" "}
-                      <strong className="text-foreground">{formatCents(upgradePreview.amountDue, upgradePreview.currency)}</strong>{" "}
-                      today (prorated for the remainder of this billing period).
-                    </p>
-                    {upgradePreview.nextAmount && upgradePreview.nextAmount > 0 && (
-                      <p className="text-muted-foreground">
-                        Your next full charge of{" "}
-                        <strong>{formatCents(upgradePreview.nextAmount, upgradePreview.currency)}/month</strong>{" "}
-                        will be on <strong>{formatDate(upgradePreview.nextBillingDate)}</strong>.
-                      </p>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <p>
-                      Switching to <strong>{upgradePreview?.planName}</strong> — no charge today.
-                    </p>
-                    <p className="text-muted-foreground">
-                      Your current plan will remain active until{" "}
-                      <strong>{formatDate(upgradePreview?.effectiveDate)}</strong>,
-                      then you'll move to {upgradePreview?.planName} at{" "}
-                      <strong>{formatCents(upgradePreview?.nextAmount || 0, upgradePreview?.currency || "usd")}/month</strong>.
-                    </p>
-                  </>
-                )}
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmUpgrade}
-              className={upgradePreview?.isUpgrade ? "" : ""}
-            >
-              {upgradePreview?.isUpgrade
-                ? `Pay ${formatCents(upgradePreview?.amountDue || 0, upgradePreview?.currency || "usd")} & Upgrade`
-                : `Confirm Downgrade`}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+          {/* Purchase button */}
+          <Button
+            variant="hero"
+            size="lg"
+            className="w-full"
+            onClick={handlePurchase}
+            disabled={loading}
+          >
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Redirecting to checkout...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Zap className="w-4 h-4" />
+                Buy {credits.toLocaleString()} Credits for ${amount}
+              </span>
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

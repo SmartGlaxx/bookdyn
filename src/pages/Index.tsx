@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import { BookOpen, Sparkles } from "lucide-react";
@@ -9,12 +9,23 @@ import BookDetailView from "@/components/BookDetailView";
 import { useBooks } from "@/hooks/useBooks";
 import { Book, CreateBookInput } from "@/types/book";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const Index = () => {
   const [showEngine, setShowEngine] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   
   const { books, isLoading, addBook, deleteBook, updateBook } = useBooks();
+
+  // Handle credit purchase success redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const creditsPurchased = params.get("credits_purchased");
+    if (creditsPurchased) {
+      window.history.replaceState({}, "", "/dashboard");
+      toast.success(`${Number(creditsPurchased).toLocaleString()} credits added to your account!`);
+    }
+  }, []);
 
   const handleCreateBook = async (input: CreateBookInput) => {
     try {
