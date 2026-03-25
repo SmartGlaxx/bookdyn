@@ -93,6 +93,7 @@ const Index = () => {
                   turboWordsProgress={turbo.turboWordsProgress}
                   streakGoal={turbo.STREAK_GOAL}
                   wordsGoal={turbo.WORDS_GOAL}
+                  plan={turbo.plan}
                 />
               </div>
             )}
@@ -200,6 +201,7 @@ const Index = () => {
                       turboWordsProgress={turbo.turboWordsProgress}
                       streakGoal={turbo.STREAK_GOAL}
                       wordsGoal={turbo.WORDS_GOAL}
+                      plan={turbo.plan}
                     />
                   </div>
                 )}
