@@ -50,9 +50,7 @@ interface InvoiceData {
 }
 
 const PLANS = [
-  { id: "starter", name: "Starter", price: 9, credits: 100, icon: Sparkles },
-  { id: "pro", name: "Pro", price: 29, credits: 500, icon: Crown },
-  { id: "unlimited", name: "Unlimited", price: 79, credits: null, icon: Crown },
+  { id: "free", name: "Free", price: 0, credits: 5, icon: Zap },
 ];
 
 function formatDate(dateStr: string | null | undefined): string {
@@ -277,13 +275,10 @@ const ManageSubscription = () => {
                 <Separator />
 
                 <div className="flex flex-wrap gap-3">
-                  <Button variant={isFree ? "hero" : "outline"} onClick={() => setPricingOpen(true)}>
-                    {isFree ? (
-                      <><Sparkles className="w-4 h-4 mr-2" /> Upgrade Plan</>
-                    ) : (
-                      <><ArrowUpDown className="w-4 h-4 mr-2" /> Change Plan</>
-                    )}
+                  <Button variant="hero" onClick={() => setPricingOpen(true)}>
+                    <Coins className="w-4 h-4 mr-2" /> Buy Credits
                   </Button>
+                </div>
                   {!isFree && (
                     <>
                       {subscription?.cancel_at_period_end ? (
