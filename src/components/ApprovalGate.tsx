@@ -1,12 +1,11 @@
 import { motion } from "framer-motion";
-import { Check, Pencil, RefreshCw, ArrowRight, MessageSquare } from "lucide-react";
+import { Check, RefreshCw, ArrowRight, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ApprovalGateProps {
   type: "section" | "chapter" | "outline";
   title: string;
   onApprove: () => void;
-  onEdit?: () => void;
   onRegenerate?: () => void;
   onExpand?: () => void;
   onAddDialogue?: () => void;
@@ -17,7 +16,6 @@ export function ApprovalGate({
   type,
   title,
   onApprove,
-  onEdit,
   onRegenerate,
   onExpand,
   onAddDialogue,
@@ -39,27 +37,15 @@ export function ApprovalGate({
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button
-          variant="hero"
-          size="sm"
-          onClick={onApprove}
-          disabled={isProcessing}
-        >
+        <Button variant="hero" size="sm" onClick={onApprove} disabled={isProcessing}>
           <Check className="w-4 h-4" />
           Approve & Continue
         </Button>
 
-        {onEdit && (
-          <Button variant="outline" size="sm" onClick={onEdit} disabled={isProcessing}>
-            <Pencil className="w-4 h-4" />
-            Edit
-          </Button>
-        )}
-
         {onRegenerate && (
           <Button variant="outline" size="sm" onClick={onRegenerate} disabled={isProcessing}>
             <RefreshCw className="w-4 h-4" />
-            Rewrite
+            Regenerate
           </Button>
         )}
 
