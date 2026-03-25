@@ -360,7 +360,7 @@ export const TONE_OPTIONS: { value: ToneLevel; label: string; emoji: string; des
 ];
 
 export const AUTOMATION_OPTIONS: { value: AutomationLevel; label: string; description: string; locked?: boolean }[] = [
-  { value: "guided", label: "Guided", description: "Step-by-step generation with approval at each section. Best quality." },
+  { value: "guided", label: "Guided", description: "You write, AI suggests. Prompt for ideas based on your context." },
   { value: "assisted", label: "Assisted", description: "Generates paragraphs/sections, you review before continuing." },
   { value: "semi-auto", label: "Semi-Auto", description: "Generates full chapters, you approve per chapter." },
   { value: "auto-draft", label: "Auto Draft", description: "Generates large portions automatically. Requires Turbo unlock.", locked: true },

@@ -351,10 +351,10 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                   <div className="grid grid-cols-2 gap-3">
                     <FieldGroup label="Depth" tooltip="Controls how detailed the content will be">
                       <Select
-                        value={formData.controls?.depthLevel || "intermediate"}
+                        value={formData.controls?.depthLevel || ""}
                         onValueChange={(v) => updateControls("depthLevel", v as DepthLevel)}
                       >
-                        <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
                         <SelectContent className="bg-popover z-50">
                           {DEPTH_OPTIONS.map((opt) => (
                             <SelectItem key={opt.value} value={opt.value}>
@@ -370,13 +370,13 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
                     <FieldGroup label="Automation" tooltip="Controls generation flow. Auto Draft requires Pro+ plan and Turbo unlock.">
                       <Select
-                        value={formData.controls?.automationLevel || "guided"}
+                        value={formData.controls?.automationLevel || ""}
                         onValueChange={(v) => {
-                          if (v === "auto-draft") return; // Locked - handled differently
+                          if (v === "auto-draft") return;
                           updateControls("automationLevel", v as AutomationLevel);
                         }}
                       >
-                        <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
                         <SelectContent className="bg-popover z-50">
                           {AUTOMATION_OPTIONS.map((opt) => {
                             const isLocked = opt.value === "auto-draft";

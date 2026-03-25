@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
-import { BookOpen, Sparkles, LogOut, User, Plus, Coins, Flame, Zap } from "lucide-react";
+import { BookOpen, Sparkles, LogOut, User, Plus, Coins, Flame, Zap, PenTool, Lock, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useTurbo } from "@/hooks/useTurbo";
-import { TurboTracker } from "@/components/TurboTracker";
+import { getPlanDisplayName, canAccessTurbo } from "@/lib/plans";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -114,43 +114,83 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
 
                 <DropdownMenuSeparator />
 
-                {/* Credits */}
-                {profile && (
-                  <div className="px-2 py-2 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <Coins className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-medium">Credits</span>
-                      </div>
-                      <span className="text-sm font-semibold text-foreground">
-                        {remainingCredits} remaining
-                      </span>
-                    </div>
-                    <Progress value={creditsPercent} className="h-1.5" />
-                    <p className="text-xs text-muted-foreground">
-                      {profile.credits_used} of {profile.credits_limit} used
-                    </p>
+                {/* Plan & Credits */}
+                <div className="px-2 py-2 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Plan</span>
+                    <span className="text-xs font-semibold text-foreground">
+                      {getPlanDisplayName(turbo.plan)}
+                    </span>
                   </div>
-                )}
+                  {profile && (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Coins className="w-3.5 h-3.5 text-primary" />
+                          <span className="text-xs font-medium">Credits</span>
+                        </div>
+                        <span className="text-xs font-semibold text-foreground">
+                          {remainingCredits} remaining
+                        </span>
+                      </div>
+                      <Progress value={creditsPercent} className="h-1.5" />
+                    </>
+                  )}
+                </div>
 
                 <DropdownMenuSeparator />
 
-                {/* Turbo Tracker compact */}
+                {/* Turbo Progress */}
                 {!turbo.isLoading && (
-                  <TurboTracker
-                    streakDays={turbo.streakDays}
-                    streakProgress={turbo.streakProgress}
-                    totalWordsWritten={turbo.totalWordsWritten}
-                    wordsProgress={turbo.wordsProgress}
-                    turboUnlocked={turbo.turboUnlocked}
-                    turboWordsRemaining={turbo.turboWordsRemaining}
-                    turboWordsCapacity={turbo.turboWordsCapacity}
-                    turboWordsProgress={turbo.turboWordsProgress}
-                    streakGoal={turbo.STREAK_GOAL}
-                    wordsGoal={turbo.WORDS_GOAL}
-                    plan={turbo.plan}
-                    compact
-                  />
+                  <div className="px-2 py-2 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1">
+                        <Flame className="w-3.5 h-3.5 text-orange-500" />
+                        Streak
+                      </span>
+                      <span className="font-semibold">{turbo.streakDays} days</span>
+                    </div>
+                    <Progress value={turbo.streakProgress} className="h-1.5" variant="warning" />
+                    <p className="text-[11px] text-muted-foreground">
+                      {turbo.streakDays >= turbo.STREAK_GOAL
+                        ? "🔥 Streak goal reached!"
+                        : `${turbo.STREAK_GOAL - turbo.streakDays} more days to unlock Turbo`}
+                    </p>
+
+                    <div className="flex items-center justify-between text-xs mt-1">
+                      <span className="flex items-center gap-1">
+                        <PenTool className="w-3.5 h-3.5 text-primary" />
+                        Words
+                      </span>
+                      <span className="font-semibold">{(turbo.totalWordsWritten / 1000).toFixed(1)}K</span>
+                    </div>
+                    <Progress value={turbo.wordsProgress} className="h-1.5" />
+                    <p className="text-[11px] text-muted-foreground">
+                      {turbo.totalWordsWritten >= turbo.WORDS_GOAL
+                        ? "✍️ Word goal reached!"
+                        : `${((turbo.WORDS_GOAL - turbo.totalWordsWritten) / 1000).toFixed(1)}K more words to go`}
+                    </p>
+
+                    {/* Turbo status message */}
+                    <div className="mt-2 flex items-start gap-1.5 text-[11px] text-muted-foreground rounded-md bg-muted/50 p-2">
+                      {canAccessTurbo(turbo.plan) && turbo.turboUnlocked ? (
+                        <>
+                          <Zap className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+                          <span>Turbo Active — {(turbo.turboWordsRemaining / 1000).toFixed(0)}K words remaining</span>
+                        </>
+                      ) : !canAccessTurbo(turbo.plan) ? (
+                        <>
+                          <Crown className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                          <span>Upgrade to Pro or Elite to unlock Turbo Mode.</span>
+                        </>
+                      ) : (
+                        <>
+                          <Lock className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                          <span>Maintain a {turbo.STREAK_GOAL}-day streak and write {(turbo.WORDS_GOAL / 1000).toFixed(0)}K+ words to unlock Auto Draft mode.</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 )}
 
                 <DropdownMenuSeparator />
