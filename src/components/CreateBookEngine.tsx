@@ -517,10 +517,10 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                     <div className="grid grid-cols-2 gap-3">
                       <FieldGroup label="Era" tooltip="When the book takes place">
                         <Select
-                          value={formData.controls?.temporalContext?.era || "contemporary"}
+                          value={formData.controls?.temporalContext?.era || ""}
                           onValueChange={(v) => updateTemporalContext("era", v as TemporalEra)}
                         >
-                          <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
                           <SelectContent className="bg-popover z-50 max-h-60">
                             {TEMPORAL_ERA_OPTIONS.map((opt) => (
                               <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
@@ -531,10 +531,10 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
                       <FieldGroup label="Timeline" tooltip="How time flows in the narrative">
                         <Select
-                          value={formData.controls?.temporalContext?.timelineStructure || "linear"}
+                          value={formData.controls?.temporalContext?.timelineStructure || ""}
                           onValueChange={(v) => updateTemporalContext("timelineStructure", v as TimelineStructure)}
                         >
-                          <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
                           <SelectContent className="bg-popover z-50">
                             {TIMELINE_OPTIONS.map((opt) => (
                               <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
@@ -570,10 +570,10 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                     <div className="grid grid-cols-2 gap-3">
                       <FieldGroup label="Chapter Count">
                         <Select
-                          value={formData.controls?.structureControls?.chapterCount || "flexible"}
+                          value={formData.controls?.structureControls?.chapterCount || ""}
                           onValueChange={(v) => updateStructureControls("chapterCount", v)}
                         >
-                          <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
                           <SelectContent className="bg-popover z-50">
                             <SelectItem value="flexible">Flexible</SelectItem>
                             <SelectItem value="fixed">Fixed Number</SelectItem>
