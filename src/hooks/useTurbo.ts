@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { canAccessTurbo } from "@/lib/plans";
 
 export interface TurboStatus {
   streakDays: number;
@@ -10,6 +11,7 @@ export interface TurboStatus {
   turboWordsCapacity: number;
   turboCyclesCompleted: number;
   lastActivityDate: string | null;
+  plan: string;
   isLoading: boolean;
 }
 
@@ -26,6 +28,7 @@ export function useTurbo() {
     turboWordsCapacity: 50000,
     turboCyclesCompleted: 0,
     lastActivityDate: null,
+    plan: "free",
     isLoading: true,
   });
 
@@ -34,7 +37,7 @@ export function useTurbo() {
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("streak_days, total_words_written, turbo_unlocked, turbo_words_remaining, turbo_words_capacity, turbo_cycles_completed, last_activity_date")
+      .select("streak_days, total_words_written, turbo_unlocked, turbo_words_remaining, turbo_words_capacity, turbo_cycles_completed, last_activity_date, plan")
       .eq("id", user.id)
       .single();
 
@@ -51,6 +54,7 @@ export function useTurbo() {
       turboWordsCapacity: (data as any).turbo_words_capacity || 50000,
       turboCyclesCompleted: (data as any).turbo_cycles_completed || 0,
       lastActivityDate: (data as any).last_activity_date || null,
+      plan: (data as any).plan || "free",
       isLoading: false,
     });
   }, [user]);
@@ -81,7 +85,10 @@ export function useTurbo() {
     }
   }, [user]);
 
-  const canUseAutoDraft = status.turboUnlocked && status.turboWordsRemaining > 0;
+  // Plan-gated Turbo access
+  const hasTurboPlanAccess = canAccessTurbo(status.plan);
+  const canUseAutoDraft = hasTurboPlanAccess && status.turboUnlocked && status.turboWordsRemaining > 0;
+  const isElite = status.plan === "elite";
 
   const streakProgress = Math.min(100, (status.streakDays / STREAK_GOAL) * 100);
   const wordsProgress = Math.min(100, (status.totalWordsWritten / WORDS_GOAL) * 100);
@@ -91,7 +98,9 @@ export function useTurbo() {
 
   return {
     ...status,
+    hasTurboPlanAccess,
     canUseAutoDraft,
+    isElite,
     streakProgress,
     wordsProgress,
     turboWordsProgress,

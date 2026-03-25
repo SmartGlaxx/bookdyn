@@ -363,6 +363,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                       turboWordsProgress={turbo.turboWordsProgress}
                       streakGoal={turbo.STREAK_GOAL}
                       wordsGoal={turbo.WORDS_GOAL}
+                      plan={turbo.plan}
                     />
                   </ScrollArea>
                 ) : (

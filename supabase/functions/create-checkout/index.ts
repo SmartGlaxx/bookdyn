@@ -10,7 +10,7 @@ const corsHeaders = {
 const PLAN_PRICES: Record<string, string> = {
   starter: "price_1T8T3zBjVtw2b7OiBecRD1Oa",
   pro: "price_1T8T4YBjVtw2b7OimimbNZ22",
-  unlimited: "price_1T8T4vBjVtw2b7Oi2KQ4OlAI",
+  elite: "price_1T8T4vBjVtw2b7Oi2KQ4OlAI",
 };
 
 serve(async (req) => {
@@ -36,16 +36,16 @@ serve(async (req) => {
 
     const user = { id: claimsData.claims.sub as string, email: claimsData.claims.email as string };
     const { planId } = await req.json();
-    const priceId = PLAN_PRICES[planId];
+    // Support legacy "unlimited" plan ID mapping to "elite"
+    const normalizedPlanId = planId === "unlimited" ? "elite" : planId;
+    const priceId = PLAN_PRICES[normalizedPlanId];
     if (!priceId) throw new Error("Invalid plan");
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
-    // Check for existing Stripe customer with matching supabase_user_id
     const customers = await stripe.customers.list({ email: user.email, limit: 10 });
     let customerId: string | undefined;
     
-    // Find customer with matching supabase_user_id, or first one
     const matchedCustomer = customers.data.find(
       (c) => c.metadata?.supabase_user_id === user.id
     );
@@ -53,7 +53,6 @@ serve(async (req) => {
     if (matchedCustomer) {
       customerId = matchedCustomer.id;
     } else if (customers.data.length > 0) {
-      // Update existing customer with supabase_user_id metadata
       customerId = customers.data[0].id;
       await stripe.customers.update(customerId, {
         metadata: { supabase_user_id: user.id },
@@ -69,7 +68,7 @@ serve(async (req) => {
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: {
         supabase_user_id: user.id,
-        plan_id: planId,
+        plan_id: normalizedPlanId,
       },
       subscription_data: {
         metadata: { supabase_user_id: user.id },
@@ -78,7 +77,6 @@ serve(async (req) => {
       cancel_url: `${origin}/dashboard?checkout=cancelled`,
     };
 
-    // If no existing customer, set metadata on the new customer that Stripe will create
     if (!customerId) {
       sessionParams.customer_creation = "always";
     }
