@@ -222,6 +222,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
     }
 
     // Send only the current chapter data to keep payload small
+    // CRITICAL: Strip all base64/data URIs to prevent 413 errors
     const strippedBook = {
       id: bookData.id,
       title: bookData.title,
@@ -238,6 +239,31 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
       },
     };
 
+    // Build the payload
+    const payload = {
+      book: strippedBook,
+      chapterIndex: 0, // Always 0 since we only send the current chapter
+      subsectionIndex,
+      previousSummary: trimContext(previousSummary, MAX_SUMMARY_CHARS),
+      previousRawContent: trimContext(previousRawContent),
+      tonalAnchors: (bookData.tonalAnchors || []).slice(-2).map((anchor) => trimContext(anchor, MAX_ANCHOR_CHARS) || "").filter(Boolean),
+      ieltsBand,
+      targetWordsPerSubsection: clampedWordsPerSubsection,
+      teaserStyle: bookData.controls?.teaserStyle || "none",
+    };
+
+    // Measure payload size and warn if approaching limit
+    const payloadJson = JSON.stringify(payload);
+    const payloadSize = new TextEncoder().encode(payloadJson).length;
+    console.log(`[BookGen] Payload size: ${(payloadSize / 1024).toFixed(1)}KB`);
+
+    if (payloadSize > 180_000) {
+      console.warn(`[BookGen] Payload dangerously large (${(payloadSize / 1024).toFixed(1)}KB), stripping further...`);
+      // Emergency: truncate previousRawContent and tonalAnchors
+      payload.previousRawContent = payload.previousRawContent?.slice(-500);
+      payload.tonalAnchors = payload.tonalAnchors?.slice(-1).map(a => a?.slice(0, 200) || "");
+    }
+
     console.log(`[BookGen] Requesting content for Ch${chapterIndex + 1} Sub${subsectionIndex + 1}`);
 
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-content`, {
@@ -247,17 +273,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
         "Authorization": `Bearer ${accessToken}`,
         "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
       },
-      body: JSON.stringify({
-        book: strippedBook,
-        chapterIndex: 0, // Always 0 since we only send the current chapter
-        subsectionIndex,
-        previousSummary: trimContext(previousSummary, MAX_SUMMARY_CHARS),
-        previousRawContent: trimContext(previousRawContent),
-        tonalAnchors: (bookData.tonalAnchors || []).slice(-2).map((anchor) => trimContext(anchor, MAX_ANCHOR_CHARS) || "").filter(Boolean),
-        ieltsBand,
-        targetWordsPerSubsection: clampedWordsPerSubsection,
-        teaserStyle: bookData.controls?.teaserStyle || "none",
-      }),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
