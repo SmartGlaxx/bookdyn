@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { BookOpen, Sparkles, LogOut, User, Plus, Coins } from "lucide-react";
+import { BookOpen, Sparkles, LogOut, User, Plus, Coins, Flame, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useTurbo } from "@/hooks/useTurbo";
+import { TurboTracker } from "@/components/TurboTracker";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,13 +22,12 @@ interface NavigationProps {
   onCreateBook: () => void;
 }
 
-
 const Navigation = ({ onCreateBook }: NavigationProps) => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<{ credits_used: number; credits_limit: number } | null>(null);
-  
+  const turbo = useTurbo();
 
   useEffect(() => {
     if (!user) return;
@@ -72,6 +73,21 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
           </a>
 
           <div className="flex items-center gap-3">
+            {/* Streak badge - always visible */}
+            {!turbo.isLoading && turbo.streakDays > 0 && (
+              <div className="hidden sm:flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-orange-500/10 text-orange-500">
+                <Flame className="w-3.5 h-3.5" />
+                {turbo.streakDays}
+              </div>
+            )}
+
+            {turbo.turboUnlocked && (
+              <div className="hidden sm:flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-amber-500/10 text-amber-500">
+                <Zap className="w-3.5 h-3.5" />
+                Turbo
+              </div>
+            )}
+
             <Button variant="hero" size="sm" onClick={onCreateBook} className="hidden sm:inline-flex">
               <Sparkles className="w-4 h-4" />
               New Book
@@ -90,8 +106,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                {/* User email */}
+              <DropdownMenuContent align="end" className="w-72">
                 <DropdownMenuLabel className="flex items-center gap-2 font-normal">
                   <User className="w-4 h-4 text-muted-foreground" />
                   <span className="truncate text-sm">{user?.email}</span>
@@ -120,6 +135,25 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
 
                 <DropdownMenuSeparator />
 
+                {/* Turbo Tracker compact */}
+                {!turbo.isLoading && (
+                  <TurboTracker
+                    streakDays={turbo.streakDays}
+                    streakProgress={turbo.streakProgress}
+                    totalWordsWritten={turbo.totalWordsWritten}
+                    wordsProgress={turbo.wordsProgress}
+                    turboUnlocked={turbo.turboUnlocked}
+                    turboWordsRemaining={turbo.turboWordsRemaining}
+                    turboWordsCapacity={turbo.turboWordsCapacity}
+                    turboWordsProgress={turbo.turboWordsProgress}
+                    streakGoal={turbo.STREAK_GOAL}
+                    wordsGoal={turbo.WORDS_GOAL}
+                    compact
+                  />
+                )}
+
+                <DropdownMenuSeparator />
+
                 <DropdownMenuItem onClick={handleManageBilling}>
                   <Coins className="w-4 h-4 mr-2" />
                   Billing & Credits
@@ -127,7 +161,6 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
 
                 <DropdownMenuSeparator />
 
-                {/* Sign out */}
                 <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                   <LogOut className="w-4 h-4 mr-2" />
                   Sign out
