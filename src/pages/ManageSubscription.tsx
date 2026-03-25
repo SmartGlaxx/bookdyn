@@ -51,6 +51,9 @@ interface InvoiceData {
 
 const PLANS = [
   { id: "free", name: "Free", price: 0, credits: 5, icon: Zap },
+  { id: "starter", name: "Starter", price: 9, credits: 100, icon: Sparkles },
+  { id: "pro", name: "Pro", price: 29, credits: 500, icon: Crown },
+  { id: "unlimited", name: "Unlimited", price: 79, credits: null, icon: Crown },
 ];
 
 function formatDate(dateStr: string | null | undefined): string {
@@ -278,6 +281,19 @@ const ManageSubscription = () => {
                   <Button variant="hero" onClick={() => setPricingOpen(true)}>
                     <Coins className="w-4 h-4 mr-2" /> Buy Credits
                   </Button>
+
+                  {!isFree && subscription && !subscription.cancel_at_period_end && (
+                    <Button variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => setCancelOpen(true)}>
+                      <XCircle className="w-4 h-4 mr-2" /> Cancel Subscription
+                    </Button>
+                  )}
+
+                  {subscription?.cancel_at_period_end && (
+                    <Button variant="outline" onClick={handleReactivate} disabled={actionLoading === "reactivate"}>
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      {actionLoading === "reactivate" ? "Reactivating..." : "Reactivate"}
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
