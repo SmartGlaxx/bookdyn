@@ -79,7 +79,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
       humorLevel: 3,
       authorityLevel: 5,
     },
-    controls: { ...getDefaultControls("novel"), automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel },
+    controls: { ...getDefaultControls("novel"), automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel, temporalContext: { era: "" as TemporalEra, timelineStructure: "" as TimelineStructure }, structureControls: { ...getDefaultControls("novel").structureControls, chapterCount: "" as any } },
   });
 
   useEffect(() => {
@@ -126,7 +126,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
   const handleBookTypeChange = (type: BookType) => {
     updateForm("bookType", type);
-    updateForm("controls", { ...getDefaultControls(type), automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel });
+    updateForm("controls", { ...getDefaultControls(type), automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel, temporalContext: { era: "" as TemporalEra, timelineStructure: "" as TimelineStructure }, structureControls: { ...getDefaultControls(type).structureControls, chapterCount: "" as any } });
     const allowed = BOOK_TYPE_AUDIENCES[type];
     if (formData.audience && allowed && !allowed.includes(formData.audience)) {
       updateForm("audience", "");
@@ -517,10 +517,10 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                     <div className="grid grid-cols-2 gap-3">
                       <FieldGroup label="Era" tooltip="When the book takes place">
                         <Select
-                          value={formData.controls?.temporalContext?.era || "contemporary"}
+                          value={formData.controls?.temporalContext?.era || ""}
                           onValueChange={(v) => updateTemporalContext("era", v as TemporalEra)}
                         >
-                          <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
                           <SelectContent className="bg-popover z-50 max-h-60">
                             {TEMPORAL_ERA_OPTIONS.map((opt) => (
                               <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
@@ -531,10 +531,10 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
                       <FieldGroup label="Timeline" tooltip="How time flows in the narrative">
                         <Select
-                          value={formData.controls?.temporalContext?.timelineStructure || "linear"}
+                          value={formData.controls?.temporalContext?.timelineStructure || ""}
                           onValueChange={(v) => updateTemporalContext("timelineStructure", v as TimelineStructure)}
                         >
-                          <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
                           <SelectContent className="bg-popover z-50">
                             {TIMELINE_OPTIONS.map((opt) => (
                               <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
@@ -570,10 +570,10 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                     <div className="grid grid-cols-2 gap-3">
                       <FieldGroup label="Chapter Count">
                         <Select
-                          value={formData.controls?.structureControls?.chapterCount || "flexible"}
+                          value={formData.controls?.structureControls?.chapterCount || ""}
                           onValueChange={(v) => updateStructureControls("chapterCount", v)}
                         >
-                          <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
                           <SelectContent className="bg-popover z-50">
                             <SelectItem value="flexible">Flexible</SelectItem>
                             <SelectItem value="fixed">Fixed Number</SelectItem>
