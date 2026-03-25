@@ -79,7 +79,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
       humorLevel: 3,
       authorityLevel: 5,
     },
-    controls: { ...getDefaultControls("novel"), automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel },
+    controls: { ...getDefaultControls("novel"), automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel, temporalContext: { era: "" as TemporalEra, timelineStructure: "" as TimelineStructure }, structureControls: { ...getDefaultControls("novel").structureControls, chapterCount: "" as any } },
   });
 
   useEffect(() => {
@@ -126,7 +126,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
   const handleBookTypeChange = (type: BookType) => {
     updateForm("bookType", type);
-    updateForm("controls", { ...getDefaultControls(type), automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel });
+    updateForm("controls", { ...getDefaultControls(type), automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel, temporalContext: { era: "" as TemporalEra, timelineStructure: "" as TimelineStructure }, structureControls: { ...getDefaultControls(type).structureControls, chapterCount: "" as any } });
     const allowed = BOOK_TYPE_AUDIENCES[type];
     if (formData.audience && allowed && !allowed.includes(formData.audience)) {
       updateForm("audience", "");
