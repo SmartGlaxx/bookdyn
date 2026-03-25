@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
 import { BookOpen, Sparkles } from "lucide-react";
@@ -9,6 +9,7 @@ import BookDetailView from "@/components/BookDetailView";
 import { useBooks } from "@/hooks/useBooks";
 import { Book, CreateBookInput } from "@/types/book";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const Index = () => {
   const [showEngine, setShowEngine] = useState(false);
