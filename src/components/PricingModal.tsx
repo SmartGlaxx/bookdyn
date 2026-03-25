@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  Zap, Loader2, Coins, X, Check, Lock, Sparkles, Crown, Rocket,
+  Zap, Loader2, Coins, Check, Lock, Sparkles, Crown, Rocket,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import {
