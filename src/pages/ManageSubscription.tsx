@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft, CreditCard, Receipt, ArrowUpDown, XCircle,
+  ArrowLeft, CreditCard, Receipt, XCircle,
   RefreshCw, Crown, Sparkles, Zap, Download,
-  ExternalLink, AlertTriangle, RotateCcw,
+  ExternalLink, AlertTriangle, RotateCcw, Coins,
 } from "lucide-react";
 import PricingModal from "@/components/PricingModal";
 import { Button } from "@/components/ui/button";
