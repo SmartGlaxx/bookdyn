@@ -1,23 +1,21 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Play, Pause, Square, Download, Settings, CheckCircle2, Circle, Loader2, BookText, Users, Pencil, Check, X, RefreshCw, FileText, Zap } from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Users, Pencil, Check, X, RefreshCw, FileText, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import BookSettings from "@/components/BookSettings";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Book, BOOK_TYPE_INFO, POV_OPTIONS, TONE_OPTIONS } from "@/types/book";
+import { Book, BOOK_TYPE_INFO } from "@/types/book";
 import { useBookGeneration } from "@/hooks/useBookGeneration";
 import { useBooks } from "@/hooks/useBooks";
 import { useTurbo } from "@/hooks/useTurbo";
 import { GenerationStatus } from "@/components/GenerationStatus";
-import { LiveContentView } from "@/components/LiveContentView";
 import { CharacterGallery } from "@/components/CharacterGallery";
 import { ChapterView } from "@/components/ChapterView";
 import { RegenerateBookDialog } from "@/components/RegenerateBookDialog";
 import { ApprovalGate } from "@/components/ApprovalGate";
-import { TurboTracker } from "@/components/TurboTracker";
+import { UserMenuDropdown } from "@/components/UserMenuDropdown";
 import { exportBookToPdf } from "@/lib/exportPdf";
 import { toast } from "sonner";
 
@@ -26,17 +24,7 @@ interface BookDetailViewProps {
   onBack: () => void;
 }
 
-const statusConfig: Record<"pending" | "writing" | "completed", {
-  icon: typeof Circle;
-  color: string;
-  animate?: boolean;
-}> = {
-  pending: { icon: Circle, color: "text-muted-foreground" },
-  writing: { icon: Loader2, color: "text-primary", animate: true },
-  completed: { icon: CheckCircle2, color: "text-success" },
-};
-
-type ViewMode = "chapter" | "full" | "characters" | "progress";
+type ViewMode = "chapter" | "full" | "characters";
 
 const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>("chapter");
@@ -79,7 +67,6 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
     onActivityRecorded: turbo.recordActivity,
   });
 
-  const typeInfo = BOOK_TYPE_INFO[book.bookType];
   const hasCharacters = book.outline?.characters && book.outline.characters.length > 0;
   const automationLevel = book.controls?.automationLevel || "guided";
 
@@ -92,9 +79,6 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   const hasOutline = !!book.outline && book.outline.chapters.length > 0;
   const canStart = !hasOutline && (book.status === "planning" || book.status === "ready_to_write" || isIdle);
   const canGenerateChapter = hasOutline && !isGenerating && !isComplete;
-  const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
-
-  // Find next incomplete chapter
   const nextIncompleteChapter = book.outline?.chapters.findIndex(ch => ch.status !== "completed") ?? -1;
 
   const handleSaveTitle = () => {
@@ -180,11 +164,13 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingTitle(true)}>
+              <div className="flex items-center gap-2 group cursor-pointer flex-1" onClick={() => setIsEditingTitle(true)}>
                 <h1 className="text-xl font-serif font-semibold">{book.title}</h1>
                 <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             )}
+            {/* User avatar in book detail page */}
+            <UserMenuDropdown />
           </div>
 
           {/* Subtitle row */}
@@ -226,7 +212,6 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
               <span className="hidden sm:inline">Back</span>
             </Button>
             <div className="flex items-center gap-2">
-              {/* Co-pilot actions */}
               {!hasOutline && canStart && (
                 <Button variant="hero" size="sm" onClick={generateOutline}>
                   <FileText className="w-4 h-4" />
@@ -241,7 +226,6 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                 </Button>
               )}
 
-              {/* Full generation only for semi-auto and auto-draft */}
               {hasOutline && !isGenerating && !isComplete && !isAwaitingApproval && 
                (automationLevel === "semi-auto" || automationLevel === "auto-draft") && (
                 <Button variant="outline" size="sm" onClick={handleStartFullGeneration}>
@@ -307,14 +291,13 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
           </motion.div>
         )}
 
-        {/* Approval Gate */}
+        {/* Approval Gate - without edit/rewrite buttons */}
         {isAwaitingApproval && generationState.approvalRequest && (
           <motion.div className="mb-4 px-4 md:px-0" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
             <ApprovalGate
               type={generationState.approvalRequest.type}
               title={generationState.approvalRequest.title}
               onApprove={approveAndContinue}
-              onEdit={() => toast.info("Edit the content in the chapter view, then approve to continue.")}
               onRegenerate={() => {
                 const req = generationState.approvalRequest;
                 if (req?.chapterIndex !== undefined) {
@@ -339,10 +322,6 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                     Characters
                   </TabsTrigger>
                 )}
-                <TabsTrigger value="progress" className="gap-2">
-                  <Zap className="w-4 h-4" />
-                  Progress
-                </TabsTrigger>
               </TabsList>
 
               <div className="flex-1 min-h-0 overflow-hidden">
@@ -350,26 +329,11 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                   <ScrollArea className="h-full rounded-xl border bg-card p-6">
                     <CharacterGallery characters={book.outline!.characters!} visualStyleGuide={book.outline!.visualStyleGuide} />
                   </ScrollArea>
-                ) : viewMode === "progress" ? (
-                  <ScrollArea className="h-full rounded-xl border bg-card p-6">
-                    <TurboTracker
-                      streakDays={turbo.streakDays}
-                      streakProgress={turbo.streakProgress}
-                      totalWordsWritten={turbo.totalWordsWritten}
-                      wordsProgress={turbo.wordsProgress}
-                      turboUnlocked={turbo.turboUnlocked}
-                      turboWordsRemaining={turbo.turboWordsRemaining}
-                      turboWordsCapacity={turbo.turboWordsCapacity}
-                      turboWordsProgress={turbo.turboWordsProgress}
-                      streakGoal={turbo.STREAK_GOAL}
-                      wordsGoal={turbo.WORDS_GOAL}
-                      plan={turbo.plan}
-                    />
-                  </ScrollArea>
                 ) : (
                   <ChapterView 
                     book={book} 
                     onGenerateChapter={canGenerateChapter && !isAwaitingApproval ? generateChapter : undefined}
+                    onUpdateBook={updateBook}
                   />
                 )}
               </div>

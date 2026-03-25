@@ -1,62 +1,14 @@
-import { useState, useEffect } from "react";
-import { BookOpen, Sparkles, LogOut, User, Plus, Coins, Flame, Zap, PenTool, Lock, Crown } from "lucide-react";
+import { BookOpen, Sparkles, Plus, Flame, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 import { useTurbo } from "@/hooks/useTurbo";
-import { getPlanDisplayName, canAccessTurbo } from "@/lib/plans";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
+import { UserMenuDropdown } from "@/components/UserMenuDropdown";
 
 interface NavigationProps {
   onCreateBook: () => void;
 }
 
 const Navigation = ({ onCreateBook }: NavigationProps) => {
-  const { user, signOut } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const [profile, setProfile] = useState<{ credits_used: number; credits_limit: number } | null>(null);
   const turbo = useTurbo();
-
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from("profiles")
-      .select("credits_used, credits_limit")
-      .eq("id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (data) setProfile(data);
-      });
-  }, [user]);
-
-  const handleSignOut = async () => {
-    await signOut();
-    window.location.href = "https://authoryti.com?logout=true";
-  };
-
-  const handleManageBilling = () => {
-    navigate("/manage-subscription");
-  };
-
-  const userInitial = user?.email?.charAt(0).toUpperCase() || "U";
-  const remainingCredits = profile
-    ? Math.max(0, profile.credits_limit - profile.credits_used)
-    : null;
-  const creditsPercent = profile
-    ? Math.min(100, (profile.credits_used / profile.credits_limit) * 100)
-    : 0;
 
   return (
     <nav className="sticky top-0 z-50 glass border-b">
@@ -73,7 +25,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
           </a>
 
           <div className="flex items-center gap-3">
-            {/* Streak badge - always visible */}
+            {/* Streak badge */}
             {!turbo.isLoading && turbo.streakDays > 0 && (
               <div className="hidden sm:flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-orange-500/10 text-orange-500">
                 <Flame className="w-3.5 h-3.5" />
@@ -96,118 +48,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
               <Plus className="w-5 h-5" />
             </Button>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-                      {userInitial}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-72">
-                <DropdownMenuLabel className="flex items-center gap-2 font-normal">
-                  <User className="w-4 h-4 text-muted-foreground" />
-                  <span className="truncate text-sm">{user?.email}</span>
-                </DropdownMenuLabel>
-
-                <DropdownMenuSeparator />
-
-                {/* Plan & Credits */}
-                <div className="px-2 py-2 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Plan</span>
-                    <span className="text-xs font-semibold text-foreground">
-                      {getPlanDisplayName(turbo.plan)}
-                    </span>
-                  </div>
-                  {profile && (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <Coins className="w-3.5 h-3.5 text-primary" />
-                          <span className="text-xs font-medium">Credits</span>
-                        </div>
-                        <span className="text-xs font-semibold text-foreground">
-                          {remainingCredits} remaining
-                        </span>
-                      </div>
-                      <Progress value={creditsPercent} className="h-1.5" />
-                    </>
-                  )}
-                </div>
-
-                <DropdownMenuSeparator />
-
-                {/* Turbo Progress */}
-                {!turbo.isLoading && (
-                  <div className="px-2 py-2 space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1">
-                        <Flame className="w-3.5 h-3.5 text-orange-500" />
-                        Streak
-                      </span>
-                      <span className="font-semibold">{turbo.streakDays} days</span>
-                    </div>
-                    <Progress value={turbo.streakProgress} className="h-1.5" variant="warning" />
-                    <p className="text-[11px] text-muted-foreground">
-                      {turbo.streakDays >= turbo.STREAK_GOAL
-                        ? "🔥 Streak goal reached!"
-                        : `${turbo.STREAK_GOAL - turbo.streakDays} more days to unlock Turbo`}
-                    </p>
-
-                    <div className="flex items-center justify-between text-xs mt-1">
-                      <span className="flex items-center gap-1">
-                        <PenTool className="w-3.5 h-3.5 text-primary" />
-                        Words
-                      </span>
-                      <span className="font-semibold">{(turbo.totalWordsWritten / 1000).toFixed(1)}K</span>
-                    </div>
-                    <Progress value={turbo.wordsProgress} className="h-1.5" />
-                    <p className="text-[11px] text-muted-foreground">
-                      {turbo.totalWordsWritten >= turbo.WORDS_GOAL
-                        ? "✍️ Word goal reached!"
-                        : `${((turbo.WORDS_GOAL - turbo.totalWordsWritten) / 1000).toFixed(1)}K more words to go`}
-                    </p>
-
-                    {/* Turbo status message */}
-                    <div className="mt-2 flex items-start gap-1.5 text-[11px] text-muted-foreground rounded-md bg-muted/50 p-2">
-                      {canAccessTurbo(turbo.plan) && turbo.turboUnlocked ? (
-                        <>
-                          <Zap className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
-                          <span>Turbo Active — {(turbo.turboWordsRemaining / 1000).toFixed(0)}K words remaining</span>
-                        </>
-                      ) : !canAccessTurbo(turbo.plan) ? (
-                        <>
-                          <Crown className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                          <span>Upgrade to Pro or Elite to unlock Turbo Mode.</span>
-                        </>
-                      ) : (
-                        <>
-                          <Lock className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                          <span>Maintain a {turbo.STREAK_GOAL}-day streak and write {(turbo.WORDS_GOAL / 1000).toFixed(0)}K+ words to unlock Auto Draft mode.</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuItem onClick={handleManageBilling}>
-                  <Coins className="w-4 h-4 mr-2" />
-                  Billing & Credits
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-
-                <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <UserMenuDropdown />
           </div>
         </div>
       </div>
