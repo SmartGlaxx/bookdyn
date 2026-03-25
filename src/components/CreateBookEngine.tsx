@@ -79,7 +79,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
       humorLevel: 3,
       authorityLevel: 5,
     },
-    controls: getDefaultControls("novel"),
+    controls: { ...getDefaultControls("novel"), automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel },
   });
 
   useEffect(() => {
@@ -126,7 +126,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
   const handleBookTypeChange = (type: BookType) => {
     updateForm("bookType", type);
-    updateForm("controls", getDefaultControls(type));
+    updateForm("controls", { ...getDefaultControls(type), automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel });
     const allowed = BOOK_TYPE_AUDIENCES[type];
     if (formData.audience && allowed && !allowed.includes(formData.audience)) {
       updateForm("audience", "");
