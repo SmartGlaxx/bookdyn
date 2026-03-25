@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BookOpen, Sparkles, LogOut, User, Plus, CreditCard, Crown, Zap } from "lucide-react";
+import { BookOpen, Sparkles, LogOut, User, Plus, Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -15,50 +15,29 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 
 interface NavigationProps {
   onCreateBook: () => void;
 }
 
-const PLAN_LABELS: Record<string, { label: string; icon: typeof Zap }> = {
-  free: { label: "Free", icon: Zap },
-  starter: { label: "Starter", icon: Sparkles },
-  pro: { label: "Pro", icon: Crown },
-  unlimited: { label: "Unlimited", icon: Crown },
-};
 
 const Navigation = ({ onCreateBook }: NavigationProps) => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<{ plan: string; credits_used: number; credits_limit: number } | null>(null);
+  const [profile, setProfile] = useState<{ credits_used: number; credits_limit: number } | null>(null);
   
 
   useEffect(() => {
     if (!user) return;
-    const syncSubscription = async () => {
-      try {
-        // Call check-subscription to sync plan from Stripe into profiles
-        const { data: subData } = await supabase.functions.invoke("check-subscription");
-        if (subData?.plan) {
-          setProfile({
-            plan: subData.plan,
-            credits_used: subData.credits_used ?? 0,
-            credits_limit: subData.credits_limit ?? 5,
-          });
-          return;
-        }
-      } catch {}
-      // Fallback: read from profiles directly
-      const { data } = await supabase
-        .from("profiles")
-        .select("plan, credits_used, credits_limit")
-        .eq("id", user.id)
-        .single();
-      if (data) setProfile(data);
-    };
-    syncSubscription();
+    supabase
+      .from("profiles")
+      .select("credits_used, credits_limit")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) setProfile(data);
+      });
   }, [user]);
 
   const handleSignOut = async () => {
@@ -66,15 +45,15 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
     window.location.href = "https://authoryti.com?logout=true";
   };
 
-  const handleManageSubscription = () => {
+  const handleManageBilling = () => {
     navigate("/manage-subscription");
   };
 
   const userInitial = user?.email?.charAt(0).toUpperCase() || "U";
-  const planInfo = PLAN_LABELS[profile?.plan || "free"] || PLAN_LABELS.free;
-  const PlanIcon = planInfo.icon;
-  const isUnlimited = profile?.plan === "unlimited";
-  const creditsPercent = profile && !isUnlimited
+  const remainingCredits = profile
+    ? Math.max(0, profile.credits_limit - profile.credits_used)
+    : null;
+  const creditsPercent = profile
     ? Math.min(100, (profile.credits_used / profile.credits_limit) * 100)
     : 0;
 
@@ -120,38 +99,30 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
 
                 <DropdownMenuSeparator />
 
-                {/* Plan & Credits */}
+                {/* Credits */}
                 {profile && (
                   <div className="px-2 py-2 space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        <PlanIcon className="w-4 h-4 text-primary" />
-                        <span className="text-sm font-medium">{planInfo.label} Plan</span>
+                        <Coins className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium">Credits</span>
                       </div>
-                      <Badge variant="secondary" className="text-xs">
-                        {isUnlimited ? "∞" : `${profile.credits_limit - profile.credits_used}/${profile.credits_limit}`}
-                      </Badge>
+                      <span className="text-sm font-semibold text-foreground">
+                        {remainingCredits} remaining
+                      </span>
                     </div>
-                    {!isUnlimited && (
-                      <div className="space-y-1">
-                        <Progress value={creditsPercent} className="h-1.5" />
-                        <p className="text-xs text-muted-foreground">
-                          {profile.credits_used} of {profile.credits_limit} credits used
-                        </p>
-                      </div>
-                    )}
-                    {isUnlimited && (
-                      <p className="text-xs text-muted-foreground">Unlimited credits</p>
-                    )}
+                    <Progress value={creditsPercent} className="h-1.5" />
+                    <p className="text-xs text-muted-foreground">
+                      {profile.credits_used} of {profile.credits_limit} used
+                    </p>
                   </div>
                 )}
 
                 <DropdownMenuSeparator />
 
-                {/* Manage Subscription */}
-                <DropdownMenuItem onClick={handleManageSubscription}>
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  Manage Subscription
+                <DropdownMenuItem onClick={handleManageBilling}>
+                  <Coins className="w-4 h-4 mr-2" />
+                  Billing & Credits
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
