@@ -10,15 +10,17 @@ import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Book, Chapter as ChapterType } from "@/types/book";
+import { Book, Chapter as ChapterType, AutomationLevel } from "@/types/book";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ParagraphEditor } from "@/components/ParagraphEditor";
+import { GuidedWritingToolbar } from "@/components/GuidedWritingToolbar";
 import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2, Circle, Loader2, FileText, ChevronDown, Play } from "lucide-react";
 
 interface ChapterViewProps {
   book: Book;
   onGenerateChapter?: (chapterIndex: number) => void;
   onUpdateBook?: (id: string, updates: Partial<Book>) => void;
+  automationLevel?: AutomationLevel;
 }
 
 const statusConfig: Record<"pending" | "writing" | "completed", {
@@ -32,7 +34,7 @@ const statusConfig: Record<"pending" | "writing" | "completed", {
   completed: { icon: CheckCircle2, color: "text-success", label: "Completed" },
 };
 
-export function ChapterView({ book, onGenerateChapter, onUpdateBook }: ChapterViewProps) {
+export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationLevel = "guided" }: ChapterViewProps) {
   const [selectedChapter, setSelectedChapter] = useState(0);
   const [expandedChapter, setExpandedChapter] = useState<number | null>(null);
   const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 800);
@@ -136,9 +138,30 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook }: ChapterVi
 
       {/* Content with paragraph editing */}
       {sub.content ? (
-        <div className="prose prose-sm dark:prose-invert max-w-none pl-11 overflow-hidden">
-          {renderParagraphs(sub.content, chapterIdx, subIdx, sub)}
-        </div>
+        <>
+          <div className="prose prose-sm dark:prose-invert max-w-none pl-11 overflow-hidden">
+            {renderParagraphs(sub.content, chapterIdx, subIdx, sub)}
+          </div>
+          {/* Guided mode toolbar - shows after content for completed subsections */}
+          {automationLevel === "guided" && sub.status === "completed" && onUpdateBook && (
+            <div className="pl-11 mt-2 border-t border-dashed border-muted pt-2">
+              <GuidedWritingToolbar
+                bookId={book.id}
+                bookTitle={book.title}
+                chapterTitle={chapters[chapterIdx]?.title || ""}
+                subsectionTitle={sub.title}
+                currentContent={sub.content}
+                subsectionGoal={sub.goal}
+                onContentAppend={(appendText) => {
+                  handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + appendText);
+                }}
+                onContentReplace={(newContent) => {
+                  handleSubsectionContentUpdate(chapterIdx, subIdx, newContent);
+                }}
+              />
+            </div>
+          )}
+        </>
       ) : sub.status === "pending" ? (
         <div className="pl-11 space-y-2">
           <Skeleton className="h-4 w-full" />

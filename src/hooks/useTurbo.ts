@@ -16,7 +16,7 @@ export interface TurboStatus {
 }
 
 const STREAK_GOAL = 30;
-const WORDS_GOAL = 100000;
+const WORDS_GOAL = 500000;
 
 export function useTurbo() {
   const { user } = useAuth();

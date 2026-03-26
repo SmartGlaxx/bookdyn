@@ -6,13 +6,65 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function getGuidedPrompt(action: string, paragraph: string, bookTitle: string, chapterTitle: string, subsectionTitle: string, fullContent?: string, subsectionGoal?: string): string {
+  const context = `Book: "${bookTitle}", Chapter: "${chapterTitle}", Section: "${subsectionTitle}"${subsectionGoal ? `, Goal: ${subsectionGoal}` : ""}.`;
+
+  switch (action) {
+    case "continue":
+      return `You are a master writer helping continue a story/text.
+
+${context}
+
+Here is the current content so far:
+---
+${(fullContent || paragraph).slice(-2000)}
+---
+
+Write the next 2–3 sentences ONLY. Continue naturally from where the text left off. Match the existing tone, style, and pacing. Do NOT repeat anything already written. Return ONLY the new sentences, nothing else.`;
+
+    case "rewrite":
+      return `You are a professional editor.
+
+${context}
+
+Rewrite the following sentence/paragraph with better prose quality. Keep the same meaning and tone. Return ONLY the rewritten text (2–3 sentences max), nothing else.
+
+Text to rewrite:
+${paragraph}`;
+
+    case "improve":
+      return `You are a prose stylist.
+
+${context}
+
+Improve the following text. Enhance vocabulary, sentence rhythm, and clarity while preserving the original meaning. Return ONLY the improved text (2–3 sentences max), nothing else.
+
+Text to improve:
+${paragraph}`;
+
+    case "dialogue":
+      return `You are a dialogue specialist.
+
+${context}
+
+Based on the current content:
+---
+${(fullContent || paragraph).slice(-1500)}
+---
+
+Write 1–2 lines of natural dialogue that advance the scene. Include character attribution. Match the established tone. Return ONLY the dialogue lines, nothing else.`;
+
+    default:
+      return `You are a professional editor. Rewrite the given paragraph while maintaining the same meaning, tone, and context. Keep it natural and flowing within the chapter "${chapterTitle}", section "${subsectionTitle}" of the book "${bookTitle}". Improve prose quality, vary sentence structure, and use richer vocabulary. Return ONLY the rewritten paragraph text, nothing else. No quotes, no labels, no explanation.`;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Auth
     const authHeader = req.headers.get("authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -44,7 +96,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { paragraph, bookTitle, chapterTitle, subsectionTitle } = body;
+    const { paragraph, bookTitle, chapterTitle, subsectionTitle, guidedAction, fullContent, subsectionGoal } = body;
 
     if (!paragraph || typeof paragraph !== "string" || paragraph.length > 10000) {
       return new Response(JSON.stringify({ error: "Invalid paragraph" }), {
@@ -55,6 +107,12 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
+    const systemPrompt = guidedAction
+      ? getGuidedPrompt(guidedAction, paragraph, bookTitle || "", chapterTitle || "", subsectionTitle || "", fullContent, subsectionGoal)
+      : `You are a professional editor. Rewrite the given paragraph while maintaining the same meaning, tone, and context. Keep it natural and flowing within the chapter "${chapterTitle || ""}", section "${subsectionTitle || ""}" of the book "${bookTitle || ""}". Improve prose quality, vary sentence structure, and use richer vocabulary. Return ONLY the rewritten paragraph text, nothing else. No quotes, no labels, no explanation.`;
+
+    const userMessage = guidedAction ? "Execute the instruction above." : paragraph;
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -64,11 +122,8 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          {
-            role: "system",
-            content: `You are a professional editor. Rewrite the given paragraph while maintaining the same meaning, tone, and context. Keep it natural and flowing within the chapter "${chapterTitle || ""}", section "${subsectionTitle || ""}" of the book "${bookTitle || ""}". Improve prose quality, vary sentence structure, and use richer vocabulary. Return ONLY the rewritten paragraph text, nothing else. No quotes, no labels, no explanation.`,
-          },
-          { role: "user", content: paragraph },
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage },
         ],
       }),
     });
@@ -84,12 +139,13 @@ serve(async (req) => {
 
     if (!content) throw new Error("No content returned from AI");
 
-    return new Response(JSON.stringify({ content }), {
+    // For guided actions, return as "rewritten" field for compatibility
+    return new Response(JSON.stringify({ content, rewritten: content }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error("[rewrite-paragraph] Error:", err);
-    return new Response(JSON.stringify({ error: "Failed to rewrite paragraph" }), {
+    return new Response(JSON.stringify({ error: "Failed to process request" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

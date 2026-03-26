@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Users, Pencil, Check, X, RefreshCw, FileText, Zap } from "lucide-react";
+import { AutomationLevel } from "@/types/book";
 import { Input } from "@/components/ui/input";
 import BookSettings from "@/components/BookSettings";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { GenerationStatus } from "@/components/GenerationStatus";
 import { CharacterGallery } from "@/components/CharacterGallery";
 import { ChapterView } from "@/components/ChapterView";
 import { RegenerateBookDialog } from "@/components/RegenerateBookDialog";
+import { WritingModeSelector } from "@/components/WritingModeSelector";
 import { ApprovalGate } from "@/components/ApprovalGate";
 import { UserMenuDropdown } from "@/components/UserMenuDropdown";
 import { TestimonialModal } from "@/components/TestimonialModal";
@@ -104,6 +106,12 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
 
   const hasCharacters = book.outline?.characters && book.outline.characters.length > 0;
   const automationLevel = book.controls?.automationLevel || "guided";
+
+  const handleModeChange = (mode: AutomationLevel) => {
+    updateBook(book.id, {
+      controls: { ...book.controls, automationLevel: mode },
+    });
+  };
 
   const { phase } = generationState;
   const isGenerating = phase === "writing" || phase === "generating-outline" || phase === "generating-image" || phase === "summarizing" || phase === "generating-characters";
@@ -242,10 +250,17 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
 
           {/* Controls row */}
           <div className="flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 -ml-2">
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Back</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 -ml-2">
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Back</span>
+              </Button>
+              <WritingModeSelector
+                value={automationLevel}
+                onChange={handleModeChange}
+                disabled={isGenerating}
+              />
+            </div>
             <div className="flex items-center gap-2">
               {!hasOutline && canStart && (
                 <Button variant="hero" size="sm" onClick={generateOutline}>
@@ -369,6 +384,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                     book={book} 
                     onGenerateChapter={canGenerateChapter && !isAwaitingApproval ? generateChapter : undefined}
                     onUpdateBook={updateBook}
+                    automationLevel={automationLevel}
                   />
                 )}
               </div>

@@ -225,10 +225,17 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
     const targetWordsPerSubsection = Math.round(targetWordCount / totalSubsections);
     const clampedWordsPerSubsection = Math.max(300, Math.min(1200, targetWordsPerSubsection));
 
-    // In guided mode, generate smaller chunks (300-800 words)
-    const effectiveWordsPerSubsection = automationLevel === "guided"
-      ? Math.min(800, clampedWordsPerSubsection)
-      : clampedWordsPerSubsection;
+    // Mode-based word limits
+    let effectiveWordsPerSubsection: number;
+    if (automationLevel === "guided") {
+      // Guided: 2-3 sentences only (~50-80 words)
+      effectiveWordsPerSubsection = 80;
+    } else if (automationLevel === "assisted") {
+      // Assisted: 1 paragraph (~150-250 words)
+      effectiveWordsPerSubsection = Math.min(250, clampedWordsPerSubsection);
+    } else {
+      effectiveWordsPerSubsection = clampedWordsPerSubsection;
+    }
 
     const { data: { session } } = await supabase.auth.getSession();
     const accessToken = session?.access_token;
@@ -263,6 +270,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
       ieltsBand,
       targetWordsPerSubsection: effectiveWordsPerSubsection,
       teaserStyle: bookData.controls?.teaserStyle || "none",
+      automationLevel,
     };
 
     const payloadJson = JSON.stringify(payload);
