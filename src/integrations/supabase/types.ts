@@ -306,6 +306,14 @@ export type Database = {
         Returns: boolean
       }
       cleanup_old_request_logs: { Args: never; Returns: undefined }
+      mark_first_chapter_completed: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
+      mark_testimonial_prompted: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
       record_writing_activity: {
         Args: { _credits: number; _user_id: string; _words: number }
         Returns: Json
