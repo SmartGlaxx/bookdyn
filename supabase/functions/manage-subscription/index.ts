@@ -321,7 +321,6 @@ serve(async (req) => {
         if (!customer) throw new Error("No customer found");
 
         const origin = req.headers.get("origin") || "https://localhost:3000";
-        const returnUrl = `${origin}/manage-subscription?updated=true`;
 
         const subscriptions = await stripe.subscriptions.list({
           customer: customer.id,
@@ -342,30 +341,55 @@ serve(async (req) => {
             return order.indexOf(newPriceId) > order.indexOf(currentPriceId || "");
           })();
 
-          console.log(`[manage-subscription] Updating subscription ${sub.id} from ${currentPriceId} to ${newPriceId} (${isUpgrade ? "upgrade" : "downgrade"})`);
+          console.log(`[manage-subscription] Plan change ${sub.id} from ${currentPriceId} to ${newPriceId} (${isUpgrade ? "upgrade" : "downgrade"})`);
 
-          await stripe.subscriptions.update(sub.id, {
-            items: [{ id: sub.items.data[0].id, price: newPriceId }],
-            proration_behavior: isUpgrade ? "create_prorations" : "none",
-          });
+          if (isUpgrade) {
+            // Upgrade: immediate swap with proration
+            await stripe.subscriptions.update(sub.id, {
+              items: [{ id: sub.items.data[0].id, price: newPriceId }],
+              proration_behavior: "create_prorations",
+            });
 
-          const newPlanInfo = PRICE_TO_PLAN[newPriceId];
-          if (newPlanInfo) {
+            const newPlanInfo = PRICE_TO_PLAN[newPriceId];
+            if (newPlanInfo) {
+              await supabaseClient
+                .from("profiles")
+                .update({
+                  plan: newPlanInfo.plan,
+                  credits_limit: newPlanInfo.credits,
+                  credits_used: 0,
+                  pending_plan: null,
+                  pending_plan_at: null,
+                })
+                .eq("id", user.id);
+            }
+
+            result = { success: true, updated: true, plan: new_plan, is_upgrade: true };
+          } else {
+            // Downgrade: schedule for end of period, don't touch Stripe yet
+            const periodEndTs = (sub as any).current_period_end;
+            const effectiveDate = periodEndTs ? safeTimestamp(periodEndTs) : null;
+
             await supabaseClient
               .from("profiles")
               .update({
-                plan: newPlanInfo.plan,
-                credits_limit: newPlanInfo.credits,
-                pending_plan: null,
-                pending_plan_at: null,
+                pending_plan: new_plan,
+                pending_plan_at: effectiveDate,
               })
               .eq("id", user.id);
-          }
 
-          result = { success: true, updated: true, plan: new_plan };
+            result = {
+              success: true,
+              scheduled: true,
+              plan: new_plan,
+              is_upgrade: false,
+              effective_date: effectiveDate,
+            };
+          }
           break;
         }
 
+        // No active subscription — send to checkout
         console.log(`[manage-subscription] No active sub, using checkout for ${new_plan}`);
         const session = await stripe.checkout.sessions.create({
           customer: customer.id,

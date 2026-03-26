@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { PLANS, PLAN_ORDER, type PlanId } from "@/lib/plans";
+import { PLANS, PLAN_ORDER, type PlanId, getPlanDisplayName } from "@/lib/plans";
 
 // Credit purchase constants
 const CREDITS_PER_DOLLAR = 10;
@@ -44,6 +44,9 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
     credits_used: number;
     credits_limit: number;
     plan: string;
+    stripe_subscription_id: string | null;
+    pending_plan: string | null;
+    pending_plan_at: string | null;
   } | null>(null);
 
   const credits = amount * CREDITS_PER_DOLLAR;
@@ -53,7 +56,7 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
     if (open && user) {
       supabase
         .from("profiles")
-        .select("credits_used, credits_limit, plan")
+        .select("credits_used, credits_limit, plan, stripe_subscription_id, pending_plan, pending_plan_at")
         .eq("id", user.id)
         .single()
         .then(({ data }) => {
@@ -62,26 +65,86 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
     }
   }, [open, user]);
 
-  const handleSubscribe = useCallback(async (planId: PlanId) => {
+  const hasActiveSubscription = !!profile?.stripe_subscription_id;
+  const currentPlan = (profile?.plan || "free") as PlanId;
+  const currentPlanIndex = PLAN_ORDER.indexOf(currentPlan);
+
+  const handlePlanAction = useCallback(async (planId: PlanId) => {
     if (!user || planId === "free") return;
     setLoading(planId);
+
+    const targetIndex = PLAN_ORDER.indexOf(planId);
+    const isUpgrade = targetIndex > currentPlanIndex;
+    const isDowngrade = targetIndex < currentPlanIndex;
+
     try {
-      const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { planId },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      if (data?.url) {
-        window.location.href = data.url;
+      if (hasActiveSubscription) {
+        // Existing subscriber: use manage-subscription for inline update
+        const { data, error } = await supabase.functions.invoke("manage-subscription", {
+          body: { action: "create_portal_update", new_plan: planId },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+
+        if (data?.url) {
+          // Edge case: no active sub in Stripe, redirected to checkout
+          window.location.href = data.url;
+          return;
+        }
+
+        if (data?.scheduled) {
+          // Downgrade scheduled
+          const effectiveDate = data.effective_date
+            ? new Date(data.effective_date).toLocaleDateString("en-US", {
+                month: "long", day: "numeric", year: "numeric",
+              })
+            : "the end of your billing period";
+
+          toast({
+            title: "Downgrade scheduled",
+            description: `Your plan will change to ${getPlanDisplayName(planId)} on ${effectiveDate}. You'll keep your current privileges until then.`,
+          });
+          // Refresh profile
+          const { data: refreshed } = await supabase
+            .from("profiles")
+            .select("credits_used, credits_limit, plan, stripe_subscription_id, pending_plan, pending_plan_at")
+            .eq("id", user.id)
+            .single();
+          if (refreshed) setProfile(refreshed);
+        } else {
+          // Upgrade applied immediately
+          toast({
+            title: "Plan upgraded!",
+            description: `You're now on the ${getPlanDisplayName(planId)} plan. Prorated charges have been applied.`,
+          });
+          // Refresh profile
+          const { data: refreshed } = await supabase
+            .from("profiles")
+            .select("credits_used, credits_limit, plan, stripe_subscription_id, pending_plan, pending_plan_at")
+            .eq("id", user.id)
+            .single();
+          if (refreshed) setProfile(refreshed);
+        }
+        onOpenChange(false);
       } else {
-        throw new Error("No checkout URL returned");
+        // New subscriber: go to Stripe Checkout
+        const { data, error } = await supabase.functions.invoke("create-checkout", {
+          body: { planId },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        if (data?.url) {
+          window.location.href = data.url;
+        } else {
+          throw new Error("No checkout URL returned");
+        }
       }
     } catch (err: any) {
-      toast({ title: "Checkout failed", description: err.message, variant: "destructive" });
+      toast({ title: "Plan change failed", description: err.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user, toast, hasActiveSubscription, currentPlanIndex, onOpenChange]);
 
   const handleCreditPurchase = useCallback(async () => {
     if (!user) return;
@@ -110,8 +173,6 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
     return w.toString();
   };
 
-  const currentPlan = (profile?.plan || "free") as PlanId;
-  const currentPlanIndex = PLAN_ORDER.indexOf(currentPlan);
   const remainingCredits = profile
     ? Math.max(0, profile.credits_limit - profile.credits_used)
     : null;
@@ -148,6 +209,7 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
                 const Icon = PLAN_ICONS[planId];
                 const isCurrent = currentPlan === planId;
                 const isDowngrade = PLAN_ORDER.indexOf(planId) < currentPlanIndex;
+                const isPending = profile?.pending_plan === planId;
 
                 return (
                   <motion.div
@@ -205,14 +267,16 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
                       variant={plan.popular ? "default" : "outline"}
                       size="sm"
                       className="w-full"
-                      disabled={isCurrent || loading === planId}
-                      onClick={() => handleSubscribe(planId)}
+                      disabled={isCurrent || isPending || loading === planId}
+                      onClick={() => handlePlanAction(planId)}
                     >
                       {loading === planId ? (
                         <Loader2 className="w-3 h-3 animate-spin mr-1" />
                       ) : null}
                       {isCurrent
                         ? "Current Plan"
+                        : isPending
+                        ? "Scheduled"
                         : isDowngrade
                         ? "Downgrade"
                         : "Upgrade"}
@@ -221,6 +285,16 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
                 );
               })}
             </div>
+
+            {/* Pending downgrade notice */}
+            {profile?.pending_plan && profile?.pending_plan_at && (
+              <div className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-400 text-center">
+                Switching to {getPlanDisplayName(profile.pending_plan)} on{" "}
+                {new Date(profile.pending_plan_at).toLocaleDateString("en-US", {
+                  month: "long", day: "numeric", year: "numeric",
+                })}
+              </div>
+            )}
 
             {/* Free tier info */}
             <div className="mt-4 p-3 rounded-lg bg-muted/50 border border-border/50 text-xs text-muted-foreground text-center">
