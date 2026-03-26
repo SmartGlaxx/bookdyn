@@ -14,7 +14,8 @@ import { Book, Chapter as ChapterType, AutomationLevel } from "@/types/book";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ParagraphEditor } from "@/components/ParagraphEditor";
 import { GuidedWritingToolbar } from "@/components/GuidedWritingToolbar";
-import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2, Circle, Loader2, FileText, ChevronDown, Play } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2, Circle, Loader2, FileText, ChevronDown, Play, Check, X } from "lucide-react";
 
 interface ChapterViewProps {
   book: Book;
@@ -37,6 +38,9 @@ const statusConfig: Record<"pending" | "writing" | "completed", {
 export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationLevel = "guided" }: ChapterViewProps) {
   const [selectedChapter, setSelectedChapter] = useState(0);
   const [expandedChapter, setExpandedChapter] = useState<number | null>(null);
+  const [manualAddState, setManualAddState] = useState<{ chapterIdx: number; subIdx: number; type: "text" | "dialogue" } | null>(null);
+  const [manualText, setManualText] = useState("");
+  const manualTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 800);
   const chapters = book.outline?.chapters || [];
   const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
