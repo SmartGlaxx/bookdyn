@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const CREDITS_PER_DOLLAR = 30;
+const CREDITS_PER_DOLLAR = 10;
 const MIN_AMOUNT = 10;
 const MAX_AMOUNT = 1000;
 
