@@ -294,7 +294,7 @@ const Index = () => {
               </div>
             ) : (
 
-            <div className="space-y-10">
+            <div className="space-y-10 mt-6">
               {/* In Progress */}
               {wipBooks.length > 0 && (
                 <div>
@@ -341,6 +341,7 @@ const Index = () => {
                 </div>
               )}
             </div>
+            )}
           </div>
         )}
       </main>
