@@ -50,6 +50,7 @@ export type Database = {
           book_type: string
           concepts: string[] | null
           controls: Json
+          cover_url: string | null
           created_at: string
           current_chapter_index: number
           current_subsection_index: number
@@ -73,6 +74,7 @@ export type Database = {
           book_type: string
           concepts?: string[] | null
           controls: Json
+          cover_url?: string | null
           created_at?: string
           current_chapter_index?: number
           current_subsection_index?: number
@@ -96,6 +98,7 @@ export type Database = {
           book_type?: string
           concepts?: string[] | null
           controls?: Json
+          cover_url?: string | null
           created_at?: string
           current_chapter_index?: number
           current_subsection_index?: number
