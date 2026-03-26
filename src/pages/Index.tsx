@@ -1,25 +1,31 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
-import { BookOpen, Sparkles, ArrowUpDown } from "lucide-react";
+import { BookOpen, Sparkles, ArrowUpDown, Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import BookCard from "@/components/BookCard";
 import CreateBookEngine from "@/components/CreateBookEngine";
 import BookDetailView from "@/components/BookDetailView";
 import { useBooks } from "@/hooks/useBooks";
-import { Book, CreateBookInput } from "@/types/book";
+import { Book, CreateBookInput, BOOK_CATEGORIES, BOOK_TYPE_INFO, BookCategory, BookType } from "@/types/book";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const BOOKS_PER_PAGE = 12;
 
 type SortOption = "updated" | "bookType" | "dateCompleted";
+type CoverFilter = "all" | "with-cover" | "without-cover";
 
 const Index = () => {
   const [showEngine, setShowEngine] = useState(false);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("updated");
+  const [filterCategory, setFilterCategory] = useState<BookCategory | "all">("all");
+  const [filterType, setFilterType] = useState<BookType | "all">("all");
+  const [filterCover, setFilterCover] = useState<CoverFilter>("all");
+  const [showFilters, setShowFilters] = useState(false);
   const [wipVisible, setWipVisible] = useState(BOOKS_PER_PAGE);
   const [completedVisible, setCompletedVisible] = useState(BOOKS_PER_PAGE);
   const observerRef = useRef<IntersectionObserver | null>(null);
