@@ -265,6 +265,7 @@ export interface Book {
   tonalAnchors: string[];
   entities: string[];
   concepts: string[];
+  coverUrl?: string;
 }
 
 export interface CreateBookInput {
