@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { LogOut, User, Coins, Flame, Zap, PenTool, Lock, Crown } from "lucide-react";
+import { LogOut, User, Coins, Flame, Zap, PenTool, Lock, Crown, MessageSquare } from "lucide-react";
+import { FeedbackModal } from "@/components/FeedbackModal";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
