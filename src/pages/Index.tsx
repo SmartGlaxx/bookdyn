@@ -42,6 +42,20 @@ const Index = () => {
     }
   };
 
+  // Filter function
+  const filterBooks = useCallback((list: Book[]) => {
+    return list.filter(b => {
+      if (filterCategory !== "all") {
+        const info = BOOK_TYPE_INFO[b.bookType];
+        if (info?.category !== filterCategory) return false;
+      }
+      if (filterType !== "all" && b.bookType !== filterType) return false;
+      if (filterCover === "with-cover" && !b.coverUrl) return false;
+      if (filterCover === "without-cover" && b.coverUrl) return false;
+      return true;
+    });
+  }, [filterCategory, filterType, filterCover]);
+
   // Sort function
   const sortBooks = useCallback((list: Book[]) => {
     return [...list].sort((a, b) => {
@@ -56,8 +70,15 @@ const Index = () => {
     });
   }, [sortBy]);
 
-  const wipBooks = useMemo(() => sortBooks(books.filter(b => b.status !== "completed")), [books, sortBooks]);
-  const completedBooks = useMemo(() => sortBooks(books.filter(b => b.status === "completed")), [books, sortBooks]);
+  // Reset type filter when category changes
+  useEffect(() => {
+    setFilterType("all");
+  }, [filterCategory]);
+
+  const activeFilterCount = [filterCategory !== "all", filterType !== "all", filterCover !== "all"].filter(Boolean).length;
+
+  const wipBooks = useMemo(() => sortBooks(filterBooks(books.filter(b => b.status !== "completed"))), [books, sortBooks, filterBooks]);
+  const completedBooks = useMemo(() => sortBooks(filterBooks(books.filter(b => b.status === "completed"))), [books, sortBooks, filterBooks]);
 
   const visibleWip = wipBooks.slice(0, wipVisible);
   const visibleCompleted = completedBooks.slice(0, completedVisible);
@@ -83,12 +104,11 @@ const Index = () => {
     return () => observerRef.current?.disconnect();
   }, [wipVisible, completedVisible, wipBooks.length, completedBooks.length]);
 
-  // Reset pagination when sort changes
+  // Reset pagination when sort/filter changes
   useEffect(() => {
     setWipVisible(BOOKS_PER_PAGE);
     setCompletedVisible(BOOKS_PER_PAGE);
-  }, [sortBy]);
-
+  }, [sortBy, filterCategory, filterType, filterCover]);
   // Handle credit purchase success redirect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
