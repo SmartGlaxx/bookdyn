@@ -30,6 +30,7 @@ interface BookDetailViewProps {
 type ViewMode = "chapter" | "full" | "characters";
 
 const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
+  const { user } = useAuth();
   const [viewMode, setViewMode] = useState<ViewMode>("chapter");
   const [showSettings, setShowSettings] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -37,8 +38,10 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   const [isEditingSubtitle, setIsEditingSubtitle] = useState(false);
   const [editSubtitle, setEditSubtitle] = useState(book.subtitle || "");
   const [showRegenDialog, setShowRegenDialog] = useState(false);
+  const [showTestimonial, setShowTestimonial] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const subtitleInputRef = useRef<HTMLInputElement>(null);
+  const firstChapterTrackedRef = useRef(false);
 
   useEffect(() => {
     if (isEditingTitle && titleInputRef.current) {
