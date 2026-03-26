@@ -384,6 +384,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                     book={book} 
                     onGenerateChapter={canGenerateChapter && !isAwaitingApproval ? generateChapter : undefined}
                     onUpdateBook={updateBook}
+                    automationLevel={automationLevel}
                   />
                 )}
               </div>
