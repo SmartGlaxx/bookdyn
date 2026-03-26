@@ -62,7 +62,7 @@ const BookCard = ({ book, onSelect, onDelete, index }: BookCardProps) => {
     >
       <Card
         variant="interactive"
-        className="h-full group aspect-square flex flex-col"
+        className="h-full group"
         onClick={() => onSelect(book)}
       >
         <CardHeader className="pb-3">
