@@ -194,7 +194,7 @@ serve(async (req) => {
       });
     }
 
-    const { book, chapterIndex, subsectionIndex, previousSummary, previousRawContent, tonalAnchors, ieltsBand, targetWordsPerSubsection, teaserStyle } = body;
+    const { book, chapterIndex, subsectionIndex, previousSummary, previousRawContent, tonalAnchors, ieltsBand, targetWordsPerSubsection, teaserStyle, automationLevel: reqAutomationLevel } = body;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -337,6 +337,14 @@ CHILDREN'S BOOK REQUIREMENTS:
 - Create scenes that are easy to illustrate
 - End with a gentle hook or resolution
 - Include sensory details (colors, sounds, textures)
+` : reqAutomationLevel === "guided" ? `
+GUIDED MODE — HARD LIMIT (STRICTLY ENFORCED):
+- Write EXACTLY 2–3 sentences. No more.
+- This is a sentence-level co-writing tool. The user writes, you suggest.
+- Do NOT write paragraphs, sections, or long passages.
+- Each sentence should be meaningful and advance the narrative/content.
+- Match the established tone and style perfectly.
+- Total output must be under 80 words.
 ` : `
 Write approximately ${targetWordsPerSubsection || 600} words for this subsection.
 `}
