@@ -137,7 +137,7 @@ const ManageSubscription = () => {
                     </div>
                     <Progress value={creditsPercent} className="h-2" />
                     <p className="text-xs text-muted-foreground">
-                      1 credit = 1,000 words · $1 = 30 credits · Purchased credits never expire
+                      1 credit = 1,000 words · $1 = 10 credits · Purchased credits never expire
                     </p>
                   </div>
                 )}
