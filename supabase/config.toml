@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.rewrite-paragraph]
 verify_jwt = false
+
+[functions.waitlist]
+verify_jwt = false
