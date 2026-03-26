@@ -138,9 +138,30 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
 
       {/* Content with paragraph editing */}
       {sub.content ? (
-        <div className="prose prose-sm dark:prose-invert max-w-none pl-11 overflow-hidden">
-          {renderParagraphs(sub.content, chapterIdx, subIdx, sub)}
-        </div>
+        <>
+          <div className="prose prose-sm dark:prose-invert max-w-none pl-11 overflow-hidden">
+            {renderParagraphs(sub.content, chapterIdx, subIdx, sub)}
+          </div>
+          {/* Guided mode toolbar - shows after content for completed subsections */}
+          {automationLevel === "guided" && sub.status === "completed" && onUpdateBook && (
+            <div className="pl-11 mt-2 border-t border-dashed border-muted pt-2">
+              <GuidedWritingToolbar
+                bookId={book.id}
+                bookTitle={book.title}
+                chapterTitle={chapters[chapterIdx]?.title || ""}
+                subsectionTitle={sub.title}
+                currentContent={sub.content}
+                subsectionGoal={sub.goal}
+                onContentAppend={(appendText) => {
+                  handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + appendText);
+                }}
+                onContentReplace={(newContent) => {
+                  handleSubsectionContentUpdate(chapterIdx, subIdx, newContent);
+                }}
+              />
+            </div>
+          )}
+        </>
       ) : sub.status === "pending" ? (
         <div className="pl-11 space-y-2">
           <Skeleton className="h-4 w-full" />
