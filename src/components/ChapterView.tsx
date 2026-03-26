@@ -147,8 +147,8 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
           <div className="prose prose-sm dark:prose-invert max-w-none pl-11 overflow-hidden">
             {renderParagraphs(sub.content, chapterIdx, subIdx, sub)}
           </div>
-          {/* Guided mode toolbar - shows after content for completed subsections */}
-          {automationLevel === "guided" && sub.status === "completed" && onUpdateBook && (
+          {/* Writing toolbar - shows after content for completed subsections */}
+          {sub.status === "completed" && onUpdateBook && (
             <div className="pl-11 mt-2 border-t border-dashed border-muted pt-2">
               <GuidedWritingToolbar
                 bookId={book.id}
@@ -157,15 +157,16 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
                 subsectionTitle={sub.title}
                 currentContent={sub.content}
                 subsectionGoal={sub.goal}
+                showContinue={automationLevel === "guided"}
                 onContentAppend={(appendText) => {
                   handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + appendText);
                 }}
                 onContentReplace={(newContent) => {
                   handleSubsectionContentUpdate(chapterIdx, subIdx, newContent);
                 }}
-                onManualAdd={(type) => {
-                  setManualAddState({ chapterIdx, subIdx, type });
-                  setManualText(type === "dialogue" ? '"' : "");
+                onManualAdd={() => {
+                  setManualAddState({ chapterIdx, subIdx, type: "text" });
+                  setManualText("");
                   setTimeout(() => manualTextareaRef.current?.focus(), 50);
                 }}
               />
@@ -176,7 +177,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
                     ref={manualTextareaRef}
                     value={manualText}
                     onChange={(e) => setManualText(e.target.value)}
-                    placeholder={manualAddState.type === "dialogue" ? '"Write your dialogue here..."' : "Write your paragraph here..."}
+                    placeholder="Write your paragraph here..."
                     className="min-h-[80px] text-sm leading-relaxed"
                     onKeyDown={(e) => {
                       if (e.key === "Escape") { setManualAddState(null); setManualText(""); }
