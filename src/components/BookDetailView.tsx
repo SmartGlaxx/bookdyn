@@ -16,7 +16,10 @@ import { ChapterView } from "@/components/ChapterView";
 import { RegenerateBookDialog } from "@/components/RegenerateBookDialog";
 import { ApprovalGate } from "@/components/ApprovalGate";
 import { UserMenuDropdown } from "@/components/UserMenuDropdown";
+import { TestimonialModal } from "@/components/TestimonialModal";
 import { exportBookToPdf } from "@/lib/exportPdf";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 interface BookDetailViewProps {
