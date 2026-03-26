@@ -93,8 +93,7 @@ const RootRedirect = () => {
   if (loading) return <LoadingScreen />;
   if (user) return <Navigate to="/dashboard" replace />;
 
-  window.location.href = "https://authoryti.com";
-  return null;
+  return <Navigate to="/auth" replace />;
 };
 
 const App = () => (
