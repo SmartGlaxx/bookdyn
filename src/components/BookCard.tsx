@@ -36,7 +36,15 @@ const statusLabels = {
 };
 
 const BookCard = ({ book, onSelect, onDelete, index }: BookCardProps) => {
-  const typeInfo = BOOK_TYPE_INFO[book.bookType];
+  const typeInfo = BOOK_TYPE_INFO[book.bookType] ?? {
+    label: book.bookType
+      .split("-")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" "),
+    icon: "📘",
+    description: "Legacy book type",
+    category: "specialized" as const,
+  };
   
   const calculateProgress = () => {
     if (!book.outline) return 0;
