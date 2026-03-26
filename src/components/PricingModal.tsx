@@ -16,7 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PLANS, PLAN_ORDER, type PlanId } from "@/lib/plans";
 
 // Credit purchase constants
-const CREDITS_PER_DOLLAR = 30;
+const CREDITS_PER_DOLLAR = 10;
 const WORDS_PER_CREDIT = 1000;
 const MIN_AMOUNT = 10;
 const MAX_AMOUNT = 1000;
@@ -285,7 +285,7 @@ const PricingModal = ({ open, onOpenChange, reason }: PricingModalProps) => {
             </motion.div>
 
             <p className="text-xs text-muted-foreground text-center">
-              $1 = 30 credits (30,000 words) · Purchased credits never expire
+              $1 = 10 credits (10,000 words) · Purchased credits never expire
             </p>
 
             <Button
