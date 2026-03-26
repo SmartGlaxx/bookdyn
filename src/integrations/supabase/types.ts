@@ -118,6 +118,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          completed_first_chapter: boolean
           created_at: string
           credits_limit: number
           credits_reset_at: string
@@ -135,6 +136,7 @@ export type Database = {
           streak_days: number
           streak_start_date: string | null
           stripe_subscription_id: string | null
+          testimonial_prompted: boolean
           total_words_written: number
           turbo_cycles_completed: number
           turbo_unlocked: boolean
@@ -143,6 +145,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          completed_first_chapter?: boolean
           created_at?: string
           credits_limit?: number
           credits_reset_at?: string
@@ -160,6 +163,7 @@ export type Database = {
           streak_days?: number
           streak_start_date?: string | null
           stripe_subscription_id?: string | null
+          testimonial_prompted?: boolean
           total_words_written?: number
           turbo_cycles_completed?: number
           turbo_unlocked?: boolean
@@ -168,6 +172,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          completed_first_chapter?: boolean
           created_at?: string
           credits_limit?: number
           credits_reset_at?: string
@@ -185,6 +190,7 @@ export type Database = {
           streak_days?: number
           streak_start_date?: string | null
           stripe_subscription_id?: string | null
+          testimonial_prompted?: boolean
           total_words_written?: number
           turbo_cycles_completed?: number
           turbo_unlocked?: boolean
@@ -245,6 +251,39 @@ export type Database = {
           updated_at?: string
           user_id?: string
           words_written?: number
+        }
+        Relationships: []
+      }
+      user_feedback: {
+        Row: {
+          category: string
+          created_at: string
+          email: string | null
+          id: string
+          message: string
+          rating: number
+          reviewed: boolean
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          message: string
+          rating: number
+          reviewed?: boolean
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string
+          rating?: number
+          reviewed?: boolean
+          user_id?: string
         }
         Relationships: []
       }
