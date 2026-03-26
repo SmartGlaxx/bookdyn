@@ -8,23 +8,14 @@ export type BookType =
   | "biography"
   | "memoir"
   | "self-help"
-  | "psychology"
   | "business"
   | "finance"
-  | "accounting"
-  | "economics"
   | "technology"
   | "programming"
   | "ai-ml"
-  | "engineering"
-  | "science-academic"
   | "science-popular"
   | "cookbook"
-  | "travel"
-  | "history"
-  | "culture"
   | "magazine"
-  | "textbook"
   | "poetry"
   | "drama"
   | "reference"
@@ -62,7 +53,8 @@ export const TEASER_STYLE_OPTIONS: { value: TeaserStyle; label: string; descript
 export interface StructureControls {
   chapterCount: "flexible" | "fixed";
   targetChapters?: number;
-  sectionsPerChapter?: number; // 2-10, default 4
+  sectionsPerChapterMode: "flexible" | "fixed";
+  sectionsPerChapter: number; // 2-10, default 4
   subsectionCount: "flexible" | "fixed";
   targetSubsections?: number;
   titlesRequired: boolean;
@@ -310,23 +302,14 @@ export const BOOK_TYPE_INFO: Record<BookType, { label: string; icon: string; des
   biography: { label: "Biography", icon: "👤", description: "Life story of a notable person", category: "non-fiction" },
   memoir: { label: "Memoir", icon: "📔", description: "Personal life stories and experiences", category: "non-fiction" },
   "self-help": { label: "Self-Help", icon: "🌟", description: "Personal development and guidance", category: "non-fiction" },
-  psychology: { label: "Psychology", icon: "🧠", description: "Mental health, behavior, and cognition", category: "non-fiction" },
   business: { label: "Business", icon: "💼", description: "Business strategy and management", category: "non-fiction" },
   finance: { label: "Finance", icon: "💰", description: "Money management and investing", category: "non-fiction" },
-  accounting: { label: "Accounting", icon: "📊", description: "Financial reporting and analysis", category: "non-fiction" },
-  economics: { label: "Economics", icon: "📈", description: "Economic theory and practice", category: "non-fiction" },
-  travel: { label: "Travel", icon: "✈️", description: "Travel guides and experiences", category: "non-fiction" },
-  history: { label: "History", icon: "🏛️", description: "Historical events and analysis", category: "non-fiction" },
-  culture: { label: "Culture", icon: "🎭", description: "Cultural studies and exploration", category: "non-fiction" },
   
   // Educational
   technology: { label: "Technology", icon: "💻", description: "Tech concepts and innovations", category: "educational" },
   programming: { label: "Programming", icon: "⚙️", description: "Coding tutorials and references", category: "educational" },
   "ai-ml": { label: "AI & Machine Learning", icon: "🤖", description: "Artificial intelligence concepts", category: "educational" },
-  engineering: { label: "Engineering", icon: "🔧", description: "Engineering principles and design", category: "educational" },
-  "science-academic": { label: "Science (Academic)", icon: "🔬", description: "Rigorous scientific content", category: "educational" },
   "science-popular": { label: "Science (Popular)", icon: "🧪", description: "Accessible science writing", category: "educational" },
-  textbook: { label: "Textbook", icon: "📕", description: "Structured educational material", category: "educational" },
   cookbook: { label: "Cookbook", icon: "🍳", description: "Recipes and culinary guides", category: "educational" },
   
   // Creative
@@ -439,29 +422,20 @@ export const BOOK_TYPE_AUDIENCES: Record<BookType, string[]> = {
   "fiction-serial": ["16-plus", "general-readers"],
   "short-story": ["16-plus", "general-readers", "academics-undergraduate"],
   children: ["children-1-9", "older-children-10-15"],
-  comic: ["older-children-10-15", "16-plus", "general-readers"],
+  comic: ["children-1-9", "older-children-10-15", "16-plus", "general-readers"],
 
   // Non-Fiction
   biography: ["16-plus", "general-readers", "academics-undergraduate"],
   memoir: ["16-plus", "general-readers"],
   "self-help": ["16-plus", "general-readers", "professionals"],
-  psychology: ["general-readers", "academics-undergraduate", "professionals", "scholars-researchers"],
   business: ["general-readers", "academics-undergraduate", "professionals", "industry-experts"],
   finance: ["general-readers", "academics-undergraduate", "professionals", "industry-experts", "specialized-experts"],
-  accounting: ["general-readers", "academics-undergraduate", "professionals", "industry-experts", "specialized-experts"],
-  economics: ["general-readers", "academics-undergraduate", "professionals", "industry-experts", "scholars-researchers"],
-  travel: ["older-children-10-15", "16-plus", "general-readers"],
-  history: ["16-plus", "general-readers", "academics-undergraduate", "scholars-researchers"],
-  culture: ["16-plus", "general-readers", "academics-undergraduate", "scholars-researchers"],
 
   // Educational
   technology: ["16-plus", "general-readers", "academics-undergraduate", "professionals", "industry-experts"],
   programming: ["16-plus", "academics-undergraduate", "professionals", "industry-experts", "specialized-experts"],
   "ai-ml": ["academics-undergraduate", "professionals", "industry-experts", "specialized-experts", "scholars-researchers"],
-  engineering: ["academics-undergraduate", "professionals", "industry-experts", "specialized-experts", "scholars-researchers"],
-  "science-academic": ["academics-undergraduate", "scholars-researchers", "specialized-experts"],
   "science-popular": ["16-plus", "general-readers", "academics-undergraduate"],
-  textbook: ["older-children-10-15", "16-plus", "academics-undergraduate", "scholars-researchers"],
   cookbook: ["older-children-10-15", "16-plus", "general-readers"],
 
   // Creative
@@ -534,6 +508,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
     },
     structureControls: {
       chapterCount: "flexible",
+      sectionsPerChapterMode: "flexible",
       sectionsPerChapter: 4,
       subsectionCount: "flexible",
       titlesRequired: true,
