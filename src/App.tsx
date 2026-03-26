@@ -12,6 +12,7 @@ import Landing from "./pages/Landing";
 import ResetPassword from "./pages/ResetPassword";
 import ManageSubscription from "./pages/ManageSubscription";
 import DevDocs from "./pages/DevDocs";
+import AdminFeedback from "./pages/AdminFeedback";
 import NotFound from "./pages/NotFound";
 import CheckEmail from "./pages/CheckEmail";
 import Onboarding from "./pages/Onboarding";
@@ -126,6 +127,14 @@ const App = () => (
             }
           />
           <Route path="/dev-docs" element={<DevDocs />} />
+          <Route
+            path="/admin/feedback"
+            element={
+              <ProtectedRoute>
+                <AdminFeedback />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

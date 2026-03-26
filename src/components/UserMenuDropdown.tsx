@@ -174,6 +174,13 @@ export function UserMenuDropdown({ className }: UserMenuDropdownProps) {
           Give Feedback
         </DropdownMenuItem>
 
+        {user?.email === "mailsmartcodes@gmail.com" && (
+          <DropdownMenuItem onClick={() => navigate("/admin/feedback")}>
+            <MessageSquare className="w-4 h-4 mr-2" />
+            Feedback Dashboard
+          </DropdownMenuItem>
+        )}
+
         <DropdownMenuSeparator />
 
         <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
