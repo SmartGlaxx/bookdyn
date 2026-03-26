@@ -216,37 +216,6 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
             <UserMenuDropdown />
           </div>
 
-          {/* Subtitle row */}
-          {!isEditingTitle && (
-            <div className="mb-2">
-              {isEditingSubtitle ? (
-                <div className="flex items-center gap-2">
-                  <Input
-                    ref={subtitleInputRef}
-                    value={editSubtitle}
-                    onChange={(e) => setEditSubtitle(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSaveSubtitle();
-                      if (e.key === "Escape") handleCancelSubtitle();
-                    }}
-                    placeholder="Add a subtitle..."
-                    className="text-sm h-auto py-1"
-                  />
-                  <Button variant="ghost" size="icon" className="shrink-0 h-7 w-7" onClick={handleSaveSubtitle}>
-                    <Check className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="shrink-0 h-7 w-7" onClick={handleCancelSubtitle}>
-                    <X className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 group cursor-pointer" onClick={() => setIsEditingSubtitle(true)}>
-                  <p className="text-sm text-muted-foreground">{book.subtitle || "Add subtitle..."}</p>
-                  <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Controls row */}
           <div className="flex items-center justify-between">
@@ -272,7 +241,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
               {canGenerateChapter && nextIncompleteChapter >= 0 && !isAwaitingApproval && (
                 <Button variant="hero" size="sm" onClick={() => generateChapter(nextIncompleteChapter)}>
                   <Play className="w-4 h-4" />
-                  Write Chapter {nextIncompleteChapter + 1}
+                  <span className="hidden sm:inline">Write Chapter {nextIncompleteChapter + 1}</span>
                 </Button>
               )}
 

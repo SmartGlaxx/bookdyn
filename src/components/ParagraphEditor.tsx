@@ -201,7 +201,7 @@ export function ParagraphEditor({
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive"
+                className="h-7 px-2 text-xs gap-1"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleDelete();
