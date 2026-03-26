@@ -16,6 +16,14 @@ const Index = () => {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   
   const { books, isLoading, addBook, deleteBook, updateBook } = useBooks();
+
+  const handleUpdateCover = async (id: string, coverUrl: string) => {
+    try {
+      await updateBook(id, { coverUrl });
+    } catch (error) {
+      console.error("Failed to update cover:", error);
+    }
+  };
   
 
   // Work in progress books (not completed)
