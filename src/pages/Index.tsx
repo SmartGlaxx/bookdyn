@@ -126,8 +126,8 @@ const Index = () => {
                       </div>
                     </div>
                     <motion.div
-                      className="grid gap-4"
-                      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}
+                      className="grid gap-6"
+                      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                     >
