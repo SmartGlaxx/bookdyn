@@ -27,6 +27,7 @@ export function UserMenuDropdown({ className }: UserMenuDropdownProps) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<{ credits_used: number; credits_limit: number } | null>(null);
   const turbo = useTurbo();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -168,6 +169,11 @@ export function UserMenuDropdown({ className }: UserMenuDropdownProps) {
           Billing & Credits
         </DropdownMenuItem>
 
+        <DropdownMenuItem onClick={() => setFeedbackOpen(true)}>
+          <MessageSquare className="w-4 h-4 mr-2" />
+          Give Feedback
+        </DropdownMenuItem>
+
         <DropdownMenuSeparator />
 
         <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
@@ -175,6 +181,8 @@ export function UserMenuDropdown({ className }: UserMenuDropdownProps) {
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
+
+      <FeedbackModal open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </DropdownMenu>
   );
 }
