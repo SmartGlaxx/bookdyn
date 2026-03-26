@@ -250,10 +250,17 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
 
           {/* Controls row */}
           <div className="flex items-center justify-between">
-            <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 -ml-2">
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Back</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 -ml-2">
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Back</span>
+              </Button>
+              <WritingModeSelector
+                value={automationLevel}
+                onChange={handleModeChange}
+                disabled={isGenerating}
+              />
+            </div>
             <div className="flex items-center gap-2">
               {!hasOutline && canStart && (
                 <Button variant="hero" size="sm" onClick={generateOutline}>
