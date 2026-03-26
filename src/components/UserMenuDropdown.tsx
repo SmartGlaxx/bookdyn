@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { LogOut, User, Coins, Flame, Zap, PenTool, Lock, Crown } from "lucide-react";
+import { LogOut, User, Coins, Flame, Zap, PenTool, Lock, Crown, MessageSquare } from "lucide-react";
+import { FeedbackModal } from "@/components/FeedbackModal";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +27,7 @@ export function UserMenuDropdown({ className }: UserMenuDropdownProps) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<{ credits_used: number; credits_limit: number } | null>(null);
   const turbo = useTurbo();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -167,6 +169,11 @@ export function UserMenuDropdown({ className }: UserMenuDropdownProps) {
           Billing & Credits
         </DropdownMenuItem>
 
+        <DropdownMenuItem onClick={() => setFeedbackOpen(true)}>
+          <MessageSquare className="w-4 h-4 mr-2" />
+          Give Feedback
+        </DropdownMenuItem>
+
         <DropdownMenuSeparator />
 
         <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
@@ -174,6 +181,8 @@ export function UserMenuDropdown({ className }: UserMenuDropdownProps) {
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
+
+      <FeedbackModal open={feedbackOpen} onOpenChange={setFeedbackOpen} />
     </DropdownMenu>
   );
 }

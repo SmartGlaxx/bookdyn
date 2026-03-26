@@ -16,7 +16,10 @@ import { ChapterView } from "@/components/ChapterView";
 import { RegenerateBookDialog } from "@/components/RegenerateBookDialog";
 import { ApprovalGate } from "@/components/ApprovalGate";
 import { UserMenuDropdown } from "@/components/UserMenuDropdown";
+import { TestimonialModal } from "@/components/TestimonialModal";
 import { exportBookToPdf } from "@/lib/exportPdf";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 interface BookDetailViewProps {
@@ -27,6 +30,7 @@ interface BookDetailViewProps {
 type ViewMode = "chapter" | "full" | "characters";
 
 const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
+  const { user } = useAuth();
   const [viewMode, setViewMode] = useState<ViewMode>("chapter");
   const [showSettings, setShowSettings] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -34,8 +38,10 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   const [isEditingSubtitle, setIsEditingSubtitle] = useState(false);
   const [editSubtitle, setEditSubtitle] = useState(book.subtitle || "");
   const [showRegenDialog, setShowRegenDialog] = useState(false);
+  const [showTestimonial, setShowTestimonial] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const subtitleInputRef = useRef<HTMLInputElement>(null);
+  const firstChapterTrackedRef = useRef(false);
 
   useEffect(() => {
     if (isEditingTitle && titleInputRef.current) {
@@ -50,6 +56,35 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
       subtitleInputRef.current.select();
     }
   }, [isEditingSubtitle]);
+
+  // Track first chapter completion & show testimonial
+  useEffect(() => {
+    if (!user || firstChapterTrackedRef.current) return;
+    const hasCompletedChapter = book.outline?.chapters?.some(ch => ch.status === "completed");
+    if (!hasCompletedChapter) return;
+    firstChapterTrackedRef.current = true;
+
+    (async () => {
+      try {
+        // Mark first chapter completed in profile
+        await supabase.rpc("mark_first_chapter_completed", { _user_id: user.id });
+        
+        // Check if testimonial was already prompted
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("testimonial_prompted")
+          .eq("id", user.id)
+          .single();
+        
+        if (profile && !profile.testimonial_prompted) {
+          // Small delay so generation toast clears
+          setTimeout(() => setShowTestimonial(true), 2000);
+        }
+      } catch (err) {
+        console.error("First chapter tracking error:", err);
+      }
+    })();
+  }, [user, book.outline?.chapters]);
 
   const { updateBook } = useBooks();
   const turbo = useTurbo();
@@ -347,6 +382,11 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
         onOpenChange={setShowRegenDialog}
         bookTitle={book.title}
         onConfirm={handleRegenerate}
+      />
+
+      <TestimonialModal
+        open={showTestimonial}
+        onOpenChange={setShowTestimonial}
       />
     </motion.div>
   );
