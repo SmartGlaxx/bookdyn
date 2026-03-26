@@ -1,6 +1,12 @@
 import { useState } from "react";
-import { Pen, RefreshCw, Sparkles, MessageSquare, Loader2 } from "lucide-react";
+import { Pen, MessageSquare, Loader2, PenLine, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -13,6 +19,7 @@ interface GuidedWritingToolbarProps {
   subsectionGoal?: string;
   onContentAppend: (newContent: string) => void;
   onContentReplace: (newContent: string) => void;
+  onManualAdd: (type: "text" | "dialogue") => void;
 }
 
 export function GuidedWritingToolbar({
@@ -24,10 +31,11 @@ export function GuidedWritingToolbar({
   subsectionGoal,
   onContentAppend,
   onContentReplace,
+  onManualAdd,
 }: GuidedWritingToolbarProps) {
   const [loading, setLoading] = useState<string | null>(null);
 
-  const callGuidedAction = async (action: "continue" | "rewrite" | "improve" | "dialogue") => {
+  const callGuidedAction = async (action: "continue" | "dialogue") => {
     setLoading(action);
     try {
       const { data, error } = await supabase.functions.invoke("rewrite-paragraph", {
@@ -46,22 +54,8 @@ export function GuidedWritingToolbar({
       if (data.error) throw new Error(data.error);
 
       const result = data.rewritten || data.content || "";
-      if (action === "continue" || action === "dialogue") {
-        onContentAppend("\n\n" + result);
-      } else {
-        // For rewrite/improve, replace the last paragraph
-        const paragraphs = currentContent.split(/\n\n+/).filter(Boolean);
-        if (paragraphs.length > 0) {
-          paragraphs[paragraphs.length - 1] = result;
-          onContentReplace(paragraphs.join("\n\n"));
-        }
-      }
-      toast.success(
-        action === "continue" ? "Content continued" :
-        action === "rewrite" ? "Sentence rewritten" :
-        action === "improve" ? "Sentence improved" :
-        "Dialogue added"
-      );
+      onContentAppend("\n\n" + result);
+      toast.success(action === "continue" ? "Content continued" : "Dialogue added");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Action failed");
     } finally {
@@ -83,36 +77,31 @@ export function GuidedWritingToolbar({
         {loading === "continue" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Pen className="w-3 h-3" />}
         Continue Writing
       </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => callGuidedAction("rewrite")}
-        disabled={isLoading}
-        className="gap-1.5 text-xs h-7"
-      >
-        {loading === "rewrite" ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-        Rewrite Sentence
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => callGuidedAction("improve")}
-        disabled={isLoading}
-        className="gap-1.5 text-xs h-7"
-      >
-        {loading === "improve" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-        Improve Sentence
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => callGuidedAction("dialogue")}
-        disabled={isLoading}
-        className="gap-1.5 text-xs h-7"
-      >
-        {loading === "dialogue" ? <Loader2 className="w-3 h-3 animate-spin" /> : <MessageSquare className="w-3 h-3" />}
-        Add Dialogue
-      </Button>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isLoading}
+            className="gap-1.5 text-xs h-7"
+          >
+            <PenLine className="w-3 h-3" />
+            Manual Write
+            <ChevronDown className="w-3 h-3 ml-0.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onClick={() => onManualAdd("text")}>
+            <PenLine className="w-3.5 h-3.5 mr-2" />
+            Add Text
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onManualAdd("dialogue")}>
+            <MessageSquare className="w-3.5 h-3.5 mr-2" />
+            Add Dialogue
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
