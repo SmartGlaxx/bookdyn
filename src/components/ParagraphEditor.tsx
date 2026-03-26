@@ -72,6 +72,17 @@ export function ParagraphEditor({
     setIsEditing(false);
   };
 
+  const handleDelete = () => {
+    if (totalParagraphs <= 1) {
+      toast.error("Cannot delete the only paragraph");
+      return;
+    }
+    const updated = [...paragraphs];
+    updated.splice(paragraphIndex, 1);
+    onContentUpdate(updated.join("\n\n"));
+    toast.success("Paragraph deleted");
+  };
+
   const handleRewrite = async () => {
     setIsRewriting(true);
     try {
@@ -186,6 +197,18 @@ export function ParagraphEditor({
               >
                 <RefreshCw className="w-3 h-3" />
                 Rewrite
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete();
+                }}
+              >
+                <Trash2 className="w-3 h-3" />
+                Delete
               </Button>
             </motion.div>
           )}
