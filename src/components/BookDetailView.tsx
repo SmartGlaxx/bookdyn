@@ -383,6 +383,11 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
         bookTitle={book.title}
         onConfirm={handleRegenerate}
       />
+
+      <TestimonialModal
+        open={showTestimonial}
+        onOpenChange={setShowTestimonial}
+      />
     </motion.div>
   );
 };
