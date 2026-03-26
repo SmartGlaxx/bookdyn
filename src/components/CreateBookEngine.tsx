@@ -79,7 +79,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
       humorLevel: 3,
       authorityLevel: 5,
     },
-    controls: { ...getDefaultControls("novel"), automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel, temporalContext: { era: "" as TemporalEra, timelineStructure: "" as TimelineStructure }, structureControls: { ...getDefaultControls("novel").structureControls, chapterCount: "" as any, subsectionCount: "" as any, sectionsPerChapter: 4 } },
+    controls: { ...getDefaultControls("novel"), automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel, temporalContext: { era: "" as TemporalEra, timelineStructure: "" as TimelineStructure }, structureControls: { ...getDefaultControls("novel").structureControls, chapterCount: "" as any } },
   });
 
   useEffect(() => {
@@ -126,7 +126,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
   const handleBookTypeChange = (type: BookType) => {
     updateForm("bookType", type);
-    updateForm("controls", { ...getDefaultControls(type), automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel, temporalContext: { era: "" as TemporalEra, timelineStructure: "" as TimelineStructure }, structureControls: { ...getDefaultControls(type).structureControls, chapterCount: "" as any, subsectionCount: "" as any, sectionsPerChapter: 4 } });
+    updateForm("controls", { ...getDefaultControls(type), automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel, temporalContext: { era: "" as TemporalEra, timelineStructure: "" as TimelineStructure }, structureControls: { ...getDefaultControls(type).structureControls, chapterCount: "" as any } });
     const allowed = BOOK_TYPE_AUDIENCES[type];
     if (formData.audience && allowed && !allowed.includes(formData.audience)) {
       updateForm("audience", "");
@@ -593,29 +593,16 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                       </FieldGroup>
 
                       <FieldGroup label="Sections/Chapter" tooltip="How many sections each chapter contains (±1 for organic feel)">
-                        <Select
-                          value={formData.controls?.structureControls?.subsectionCount || ""}
-                          onValueChange={(v) => updateStructureControls("subsectionCount", v)}
-                        >
-                          <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-                          <SelectContent className="bg-popover z-50">
-                            <SelectItem value="flexible">Flexible</SelectItem>
-                            <SelectItem value="fixed">Fixed Number</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {formData.controls?.structureControls?.subsectionCount === "fixed" && (
-                          <Input
-                            type="number"
-                            min={2}
-                            max={10}
-                            className="mt-2 text-xs"
-                            placeholder="Sections per chapter"
-                            value={formData.controls?.structureControls?.sectionsPerChapter || 4}
-                            onChange={(e) =>
-                              updateStructureControls("sectionsPerChapter", Math.max(2, Math.min(10, parseInt(e.target.value) || 4)))
-                            }
-                          />
-                        )}
+                        <Input
+                          type="number"
+                          min={2}
+                          max={10}
+                          className="text-xs"
+                          value={formData.controls?.structureControls?.sectionsPerChapter || 4}
+                          onChange={(e) =>
+                            updateStructureControls("sectionsPerChapter", Math.max(2, Math.min(10, parseInt(e.target.value) || 4)))
+                          }
+                        />
                       </FieldGroup>
                     </div>
 
