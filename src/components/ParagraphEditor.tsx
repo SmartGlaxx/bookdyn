@@ -19,6 +19,7 @@ interface ParagraphEditorProps {
   subsectionTitle: string;
   onContentUpdate: (newFullContent: string) => void;
   readOnly?: boolean;
+  totalParagraphs?: number;
 }
 
 export function ParagraphEditor({
@@ -32,6 +33,7 @@ export function ParagraphEditor({
   subsectionTitle,
   onContentUpdate,
   readOnly = false,
+  totalParagraphs = 1,
 }: ParagraphEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isRewriting, setIsRewriting] = useState(false);
