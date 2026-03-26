@@ -27,6 +27,7 @@ const transformDbToBook = (row: any): Book => ({
   tonalAnchors: row.tonal_anchors || [],
   entities: row.entities || [],
   concepts: row.concepts || [],
+  coverUrl: row.cover_url || undefined,
 });
 
 // Transform Book to database row format
@@ -49,6 +50,7 @@ const transformBookToDb = (book: Partial<Book> & { id?: string }) => ({
   ...(book.tonalAnchors !== undefined && { tonal_anchors: book.tonalAnchors }),
   ...(book.entities !== undefined && { entities: book.entities }),
   ...(book.concepts !== undefined && { concepts: book.concepts }),
+  ...(book.coverUrl !== undefined && { cover_url: book.coverUrl }),
 });
 
 export const useBooks = () => {
@@ -141,6 +143,7 @@ export const useBooks = () => {
       if (updates.tonalAnchors !== undefined) dbUpdates.tonal_anchors = updates.tonalAnchors;
       if (updates.entities !== undefined) dbUpdates.entities = updates.entities;
       if (updates.concepts !== undefined) dbUpdates.concepts = updates.concepts;
+      if (updates.coverUrl !== undefined) dbUpdates.cover_url = updates.coverUrl;
       
       const { data, error } = await supabase
         .from("books")

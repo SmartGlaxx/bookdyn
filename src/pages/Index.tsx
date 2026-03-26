@@ -16,6 +16,14 @@ const Index = () => {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   
   const { books, isLoading, addBook, deleteBook, updateBook } = useBooks();
+
+  const handleUpdateCover = async (id: string, coverUrl: string) => {
+    try {
+      await updateBook(id, { coverUrl });
+    } catch (error) {
+      console.error("Failed to update cover:", error);
+    }
+  };
   
 
   // Work in progress books (not completed)
@@ -118,8 +126,8 @@ const Index = () => {
                       </div>
                     </div>
                     <motion.div
-                      className="grid gap-4"
-                      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}
+                      className="grid gap-6"
+                      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                     >
@@ -130,6 +138,7 @@ const Index = () => {
                           index={index}
                           onSelect={setSelectedBook}
                           onDelete={handleDeleteBook}
+                          onUpdateCover={handleUpdateCover}
                         />
                       ))}
                     </motion.div>
@@ -142,9 +151,9 @@ const Index = () => {
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-xl font-serif font-bold text-muted-foreground">Planning</h2>
                     </div>
-                    <motion.div className="grid gap-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
+                    <motion.div className="grid gap-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}>
                       {planningBooks.map((book, index) => (
-                        <BookCard key={book.id} book={book} index={index} onSelect={setSelectedBook} onDelete={handleDeleteBook} />
+                        <BookCard key={book.id} book={book} index={index} onSelect={setSelectedBook} onDelete={handleDeleteBook} onUpdateCover={handleUpdateCover} />
                       ))}
                     </motion.div>
                   </div>
@@ -156,9 +165,9 @@ const Index = () => {
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-xl font-serif font-bold text-muted-foreground">Completed</h2>
                     </div>
-                    <motion.div className="grid gap-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
+                    <motion.div className="grid gap-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))" }}>
                       {completedBooks.map((book, index) => (
-                        <BookCard key={book.id} book={book} index={index} onSelect={setSelectedBook} onDelete={handleDeleteBook} />
+                        <BookCard key={book.id} book={book} index={index} onSelect={setSelectedBook} onDelete={handleDeleteBook} onUpdateCover={handleUpdateCover} />
                       ))}
                     </motion.div>
                   </div>
