@@ -83,7 +83,10 @@ export function useTurbo() {
         turboWordsCapacity: result.turbo_words_capacity,
       }));
     }
-  }, [user]);
+
+    // Always refresh full status after recording activity
+    await fetchStatus();
+  }, [user, fetchStatus]);
 
   // Plan-gated Turbo access
   const hasTurboPlanAccess = canAccessTurbo(status.plan);
