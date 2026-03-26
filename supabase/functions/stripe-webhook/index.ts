@@ -271,7 +271,6 @@ serve(async (req) => {
                 .eq("id", userId);
               console.log(`[WEBHOOK] invoice.paid: applied pending downgrade user=${userId} plan=${pendingInfo.plan}`);
             }
-            }
           } else {
             await supabase
               .from("profiles")
