@@ -57,6 +57,35 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
     }
   }, [isEditingSubtitle]);
 
+  // Track first chapter completion & show testimonial
+  useEffect(() => {
+    if (!user || firstChapterTrackedRef.current) return;
+    const hasCompletedChapter = book.outline?.chapters?.some(ch => ch.status === "completed");
+    if (!hasCompletedChapter) return;
+    firstChapterTrackedRef.current = true;
+
+    (async () => {
+      try {
+        // Mark first chapter completed in profile
+        await supabase.rpc("mark_first_chapter_completed", { _user_id: user.id });
+        
+        // Check if testimonial was already prompted
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("testimonial_prompted")
+          .eq("id", user.id)
+          .single();
+        
+        if (profile && !profile.testimonial_prompted) {
+          // Small delay so generation toast clears
+          setTimeout(() => setShowTestimonial(true), 2000);
+        }
+      } catch (err) {
+        console.error("First chapter tracking error:", err);
+      }
+    })();
+  }, [user, book.outline?.chapters]);
+
   const { updateBook } = useBooks();
   const turbo = useTurbo();
   const {
