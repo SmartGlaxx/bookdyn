@@ -142,18 +142,104 @@ const Index = () => {
     return <BookDetailView book={currentBook} onBack={() => setSelectedBook(null)} />;
   }
 
-  const sortSelector = (
-    <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-      <SelectTrigger className="w-[160px] h-8 text-xs">
-        <ArrowUpDown className="w-3 h-3 mr-1" />
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="updated">Last Updated</SelectItem>
-        <SelectItem value="bookType">Book Type</SelectItem>
-        <SelectItem value="dateCompleted">Date</SelectItem>
-      </SelectContent>
-    </Select>
+  const availableTypes = filterCategory === "all"
+    ? Object.entries(BOOK_TYPE_INFO)
+    : Object.entries(BOOK_TYPE_INFO).filter(([, info]) => info.category === filterCategory);
+
+  const clearFilters = () => {
+    setFilterCategory("all");
+    setFilterType("all");
+    setFilterCover("all");
+  };
+
+  const toolbar = (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-serif font-bold">Your Library</h2>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={showFilters ? "secondary" : "outline"}
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className="h-8 text-xs"
+          >
+            <Filter className="w-3 h-3 mr-1" />
+            Filter
+            {activeFilterCount > 0 && (
+              <Badge variant="default" className="ml-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]">
+                {activeFilterCount}
+              </Badge>
+            )}
+          </Button>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+            <SelectTrigger className="w-[150px] h-8 text-xs">
+              <ArrowUpDown className="w-3 h-3 mr-1" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="updated">Last Updated</SelectItem>
+              <SelectItem value="bookType">Book Type</SelectItem>
+              <SelectItem value="dateCompleted">Date</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="flex flex-wrap items-center gap-3 p-3 rounded-lg border border-border bg-muted/30">
+              <Select value={filterCategory} onValueChange={(v) => setFilterCategory(v as BookCategory | "all")}>
+                <SelectTrigger className="w-[160px] h-8 text-xs">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {Object.entries(BOOK_CATEGORIES).map(([key, cat]) => (
+                    <SelectItem key={key} value={key}>{cat.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filterType} onValueChange={(v) => setFilterType(v as BookType | "all")}>
+                <SelectTrigger className="w-[170px] h-8 text-xs">
+                  <SelectValue placeholder="Book Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {availableTypes.map(([key, info]) => (
+                    <SelectItem key={key} value={key}>{info.icon} {info.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filterCover} onValueChange={(v) => setFilterCover(v as CoverFilter)}>
+                <SelectTrigger className="w-[150px] h-8 text-xs">
+                  <SelectValue placeholder="Cover" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Books</SelectItem>
+                  <SelectItem value="with-cover">Has Cover</SelectItem>
+                  <SelectItem value="without-cover">No Cover</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {activeFilterCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="h-8 text-xs text-muted-foreground">
+                  <X className="w-3 h-3 mr-1" />
+                  Clear
+                </Button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 
   return (
@@ -198,10 +284,15 @@ const Index = () => {
           </div>
         ) : (
           <div className="container max-w-6xl mx-auto px-4 py-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-3xl font-serif font-bold">Your Library</h2>
-              {sortSelector}
-            </div>
+            {toolbar}
+
+            {wipBooks.length === 0 && completedBooks.length === 0 && activeFilterCount > 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                <Filter className="w-10 h-10 text-muted-foreground/50" />
+                <p className="text-muted-foreground">No books match your filters</p>
+                <Button variant="outline" size="sm" onClick={clearFilters}>Clear Filters</Button>
+              </div>
+            ) : (
 
             <div className="space-y-10">
               {/* In Progress */}
