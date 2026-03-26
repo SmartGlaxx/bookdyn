@@ -70,10 +70,10 @@ const BookCard = ({ book, onSelect, onDelete, index }: BookCardProps) => {
     >
       <Card
         variant="interactive"
-        className="h-full group"
+        className="aspect-square group flex flex-col"
         onClick={() => onSelect(book)}
       >
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
               <CardTitle className="text-lg line-clamp-1">{book.title}</CardTitle>
@@ -104,13 +104,13 @@ const BookCard = ({ book, onSelect, onDelete, index }: BookCardProps) => {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 flex-1 flex flex-col justify-between">
           <div className="flex flex-wrap gap-2">
             <Badge variant={statusColors[book.status]}>{statusLabels[book.status]}</Badge>
             <Badge variant="outline">{typeInfo.label}</Badge>
           </div>
 
-          <p className="text-sm text-muted-foreground line-clamp-2">{book.theme}</p>
+          <p className="text-sm text-muted-foreground line-clamp-3 flex-1">{book.theme}</p>
 
 
           <div className="flex items-center gap-4 text-sm text-muted-foreground pt-2">
