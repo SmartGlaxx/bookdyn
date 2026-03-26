@@ -270,6 +270,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
       ieltsBand,
       targetWordsPerSubsection: effectiveWordsPerSubsection,
       teaserStyle: bookData.controls?.teaserStyle || "none",
+      automationLevel,
     };
 
     const payloadJson = JSON.stringify(payload);
