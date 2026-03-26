@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pencil, RefreshCw, Check, X, Loader2 } from "lucide-react";
+import { Pencil, RefreshCw, Check, X, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,7 @@ interface ParagraphEditorProps {
   subsectionTitle: string;
   onContentUpdate: (newFullContent: string) => void;
   readOnly?: boolean;
+  totalParagraphs?: number;
 }
 
 export function ParagraphEditor({
@@ -32,6 +33,7 @@ export function ParagraphEditor({
   subsectionTitle,
   onContentUpdate,
   readOnly = false,
+  totalParagraphs = 1,
 }: ParagraphEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isRewriting, setIsRewriting] = useState(false);
@@ -68,6 +70,17 @@ export function ParagraphEditor({
   const handleCancel = () => {
     setEditText(paragraph);
     setIsEditing(false);
+  };
+
+  const handleDelete = () => {
+    if (totalParagraphs <= 1) {
+      toast.error("Cannot delete the only paragraph");
+      return;
+    }
+    const updated = [...paragraphs];
+    updated.splice(paragraphIndex, 1);
+    onContentUpdate(updated.join("\n\n"));
+    toast.success("Paragraph deleted");
   };
 
   const handleRewrite = async () => {
@@ -184,6 +197,18 @@ export function ParagraphEditor({
               >
                 <RefreshCw className="w-3 h-3" />
                 Rewrite
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs gap-1 text-destructive hover:text-destructive"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete();
+                }}
+              >
+                <Trash2 className="w-3 h-3" />
+                Delete
               </Button>
             </motion.div>
           )}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { sanitizeText } from "@/lib/sanitize";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,8 @@ import { Book, Chapter as ChapterType, AutomationLevel } from "@/types/book";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ParagraphEditor } from "@/components/ParagraphEditor";
 import { GuidedWritingToolbar } from "@/components/GuidedWritingToolbar";
-import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2, Circle, Loader2, FileText, ChevronDown, Play } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2, Circle, Loader2, FileText, ChevronDown, Play, Check, X } from "lucide-react";
 
 interface ChapterViewProps {
   book: Book;
@@ -37,6 +38,9 @@ const statusConfig: Record<"pending" | "writing" | "completed", {
 export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationLevel = "guided" }: ChapterViewProps) {
   const [selectedChapter, setSelectedChapter] = useState(0);
   const [expandedChapter, setExpandedChapter] = useState<number | null>(null);
+  const [manualAddState, setManualAddState] = useState<{ chapterIdx: number; subIdx: number; type: "text" | "dialogue" } | null>(null);
+  const [manualText, setManualText] = useState("");
+  const manualTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 800);
   const chapters = book.outline?.chapters || [];
   const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
@@ -106,6 +110,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
             subsectionTitle={sub.title}
             onContentUpdate={(newContent) => handleSubsectionContentUpdate(chapterIdx, subIdx, newContent)}
             readOnly={!onUpdateBook}
+            totalParagraphs={paragraphs.length}
           />
         ))}
       </div>
@@ -158,7 +163,51 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
                 onContentReplace={(newContent) => {
                   handleSubsectionContentUpdate(chapterIdx, subIdx, newContent);
                 }}
+                onManualAdd={(type) => {
+                  setManualAddState({ chapterIdx, subIdx, type });
+                  setManualText(type === "dialogue" ? '"' : "");
+                  setTimeout(() => manualTextareaRef.current?.focus(), 50);
+                }}
               />
+              {/* Manual write inline editor */}
+              {manualAddState?.chapterIdx === chapterIdx && manualAddState?.subIdx === subIdx && (
+                <div className="mt-2 space-y-2">
+                  <Textarea
+                    ref={manualTextareaRef}
+                    value={manualText}
+                    onChange={(e) => setManualText(e.target.value)}
+                    placeholder={manualAddState.type === "dialogue" ? '"Write your dialogue here..."' : "Write your paragraph here..."}
+                    className="min-h-[80px] text-sm leading-relaxed"
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") { setManualAddState(null); setManualText(""); }
+                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                        if (manualText.trim()) {
+                          handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + "\n\n" + manualText.trim());
+                          setManualAddState(null);
+                          setManualText("");
+                        }
+                      }
+                    }}
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <Button variant="hero" size="sm" onClick={() => {
+                      if (manualText.trim()) {
+                        handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + "\n\n" + manualText.trim());
+                        setManualAddState(null);
+                        setManualText("");
+                      }
+                    }}>
+                      <Check className="w-3.5 h-3.5" />
+                      Add
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => { setManualAddState(null); setManualText(""); }}>
+                      <X className="w-3.5 h-3.5" />
+                      Cancel
+                    </Button>
+                    <span className="text-[11px] text-muted-foreground ml-2">⌘+Enter to add · Esc to cancel</span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </>
