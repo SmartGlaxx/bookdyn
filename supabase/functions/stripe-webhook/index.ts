@@ -241,6 +241,23 @@ serve(async (req) => {
             const normalizedPending = profile.pending_plan === "unlimited" ? "elite" : profile.pending_plan;
             const pendingInfo = PLAN_CREDITS[normalizedPending];
             if (pendingInfo) {
+              // Apply the pending downgrade in Stripe now
+              const pendingPriceId = Object.entries(PRICE_TO_PLAN).find(
+                ([, v]) => v.plan === pendingInfo.plan
+              )?.[0];
+
+              if (pendingPriceId && subscription.items.data[0]) {
+                try {
+                  await stripe.subscriptions.update(subscription.id, {
+                    items: [{ id: subscription.items.data[0].id, price: pendingPriceId }],
+                    proration_behavior: "none",
+                  });
+                  console.log(`[WEBHOOK] invoice.paid: applied Stripe price swap to ${pendingPriceId}`);
+                } catch (e) {
+                  console.error(`[WEBHOOK] Failed to swap Stripe price:`, e);
+                }
+              }
+
               await supabase
                 .from("profiles")
                 .update({
@@ -253,6 +270,7 @@ serve(async (req) => {
                 })
                 .eq("id", userId);
               console.log(`[WEBHOOK] invoice.paid: applied pending downgrade user=${userId} plan=${pendingInfo.plan}`);
+            }
             }
           } else {
             await supabase
