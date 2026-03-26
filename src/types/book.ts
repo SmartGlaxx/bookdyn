@@ -508,6 +508,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
     },
     structureControls: {
       chapterCount: "flexible",
+      sectionsPerChapterMode: "flexible",
       sectionsPerChapter: 4,
       subsectionCount: "flexible",
       titlesRequired: true,
