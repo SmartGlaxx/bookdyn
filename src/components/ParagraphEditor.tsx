@@ -59,9 +59,16 @@ export function ParagraphEditor({
     return updated.join("\n\n");
   };
 
+  const MAX_PARAGRAPH_LENGTH = 5000;
+
+  const normalizeWhitespace = (text: string) =>
+    text.replace(/\n{3,}/g, "\n\n").trim();
+
   const handleSave = () => {
     if (!editText.trim()) return;
-    const newContent = updateParagraph(editText.trim());
+    const cleaned = sanitizeText(normalizeWhitespace(editText)).substring(0, MAX_PARAGRAPH_LENGTH);
+    if (!cleaned) return;
+    const newContent = updateParagraph(cleaned);
     onContentUpdate(newContent);
     setIsEditing(false);
     toast.success("Paragraph updated");
@@ -121,30 +128,38 @@ export function ParagraphEditor({
         animate={{ opacity: 1 }}
         className="relative group"
       >
-        <Textarea
-          ref={textareaRef}
-          value={editText}
-          onChange={(e) => setEditText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") handleCancel();
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSave();
-          }}
-          className="min-h-[100px] leading-relaxed text-foreground/90 resize-y"
-          placeholder="Write your paragraph..."
-        />
-        <div className="flex items-center gap-1.5 mt-2">
-          <Button variant="hero" size="sm" onClick={handleSave}>
-            <Check className="w-3.5 h-3.5" />
-            Save
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleCancel}>
-            <X className="w-3.5 h-3.5" />
-            Cancel
-          </Button>
-          <span className="text-[11px] text-muted-foreground ml-2">
-            ⌘+Enter to save · Esc to cancel
-          </span>
-        </div>
+         <Textarea
+           ref={textareaRef}
+           value={editText}
+           onChange={(e) => {
+             if (e.target.value.length <= MAX_PARAGRAPH_LENGTH) setEditText(e.target.value);
+           }}
+           onKeyDown={(e) => {
+             if (e.key === "Escape") handleCancel();
+             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSave();
+           }}
+           maxLength={MAX_PARAGRAPH_LENGTH}
+           className="min-h-[100px] leading-relaxed text-foreground/90 resize-y"
+           placeholder="Write your paragraph..."
+         />
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center gap-1.5">
+              <Button variant="hero" size="sm" onClick={handleSave}>
+                <Check className="w-3.5 h-3.5" />
+                Save
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleCancel}>
+                <X className="w-3.5 h-3.5" />
+                Cancel
+              </Button>
+              <span className="text-[11px] text-muted-foreground ml-2">
+                ⌘+Enter to save · Esc to cancel
+              </span>
+            </div>
+            <span className={cn("text-[11px]", editText.length > 4500 ? "text-destructive" : "text-muted-foreground")}>
+              {editText.length}/{MAX_PARAGRAPH_LENGTH.toLocaleString()}
+            </span>
+          </div>
       </motion.div>
     );
   }
