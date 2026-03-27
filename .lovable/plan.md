@@ -1,37 +1,30 @@
 
 
-## Plan: Fix Subscription Upgrade/Downgrade Flow + Update Elite Product
+## Plan: Sanitize User-Authored Content in Edit & Manual Write
 
-### Problem
-1. **PricingModal** always calls `create-checkout`, which opens a full Stripe Checkout page for both upgrades and downgrades — showing the flat plan price, not a prorated amount.
-2. Downgrades should NOT navigate to Stripe at all — they should be applied at end of billing period with an in-app confirmation.
-3. Upgrades should show the **prorated** charge on Stripe Checkout.
-4. The Elite product in Stripe still shows "Unlimited" instead of "Elite — 2M words/month".
+### What's missing today
+Both the **ParagraphEditor** (inline edit/save) and the **Manual Write** textarea in ChapterView pass user text directly into the book content string without any sanitization. While the *display* side calls `sanitizeText()`, the *storage* side does not — meaning raw HTML/script tags could be persisted in the database and potentially rendered elsewhere (exports, future views, etc.).
 
 ### Changes
 
-#### 1. Update PricingModal (`src/components/PricingModal.tsx`)
-- Detect if the user already has an active paid subscription (fetch `stripe_subscription_id` from profile).
-- **If no active subscription**: keep current behavior — call `create-checkout` to open Stripe Checkout.
-- **If active subscription + upgrade**: call `manage-subscription` → `create_portal_update`, which does the inline Stripe API swap with proration. Show a toast confirming the upgrade and prorated charge.
-- **If active subscription + downgrade**: call `manage-subscription` → `create_portal_update` but with a modified backend that schedules the downgrade for end of period. Show a toast: "Your plan will change to [X] on [date]. You'll keep current privileges until then."
+#### 1. Sanitize on save in ParagraphEditor (`src/components/ParagraphEditor.tsx`)
+- In `handleSave`, run `sanitizeText(editText.trim())` before calling `onContentUpdate`.
 
-#### 2. Update `manage-subscription` edge function (`supabase/functions/manage-subscription/index.ts`)
-- In `create_portal_update`, split behavior:
-  - **Upgrade**: keep current logic (immediate price swap with `create_prorations`), update profile immediately.
-  - **Downgrade**: instead of immediate swap, use `stripe.subscriptions.update` with `schedule` or set `pending_plan` + `pending_plan_at` in the profiles table. Store the new plan as pending and let the webhook handle the actual switch at period end. Return `{ success: true, scheduled: true, effective_date, new_plan }`.
-- Actually, simpler approach: for downgrades, use Stripe's `subscription_update` with `proration_behavior: "none"` and schedule via Stripe's built-in billing cycle behavior. But that still changes the plan immediately in Stripe.
-- **Better approach**: For downgrades, do NOT change Stripe immediately. Just store `pending_plan` and `pending_plan_at` in the profile. The `stripe-webhook` on `invoice.paid` at next cycle should handle the actual plan swap. Return the effective date to the frontend.
+#### 2. Sanitize on save in ChapterView manual write (`src/components/ChapterView.tsx`)
+- In both save paths (button click and ⌘+Enter), run `sanitizeText(manualText.trim())` before appending to `sub.content`.
 
-#### 3. Update Stripe Elite product metadata
-- Use the Stripe tools to update the Elite product name from "Unlimited" to "Elite" and description to "2M words/month".
+#### 3. Add max-length guard
+- Cap manual input and edit input at **5,000 characters** to prevent excessively large single-paragraph payloads.
+- Show a character count or warning near the textarea when approaching the limit.
 
-#### 4. Fix `ManageSubscription.tsx` credit rate text
-- Line 140 still says `$1 = 30 credits` — update to `$1 = 10 credits`.
+#### 4. Trim & normalize whitespace
+- Collapse multiple consecutive newlines into a single `\n\n` before persisting, preventing content bloat or layout abuse.
 
-### Files Modified
-- `src/components/PricingModal.tsx` — smart routing for upgrade vs downgrade vs new subscriber
-- `supabase/functions/manage-subscription/index.ts` — downgrade = schedule only, upgrade = immediate with proration
-- `src/pages/ManageSubscription.tsx` — fix stale credit rate text
-- Stripe product update via Stripe tools (Elite product name + description)
+### Files modified
+- `src/components/ParagraphEditor.tsx` — sanitize + length cap on edit save
+- `src/components/ChapterView.tsx` — sanitize + length cap on manual write save
+
+### Not in scope
+- Server-side validation of book content (already protected by RLS + service-role triggers)
+- Sanitization of AI-generated content (already handled by `safeContent()` at render time)
 
