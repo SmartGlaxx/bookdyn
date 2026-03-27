@@ -142,20 +142,24 @@ export function ParagraphEditor({
            className="min-h-[100px] leading-relaxed text-foreground/90 resize-y"
            placeholder="Write your paragraph..."
          />
-         <div className="flex items-center justify-between mt-2">
-           <div className="flex items-center gap-1.5">
-          <Button variant="hero" size="sm" onClick={handleSave}>
-            <Check className="w-3.5 h-3.5" />
-            Save
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleCancel}>
-            <X className="w-3.5 h-3.5" />
-            Cancel
-          </Button>
-          <span className="text-[11px] text-muted-foreground ml-2">
-            ⌘+Enter to save · Esc to cancel
-          </span>
-        </div>
+          <div className="flex items-center justify-between mt-2">
+            <div className="flex items-center gap-1.5">
+              <Button variant="hero" size="sm" onClick={handleSave}>
+                <Check className="w-3.5 h-3.5" />
+                Save
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleCancel}>
+                <X className="w-3.5 h-3.5" />
+                Cancel
+              </Button>
+              <span className="text-[11px] text-muted-foreground ml-2">
+                ⌘+Enter to save · Esc to cancel
+              </span>
+            </div>
+            <span className={cn("text-[11px]", editText.length > 4500 ? "text-destructive" : "text-muted-foreground")}>
+              {editText.length}/{MAX_PARAGRAPH_LENGTH.toLocaleString()}
+            </span>
+          </div>
       </motion.div>
     );
   }
