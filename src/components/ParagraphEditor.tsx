@@ -59,9 +59,16 @@ export function ParagraphEditor({
     return updated.join("\n\n");
   };
 
+  const MAX_PARAGRAPH_LENGTH = 5000;
+
+  const normalizeWhitespace = (text: string) =>
+    text.replace(/\n{3,}/g, "\n\n").trim();
+
   const handleSave = () => {
     if (!editText.trim()) return;
-    const newContent = updateParagraph(editText.trim());
+    const cleaned = sanitizeText(normalizeWhitespace(editText)).substring(0, MAX_PARAGRAPH_LENGTH);
+    if (!cleaned) return;
+    const newContent = updateParagraph(cleaned);
     onContentUpdate(newContent);
     setIsEditing(false);
     toast.success("Paragraph updated");
@@ -121,18 +128,22 @@ export function ParagraphEditor({
         animate={{ opacity: 1 }}
         className="relative group"
       >
-        <Textarea
-          ref={textareaRef}
-          value={editText}
-          onChange={(e) => setEditText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") handleCancel();
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSave();
-          }}
-          className="min-h-[100px] leading-relaxed text-foreground/90 resize-y"
-          placeholder="Write your paragraph..."
-        />
-        <div className="flex items-center gap-1.5 mt-2">
+         <Textarea
+           ref={textareaRef}
+           value={editText}
+           onChange={(e) => {
+             if (e.target.value.length <= MAX_PARAGRAPH_LENGTH) setEditText(e.target.value);
+           }}
+           onKeyDown={(e) => {
+             if (e.key === "Escape") handleCancel();
+             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSave();
+           }}
+           maxLength={MAX_PARAGRAPH_LENGTH}
+           className="min-h-[100px] leading-relaxed text-foreground/90 resize-y"
+           placeholder="Write your paragraph..."
+         />
+         <div className="flex items-center justify-between mt-2">
+           <div className="flex items-center gap-1.5">
           <Button variant="hero" size="sm" onClick={handleSave}>
             <Check className="w-3.5 h-3.5" />
             Save

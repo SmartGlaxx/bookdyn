@@ -173,40 +173,50 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
               {/* Manual write inline editor */}
               {manualAddState?.chapterIdx === chapterIdx && manualAddState?.subIdx === subIdx && (
                 <div className="mt-2 space-y-2">
-                  <Textarea
-                    ref={manualTextareaRef}
-                    value={manualText}
-                    onChange={(e) => setManualText(e.target.value)}
-                    placeholder="Write your paragraph here..."
-                    className="min-h-[80px] text-sm leading-relaxed"
-                    onKeyDown={(e) => {
-                      if (e.key === "Escape") { setManualAddState(null); setManualText(""); }
-                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                        if (manualText.trim()) {
-                          handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + "\n\n" + manualText.trim());
-                          setManualAddState(null);
-                          setManualText("");
-                        }
-                      }
-                    }}
-                  />
-                  <div className="flex items-center gap-1.5">
-                    <Button variant="hero" size="sm" onClick={() => {
-                      if (manualText.trim()) {
-                        handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + "\n\n" + manualText.trim());
-                        setManualAddState(null);
-                        setManualText("");
-                      }
-                    }}>
-                      <Check className="w-3.5 h-3.5" />
-                      Add
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => { setManualAddState(null); setManualText(""); }}>
-                      <X className="w-3.5 h-3.5" />
-                      Cancel
-                    </Button>
-                    <span className="text-[11px] text-muted-foreground ml-2">⌘+Enter to add · Esc to cancel</span>
-                  </div>
+                   <Textarea
+                     ref={manualTextareaRef}
+                     value={manualText}
+                     onChange={(e) => {
+                       if (e.target.value.length <= 5000) setManualText(e.target.value);
+                     }}
+                     placeholder="Write your paragraph here..."
+                     className="min-h-[80px] text-sm leading-relaxed"
+                     maxLength={5000}
+                     onKeyDown={(e) => {
+                       if (e.key === "Escape") { setManualAddState(null); setManualText(""); }
+                       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                         const cleaned = sanitizeText(manualText.trim().replace(/\n{3,}/g, "\n\n")).substring(0, 5000);
+                         if (cleaned) {
+                           handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + "\n\n" + cleaned);
+                           setManualAddState(null);
+                           setManualText("");
+                         }
+                       }
+                     }}
+                   />
+                   <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-1.5">
+                       <Button variant="hero" size="sm" onClick={() => {
+                         const cleaned = sanitizeText(manualText.trim().replace(/\n{3,}/g, "\n\n")).substring(0, 5000);
+                         if (cleaned) {
+                           handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + "\n\n" + cleaned);
+                           setManualAddState(null);
+                           setManualText("");
+                         }
+                       }}>
+                         <Check className="w-3.5 h-3.5" />
+                         Add
+                       </Button>
+                       <Button variant="ghost" size="sm" onClick={() => { setManualAddState(null); setManualText(""); }}>
+                         <X className="w-3.5 h-3.5" />
+                         Cancel
+                       </Button>
+                       <span className="text-[11px] text-muted-foreground ml-2">⌘+Enter to add · Esc to cancel</span>
+                     </div>
+                     <span className={cn("text-[11px]", manualText.length > 4500 ? "text-destructive" : "text-muted-foreground")}>
+                       {manualText.length}/5,000
+                     </span>
+                   </div>
                 </div>
               )}
             </div>
