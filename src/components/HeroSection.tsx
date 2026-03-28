@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Book, Sparkles, BookOpen, PenTool } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import heroBg from "@/assets/hero-bg.jpg";
 
 interface HeroSectionProps {
@@ -67,6 +68,7 @@ const HeroSection = ({ onCreateBook, bookCount }: HeroSectionProps) => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+            {/* COMMENTED OUT FOR PRE-LAUNCH — uncomment after launch to restore CTA
             <Button
               variant="hero"
               size="xl"
@@ -81,6 +83,13 @@ const HeroSection = ({ onCreateBook, bookCount }: HeroSectionProps) => {
                 View Your Library ({bookCount})
               </Button>
             )}
+            */}
+            <Link to="/waitlist">
+              <Button variant="hero" size="xl" className="group">
+                <Sparkles className="w-5 h-5 transition-transform group-hover:scale-110" />
+                Join the Waitlist
+              </Button>
+            </Link>
           </div>
         </motion.div>
 
