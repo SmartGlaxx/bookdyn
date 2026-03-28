@@ -192,6 +192,8 @@ export default function WaitlistPage() {
           </span>
         </p>
       </div>
+      </div>
+      <PublicFooter />
     </div>
   );
 }
