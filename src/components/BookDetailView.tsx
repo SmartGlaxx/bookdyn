@@ -171,6 +171,16 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
     }
   };
 
+  const handleExportEpub = () => {
+    try {
+      exportBookToEpub(book);
+      toast.success("EPUB exported successfully");
+    } catch (err) {
+      toast.error("Failed to export EPUB");
+      console.error(err);
+    }
+  };
+
   const handleStartFullGeneration = () => {
     if (automationLevel === "auto-draft" && !turbo.canUseAutoDraft) {
       toast.error("Auto Draft requires Turbo unlock. Maintain a 30-day streak and write 100K+ words.");
