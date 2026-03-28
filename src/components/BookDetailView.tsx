@@ -285,15 +285,25 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
               )}
 
               {isComplete && (
-                <>
-                  <Button variant="ghost" className="hidden sm:inline-flex gap-2" onClick={handleExportPdf}>
-                    <Download className="w-4 h-4" />
-                    Export PDF
-                  </Button>
-                  <Button variant="ghost" size="icon" className="sm:hidden" onClick={handleExportPdf}>
-                    <Download className="w-4 h-4" />
-                  </Button>
-                </>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="gap-2">
+                      <Download className="w-4 h-4" />
+                      <span className="hidden sm:inline">Export</span>
+                      <ChevronDown className="w-3 h-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleExportPdf}>
+                      <FileText className="w-4 h-4 mr-2" />
+                      Export as PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportEpub}>
+                      <BookText className="w-4 h-4 mr-2" />
+                      Export as EPUB
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
               {(isComplete || book.outline) && !isGenerating && !isAwaitingApproval && (
                 <Button variant="ghost" size="icon" onClick={() => setShowRegenDialog(true)} title="Regenerate book">
