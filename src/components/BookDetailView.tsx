@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Users, Pencil, Check, X, RefreshCw, FileText, Zap } from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Users, Pencil, Check, X, RefreshCw, FileText, Zap, ChevronDown } from "lucide-react";
 import { AutomationLevel } from "@/types/book";
 import { Input } from "@/components/ui/input";
 import BookSettings from "@/components/BookSettings";
@@ -20,6 +20,8 @@ import { ApprovalGate } from "@/components/ApprovalGate";
 import { UserMenuDropdown } from "@/components/UserMenuDropdown";
 import { TestimonialModal } from "@/components/TestimonialModal";
 import { exportBookToPdf } from "@/lib/exportPdf";
+import { exportBookToEpub } from "@/lib/exportEpub";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
