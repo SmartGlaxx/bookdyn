@@ -87,8 +87,8 @@ export default function WaitlistPage() {
         {/* Form / Success */}
         {status === "success" ? (
           <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-card border border-border shadow-lg w-full max-w-md">
-            <div className="w-14 h-14 rounded-full bg-green-500/10 flex items-center justify-center">
-              <CheckCircle2 className="w-7 h-7 text-green-500" />
+            <div className="w-14 h-14 rounded-full bg-success/10 flex items-center justify-center">
+              <CheckCircle2 className="w-7 h-7 text-success" />
             </div>
             <div className="text-center">
               <h3 className="text-xl font-semibold text-foreground mb-1">
