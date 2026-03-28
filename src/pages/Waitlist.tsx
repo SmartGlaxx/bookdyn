@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, Sparkles, Users, ArrowRight } from "lucide-react";
+import PublicHeader from "@/components/PublicHeader";
+import PublicFooter from "@/components/PublicFooter";
 
 const WAITLIST_URL =
   `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/waitlist`;
@@ -50,7 +52,9 @@ export default function WaitlistPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center px-4 py-16">
+    <div className="min-h-screen bg-background flex flex-col">
+      <PublicHeader />
+      <div className="flex-1 relative overflow-hidden flex items-center justify-center px-4 py-16">
       {/* Background blobs */}
       <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-15%] right-[-10%] w-[500px] h-[500px] rounded-full bg-accent/5 blur-[100px] pointer-events-none" />
@@ -190,6 +194,8 @@ export default function WaitlistPage() {
           </span>
         </p>
       </div>
+      </div>
+      <PublicFooter />
     </div>
   );
 }
