@@ -15,6 +15,7 @@ import DevDocs from "./pages/DevDocs";
 import AdminFeedback from "./pages/AdminFeedback";
 import NotFound from "./pages/NotFound";
 import CheckEmail from "./pages/CheckEmail";
+import Waitlist from "./pages/Waitlist";
 import Onboarding from "./pages/Onboarding";
 import { BookOpen } from "lucide-react";
 
