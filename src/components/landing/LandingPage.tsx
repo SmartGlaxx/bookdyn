@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { Link } from "react-router-dom";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import {
@@ -115,11 +116,20 @@ const LandingPage = ({ onCreateBook, bookCount }: LandingPageProps) => {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
+                {/* COMMENTED OUT FOR PRE-LAUNCH — uncomment after launch to restore CTA
                 <Button variant="hero" size="xl" onClick={onCreateBook} className="group">
                   <BookOpen className="w-5 h-5 transition-transform group-hover:scale-110" />
                   Start Now — It's Free
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </Button>
+                */}
+                <Link to="/waitlist">
+                  <Button variant="hero" size="xl" className="group">
+                    <Sparkles className="w-5 h-5 transition-transform group-hover:scale-110" />
+                    Join the Waitlist
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </Button>
+                </Link>
               </div>
 
               {/* Social proof */}
@@ -274,10 +284,18 @@ const LandingPage = ({ onCreateBook, bookCount }: LandingPageProps) => {
                   </div>
                 ))}
               </div>
+              {/* COMMENTED OUT FOR PRE-LAUNCH — uncomment after launch to restore CTA
               <Button variant="hero" size="lg" onClick={onCreateBook} className="group">
                 Get Started Free
                 <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Button>
+              */}
+              <Link to="/waitlist">
+                <Button variant="hero" size="lg" className="group">
+                  Join the Waitlist
+                  <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </Link>
             </RevealSection>
           </div>
         </div>
@@ -339,11 +357,20 @@ const LandingPage = ({ onCreateBook, bookCount }: LandingPageProps) => {
               Start your first book in minutes.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              {/* COMMENTED OUT FOR PRE-LAUNCH — uncomment after launch to restore CTA
               <Button variant="hero" size="xl" onClick={onCreateBook} className="group">
                 <Sparkles className="w-5 h-5" />
                 Start Now — It's Free
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Button>
+              */}
+              <Link to="/waitlist">
+                <Button variant="hero" size="xl" className="group">
+                  <Sparkles className="w-5 h-5" />
+                  Join the Waitlist
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </Link>
             </div>
           </RevealSection>
         </div>
