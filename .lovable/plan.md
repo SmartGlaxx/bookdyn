@@ -1,30 +1,36 @@
 
 
-## Plan: Sanitize User-Authored Content in Edit & Manual Write
+## Plan: Upgrade Content Generation to Gemini 2.5 Pro
 
-### What's missing today
-Both the **ParagraphEditor** (inline edit/save) and the **Manual Write** textarea in ChapterView pass user text directly into the book content string without any sanitization. While the *display* side calls `sanitizeText()`, the *storage* side does not — meaning raw HTML/script tags could be persisted in the database and potentially rendered elsewhere (exports, future views, etc.).
+### Current Model Mapping
+| Function | Current Model | New Model |
+|---|---|---|
+| `generate-content` | gemini-2.5-flash | **gemini-2.5-pro** |
+| `rewrite-paragraph` | gemini-2.5-flash | **gemini-2.5-pro** |
+| `generate-outline` | gemini-2.5-flash | gemini-2.5-flash (keep) |
+| `summarize-content` | gemini-2.5-flash-lite | gemini-2.5-flash-lite (keep) |
+| `generate-characters` | gemini-2.5-flash | gemini-2.5-flash (keep) |
+| Image functions | gemini-3-pro-image | gemini-3-pro-image (keep) |
 
 ### Changes
 
-#### 1. Sanitize on save in ParagraphEditor (`src/components/ParagraphEditor.tsx`)
-- In `handleSave`, run `sanitizeText(editText.trim())` before calling `onContentUpdate`.
+#### 1. `supabase/functions/generate-content/index.ts`
+- Change model from `google/gemini-2.5-flash` to `google/gemini-2.5-pro`
+- This is the main prose generation function — Pro will produce richer, more nuanced writing
 
-#### 2. Sanitize on save in ChapterView manual write (`src/components/ChapterView.tsx`)
-- In both save paths (button click and ⌘+Enter), run `sanitizeText(manualText.trim())` before appending to `sub.content`.
+#### 2. `supabase/functions/rewrite-paragraph/index.ts`
+- Change model from `google/gemini-2.5-flash` to `google/gemini-2.5-pro`
+- Rewrites and guided writing (continue, improve, dialogue) benefit from Pro's superior prose quality
 
-#### 3. Add max-length guard
-- Cap manual input and edit input at **5,000 characters** to prevent excessively large single-paragraph payloads.
-- Show a character count or warning near the textarea when approaching the limit.
+### What stays the same
+- **Outlines** (`generate-outline`): Flash is fine — outlines are structural, not prose-heavy
+- **Summaries** (`summarize-content`): Flash Lite is sufficient for condensing text
+- **Characters** (`generate-characters`): Flash handles extraction and metadata well
+- **Images/Covers**: Already on the image-specific model
 
-#### 4. Trim & normalize whitespace
-- Collapse multiple consecutive newlines into a single `\n\n` before persisting, preventing content bloat or layout abuse.
-
-### Files modified
-- `src/components/ParagraphEditor.tsx` — sanitize + length cap on edit save
-- `src/components/ChapterView.tsx` — sanitize + length cap on manual write save
-
-### Not in scope
-- Server-side validation of book content (already protected by RLS + service-role triggers)
-- Sanitization of AI-generated content (already handled by `safeContent()` at render time)
+### Trade-offs
+- **Quality**: Noticeably better dialogue, vocabulary, and narrative flow
+- **Speed**: ~2-3x slower per request (Pro thinks deeper)
+- **Cost**: ~3-5x more per request for content generation
+- Outlines and summaries remain cheap and fast
 
