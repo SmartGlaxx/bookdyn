@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, Sparkles, Users, ArrowRight } from "lucide-react";
+import PublicHeader from "@/components/PublicHeader";
+import PublicFooter from "@/components/PublicFooter";
 
 const WAITLIST_URL =
   `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/waitlist`;
