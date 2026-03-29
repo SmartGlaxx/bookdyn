@@ -17,6 +17,7 @@ import NotFound from "./pages/NotFound";
 import CheckEmail from "./pages/CheckEmail";
 import Waitlist from "./pages/Waitlist";
 import Onboarding from "./pages/Onboarding";
+import BookDetail from "./pages/BookDetail";
 import { BookOpen } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -117,6 +118,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Index />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/:bookId"
+            element={
+              <ProtectedRoute>
+                <BookDetail />
               </ProtectedRoute>
             }
           />
