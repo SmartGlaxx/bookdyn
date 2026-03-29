@@ -117,7 +117,23 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
     );
   };
 
-  const renderSubsectionContent = (sub: any, subIdx: number, chapterIdx: number) => (
+  // Find the first empty (non-writing, non-completed) subsection across all chapters
+  const firstEmptyLocation = (() => {
+    for (let ci = 0; ci < chapters.length; ci++) {
+      for (let si = 0; si < chapters[ci].subsections.length; si++) {
+        const s = chapters[ci].subsections[si];
+        if (!s.content && s.status !== "writing" && s.status !== "completed") {
+          return { chapterIdx: ci, subIdx: si };
+        }
+      }
+    }
+    return null;
+  })();
+
+  const renderSubsectionContent = (sub: any, subIdx: number, chapterIdx: number) => {
+    const isFirstEmpty = firstEmptyLocation?.chapterIdx === chapterIdx && firstEmptyLocation?.subIdx === subIdx;
+
+    return (
     <div key={sub.id} className="mb-8 last:mb-0">
       {/* Subsection Header */}
       <div className="flex items-center gap-3 mb-4">
@@ -230,7 +246,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
       ) : (
         <div className="pl-11 flex flex-col items-start gap-2">
           <p className="text-muted-foreground italic text-sm">No content yet for this section.</p>
-          {onGenerateChapter && (
+          {isFirstEmpty && onGenerateChapter && (
             <Button
               variant="hero"
               size="sm"
@@ -246,7 +262,8 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
 
       {subIdx < (chapters[chapterIdx]?.subsections.length || 0) - 1 && <Separator className="mt-8" />}
     </div>
-  );
+    );
+  };
 
   // Mobile view - accordion style
   if (isMobile) {
