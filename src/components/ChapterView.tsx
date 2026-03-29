@@ -222,19 +222,26 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
             </div>
           )}
         </>
-      ) : sub.status === "pending" ? (
-        <div className="pl-11 space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-3/4" />
-        </div>
       ) : sub.status === "writing" ? (
         <div className="pl-11 flex items-center gap-2 text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin" />
           <span className="text-sm">Writing content...</span>
         </div>
       ) : (
-        <p className="pl-11 text-muted-foreground italic text-sm">Content pending...</p>
+        <div className="pl-11 flex flex-col items-start gap-2">
+          <p className="text-muted-foreground italic text-sm">No content yet for this section.</p>
+          {onGenerateChapter && (
+            <Button
+              variant="hero"
+              size="sm"
+              onClick={() => onGenerateChapter(chapterIdx)}
+              className="gap-1.5"
+            >
+              <Play className="w-3.5 h-3.5" />
+              Generate Text
+            </Button>
+          )}
+        </div>
       )}
 
       {subIdx < (chapters[chapterIdx]?.subsections.length || 0) - 1 && <Separator className="mt-8" />}
