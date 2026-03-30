@@ -334,7 +334,10 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
               <BookSearchPanel
                 book={book}
                 onUpdateBook={updateBook}
-                onClose={() => setShowSearch(false)}
+                onClose={() => { setShowSearch(false); setSearchQuery(""); }}
+                onNavigateToChapter={(idx) => setSearchNavigateChapter(idx)}
+                searchQuery={searchQuery}
+                onSearchQueryChange={setSearchQuery}
               />
             </div>
           )}
