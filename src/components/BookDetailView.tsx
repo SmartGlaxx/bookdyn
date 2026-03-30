@@ -45,6 +45,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   const [showRegenDialog, setShowRegenDialog] = useState(false);
   const [showTestimonial, setShowTestimonial] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const titleInputRef = useRef<HTMLInputElement>(null);
   const subtitleInputRef = useRef<HTMLInputElement>(null);
   const firstChapterTrackedRef = useRef(false);

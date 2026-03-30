@@ -290,7 +290,7 @@ export function BookSearchPanel({ book, onUpdateBook, onClose, onNavigateToChapt
     return (
       <span>
         {text.substring(0, start)}
-        <mark className="bg-yellow-300/40 dark:bg-yellow-500/30 text-foreground rounded-sm px-0.5">{text.substring(start, end)}</mark>
+        <mark className="bg-warning/40 text-foreground rounded-sm px-0.5">{text.substring(start, end)}</mark>
         {text.substring(end)}
       </span>
     );
