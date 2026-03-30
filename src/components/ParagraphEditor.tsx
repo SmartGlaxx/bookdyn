@@ -20,6 +20,7 @@ interface ParagraphEditorProps {
   onContentUpdate: (newFullContent: string) => void;
   readOnly?: boolean;
   totalParagraphs?: number;
+  highlightText?: (text: string) => React.ReactNode;
 }
 
 export function ParagraphEditor({
