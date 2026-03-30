@@ -38,7 +38,7 @@ const statusConfig: Record<"pending" | "writing" | "completed", {
   completed: { icon: CheckCircle2, color: "text-success", label: "Completed" },
 };
 
-export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationLevel = "guided" }: ChapterViewProps) {
+export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationLevel = "guided", searchQuery, navigateToChapter, onNavigateHandled }: ChapterViewProps) {
   const [selectedChapter, setSelectedChapter] = useState(0);
   const [expandedChapter, setExpandedChapter] = useState<number | null>(null);
   const [manualAddState, setManualAddState] = useState<{ chapterIdx: number; subIdx: number; type: "text" | "dialogue" } | null>(null);
