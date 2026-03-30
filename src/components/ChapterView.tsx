@@ -139,6 +139,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
             onContentUpdate={(newContent) => handleSubsectionContentUpdate(chapterIdx, subIdx, newContent)}
             readOnly={!onUpdateBook}
             totalParagraphs={paragraphs.length}
+            highlightText={searchQuery ? highlightSearchInText : undefined}
           />
         ))}
       </div>
