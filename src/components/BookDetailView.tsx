@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Users, Pencil, Check, X, RefreshCw, FileText, Zap, ChevronDown, Search } from "lucide-react";
 import { AutomationLevel } from "@/types/book";
