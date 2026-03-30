@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Users, Pencil, Check, X, RefreshCw, FileText, Zap, ChevronDown } from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Users, Pencil, Check, X, RefreshCw, FileText, Zap, ChevronDown, Search } from "lucide-react";
 import { AutomationLevel } from "@/types/book";
 import { Input } from "@/components/ui/input";
 import BookSettings from "@/components/BookSettings";
@@ -19,6 +19,7 @@ import { WritingModeSelector } from "@/components/WritingModeSelector";
 import { ApprovalGate } from "@/components/ApprovalGate";
 import { UserMenuDropdown } from "@/components/UserMenuDropdown";
 import { TestimonialModal } from "@/components/TestimonialModal";
+import { BookSearchPanel } from "@/components/BookSearchPanel";
 import { exportBookToPdf } from "@/lib/exportPdf";
 import { exportBookToEpub } from "@/lib/exportEpub";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -43,6 +44,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   const [editSubtitle, setEditSubtitle] = useState(book.subtitle || "");
   const [showRegenDialog, setShowRegenDialog] = useState(false);
   const [showTestimonial, setShowTestimonial] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const subtitleInputRef = useRef<HTMLInputElement>(null);
   const firstChapterTrackedRef = useRef(false);
@@ -310,6 +312,11 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                   <RefreshCw className="w-4 h-4" />
                 </Button>
               )}
+              {hasOutline && (
+                <Button variant="ghost" size="icon" onClick={() => setShowSearch(s => !s)} title="Search book (Ctrl+F)">
+                  <Search className="w-4 h-4" />
+                </Button>
+              )}
               <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)}>
                 <Settings className="w-5 h-5" />
               </Button>
@@ -319,6 +326,18 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
       </header>
 
       <main className="flex-1 container max-w-7xl mx-auto px-0 md:px-4 pb-4 md:pb-6">
+        {/* Book Search Panel */}
+        <AnimatePresence>
+          {showSearch && hasOutline && (
+            <div className="mb-3 px-4 md:px-0">
+              <BookSearchPanel
+                book={book}
+                onUpdateBook={updateBook}
+                onClose={() => setShowSearch(false)}
+              />
+            </div>
+          )}
+        </AnimatePresence>
         {/* Generation Status */}
         {(isGenerating || isPaused || isAwaitingApproval) && generationState.phase !== "completed" && (
           <motion.div className="mb-2 px-4 md:px-0" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
