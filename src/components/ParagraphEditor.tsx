@@ -35,6 +35,7 @@ export function ParagraphEditor({
   onContentUpdate,
   readOnly = false,
   totalParagraphs = 1,
+  highlightText,
 }: ParagraphEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isRewriting, setIsRewriting] = useState(false);
