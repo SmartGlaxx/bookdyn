@@ -400,6 +400,9 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                     onGenerateChapter={canGenerateChapter && !isAwaitingApproval ? generateChapter : undefined}
                     onUpdateBook={updateBook}
                     automationLevel={automationLevel}
+                    searchQuery={showSearch ? searchQuery : ""}
+                    navigateToChapter={searchNavigateChapter}
+                    onNavigateHandled={() => setSearchNavigateChapter(null)}
                   />
                 )}
               </div>
