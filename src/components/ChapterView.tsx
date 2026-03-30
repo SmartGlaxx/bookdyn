@@ -56,6 +56,31 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Navigate to chapter from search panel
+  useEffect(() => {
+    if (navigateToChapter !== null && navigateToChapter !== undefined && navigateToChapter !== selectedChapter) {
+      setSelectedChapter(navigateToChapter);
+      if (isMobile) setExpandedChapter(navigateToChapter);
+    }
+    if (navigateToChapter !== null && navigateToChapter !== undefined) {
+      onNavigateHandled?.();
+    }
+  }, [navigateToChapter]);
+
+  // Highlight search matches in rendered text
+  const highlightSearchInText = useCallback((text: string) => {
+    if (!searchQuery || !searchQuery.trim()) return text;
+    const escaped = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escaped})`, "gi");
+    const parts = text.split(regex);
+    if (parts.length === 1) return text;
+    return parts.map((part, i) =>
+      regex.test(part)
+        ? <mark key={i} className="bg-warning/40 text-foreground rounded-sm px-0.5">{part}</mark>
+        : part
+    );
+  }, [searchQuery]);
+
   const handleSubsectionContentUpdate = useCallback((chapterIdx: number, subIdx: number, newContent: string) => {
     if (!onUpdateBook || !book.outline) return;
     const updatedOutline = JSON.parse(JSON.stringify(book.outline));
