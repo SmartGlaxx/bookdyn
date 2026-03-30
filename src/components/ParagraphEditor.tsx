@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Pencil, RefreshCw, Check, X, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ interface ParagraphEditorProps {
   onContentUpdate: (newFullContent: string) => void;
   readOnly?: boolean;
   totalParagraphs?: number;
+  highlightText?: (text: string) => React.ReactNode;
 }
 
 export function ParagraphEditor({
@@ -34,6 +35,7 @@ export function ParagraphEditor({
   onContentUpdate,
   readOnly = false,
   totalParagraphs = 1,
+  highlightText,
 }: ParagraphEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isRewriting, setIsRewriting] = useState(false);
@@ -174,7 +176,7 @@ export function ParagraphEditor({
       onMouseLeave={() => setIsHovered(false)}
     >
       <p className="whitespace-pre-wrap leading-relaxed text-foreground/90 break-words">
-        {sanitizeText(paragraph)}
+        {highlightText ? highlightText(sanitizeText(paragraph)) : sanitizeText(paragraph)}
       </p>
 
       {/* Floating toolbar */}

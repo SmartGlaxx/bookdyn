@@ -22,6 +22,9 @@ interface ChapterViewProps {
   onGenerateChapter?: (chapterIndex: number) => void;
   onUpdateBook?: (id: string, updates: Partial<Book>) => void;
   automationLevel?: AutomationLevel;
+  searchQuery?: string;
+  navigateToChapter?: number | null;
+  onNavigateHandled?: () => void;
 }
 
 const statusConfig: Record<"pending" | "writing" | "completed", {
@@ -35,7 +38,7 @@ const statusConfig: Record<"pending" | "writing" | "completed", {
   completed: { icon: CheckCircle2, color: "text-success", label: "Completed" },
 };
 
-export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationLevel = "guided" }: ChapterViewProps) {
+export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationLevel = "guided", searchQuery, navigateToChapter, onNavigateHandled }: ChapterViewProps) {
   const [selectedChapter, setSelectedChapter] = useState(0);
   const [expandedChapter, setExpandedChapter] = useState<number | null>(null);
   const [manualAddState, setManualAddState] = useState<{ chapterIdx: number; subIdx: number; type: "text" | "dialogue" } | null>(null);
@@ -52,6 +55,31 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Navigate to chapter from search panel
+  useEffect(() => {
+    if (navigateToChapter !== null && navigateToChapter !== undefined && navigateToChapter !== selectedChapter) {
+      setSelectedChapter(navigateToChapter);
+      if (isMobile) setExpandedChapter(navigateToChapter);
+    }
+    if (navigateToChapter !== null && navigateToChapter !== undefined) {
+      onNavigateHandled?.();
+    }
+  }, [navigateToChapter]);
+
+  // Highlight search matches in rendered text
+  const highlightSearchInText = useCallback((text: string) => {
+    if (!searchQuery || !searchQuery.trim()) return text;
+    const escaped = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(`(${escaped})`, "gi");
+    const parts = text.split(regex);
+    if (parts.length === 1) return text;
+    return parts.map((part, i) =>
+      regex.test(part)
+        ? <mark key={i} className="bg-warning/40 text-foreground rounded-sm px-0.5">{part}</mark>
+        : part
+    );
+  }, [searchQuery]);
 
   const handleSubsectionContentUpdate = useCallback((chapterIdx: number, subIdx: number, newContent: string) => {
     if (!onUpdateBook || !book.outline) return;
@@ -111,6 +139,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
             onContentUpdate={(newContent) => handleSubsectionContentUpdate(chapterIdx, subIdx, newContent)}
             readOnly={!onUpdateBook}
             totalParagraphs={paragraphs.length}
+            highlightText={searchQuery ? highlightSearchInText : undefined}
           />
         ))}
       </div>

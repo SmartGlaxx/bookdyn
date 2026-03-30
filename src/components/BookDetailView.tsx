@@ -45,6 +45,8 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   const [showRegenDialog, setShowRegenDialog] = useState(false);
   const [showTestimonial, setShowTestimonial] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchNavigateChapter, setSearchNavigateChapter] = useState<number | null>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const subtitleInputRef = useRef<HTMLInputElement>(null);
   const firstChapterTrackedRef = useRef(false);
@@ -333,7 +335,10 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
               <BookSearchPanel
                 book={book}
                 onUpdateBook={updateBook}
-                onClose={() => setShowSearch(false)}
+                onClose={() => { setShowSearch(false); setSearchQuery(""); }}
+                onNavigateToChapter={(idx) => setSearchNavigateChapter(idx)}
+                searchQuery={searchQuery}
+                onSearchQueryChange={setSearchQuery}
               />
             </div>
           )}
@@ -395,6 +400,9 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                     onGenerateChapter={canGenerateChapter && !isAwaitingApproval ? generateChapter : undefined}
                     onUpdateBook={updateBook}
                     automationLevel={automationLevel}
+                    searchQuery={showSearch ? searchQuery : ""}
+                    navigateToChapter={searchNavigateChapter}
+                    onNavigateHandled={() => setSearchNavigateChapter(null)}
                   />
                 )}
               </div>
