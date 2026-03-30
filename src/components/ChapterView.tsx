@@ -22,6 +22,9 @@ interface ChapterViewProps {
   onGenerateChapter?: (chapterIndex: number) => void;
   onUpdateBook?: (id: string, updates: Partial<Book>) => void;
   automationLevel?: AutomationLevel;
+  searchQuery?: string;
+  navigateToChapter?: number | null;
+  onNavigateHandled?: () => void;
 }
 
 const statusConfig: Record<"pending" | "writing" | "completed", {
