@@ -176,7 +176,7 @@ export function ParagraphEditor({
       onMouseLeave={() => setIsHovered(false)}
     >
       <p className="whitespace-pre-wrap leading-relaxed text-foreground/90 break-words">
-        {sanitizeText(paragraph)}
+        {highlightText ? highlightText(sanitizeText(paragraph)) : sanitizeText(paragraph)}
       </p>
 
       {/* Floating toolbar */}
