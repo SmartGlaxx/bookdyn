@@ -55,7 +55,8 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   const editChapterRef = useRef<HTMLInputElement>(null);
   const chapters = book.outline?.chapters || [];
   const hasCharacters = book.outline?.characters && book.outline.characters.length > 0;
-  const isComplete = book.status === "completed" || chapters.every(c => c.status === "completed");
+  const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
+  const selectedCharacter = selectedCharacterId ? book.outline?.characters?.find(c => c.id === selectedCharacterId) : null;
   const isMobile = useIsMobile();
   const isLandscapeMobile = isMobile && windowHeight < 500;
 
