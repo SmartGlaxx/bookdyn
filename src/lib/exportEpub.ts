@@ -15,7 +15,7 @@ function contentToXhtml(content: string): string {
   return paragraphs.map((p) => `<p>${escapeXml(p.trim())}</p>`).join("\n");
 }
 
-export function exportBookToEpub(book: Book) {
+export async function exportBookToEpub(book: Book) {
   const zip = new JSZip();
   const bookId = `urn:uuid:${book.id}`;
   const chapters = book.outline?.chapters || [];
@@ -39,6 +39,42 @@ export function exportBookToEpub(book: Book) {
   const manifest: string[] = [];
   const spine: string[] = [];
   const toc: string[] = [];
+
+  // Cover page (if cover image exists)
+  if (book.coverUrl) {
+    try {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("Failed to load cover"));
+        img.src = book.coverUrl!;
+      });
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+      const base64 = dataUrl.split(",")[1];
+      zip.file("OEBPS/cover.jpg", base64, { base64: true });
+      manifest.push(`<item id="cover-image" href="cover.jpg" media-type="image/jpeg"/>`);
+
+      const coverPageHtml = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><title>Cover</title></head>
+<body style="margin:0;padding:0;text-align:center;">
+<img src="cover.jpg" alt="Cover" style="max-width:100%;max-height:100%;"/>
+</body>
+</html>`;
+      zip.file("OEBPS/cover.xhtml", coverPageHtml);
+      manifest.push(`<item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>`);
+      spine.push(`<itemref idref="cover"/>`);
+    } catch (e) {
+      console.warn("Could not add cover to EPUB:", e);
+    }
+  }
 
   // Title page
   const titlePageHtml = `<?xml version="1.0" encoding="UTF-8"?>

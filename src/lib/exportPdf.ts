@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import { Book } from "@/types/book";
 
-export function exportBookToPdf(book: Book) {
+export async function exportBookToPdf(book: Book) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -15,6 +15,41 @@ export function exportBookToPdf(book: Book) {
       y = margin;
     }
   };
+
+  // ---- Cover Page (if cover image exists) ----
+  if (book.coverUrl) {
+    try {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("Failed to load cover"));
+        img.src = book.coverUrl!;
+      });
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
+      // Fit cover to full page
+      const imgRatio = img.naturalWidth / img.naturalHeight;
+      const pageRatio = pageWidth / pageHeight;
+      let drawW = pageWidth;
+      let drawH = pageHeight;
+      if (imgRatio > pageRatio) {
+        drawH = pageWidth / imgRatio;
+      } else {
+        drawW = pageHeight * imgRatio;
+      }
+      const drawX = (pageWidth - drawW) / 2;
+      const drawY = (pageHeight - drawH) / 2;
+      doc.addImage(dataUrl, "JPEG", drawX, drawY, drawW, drawH);
+      doc.addPage();
+    } catch (e) {
+      console.warn("Could not add cover to PDF:", e);
+    }
+  }
 
   // ---- Title Page ----
   y = pageHeight * 0.35;
