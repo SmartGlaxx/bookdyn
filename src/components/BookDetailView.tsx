@@ -30,11 +30,8 @@ interface BookDetailViewProps {
   onBack: () => void;
 }
 
-type ViewMode = "chapter" | "full" | "characters";
-
 const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   const { user } = useAuth();
-  const [viewMode, setViewMode] = useState<ViewMode>("chapter");
   const [showSettings, setShowSettings] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState(book.title);
