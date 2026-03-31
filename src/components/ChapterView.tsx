@@ -393,107 +393,227 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   }
 
   // Desktop view
-  return (
-    <div className="h-[calc(100vh-theme(spacing.32))] flex gap-4 min-h-0 pb-6">
-      {/* Chapter Navigation Sidebar */}
-      <Card className="w-64 shrink-0 flex flex-col min-h-0">
-        <div className="p-4 border-b shrink-0">
-          <h3 className="font-medium text-sm flex items-center gap-2">
-            <BookOpen className="w-4 h-4" />
-            Chapters
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            {chapters.length} chapters · {chapters.filter(c => c.status === "completed").length} completed
-          </p>
-        </div>
-        <ScrollArea className="flex-1 min-h-0">
-          <div className="p-3 space-y-1">
-            {chapters.map((chapter, idx) => {
-              const StatusIcon = statusConfig[chapter.status].icon;
-              const isActive = idx === selectedChapter;
-              return (
-                <motion.button
-                  key={chapter.id}
-                  onClick={() => setSelectedChapter(idx)}
-                  className={cn("w-[14rem] text-left p-3 rounded-lg transition-colors", isActive ? "bg-primary/10" : "hover:bg-muted")}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                >
-                  <div className="flex items-start gap-2">
-                    <StatusIcon className={cn("w-4 h-4 mt-0.5 shrink-0", statusConfig[chapter.status].color, statusConfig[chapter.status].animate && "animate-spin")} />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs text-muted-foreground mb-0.5">Chapter {chapter.chapterNumber}</div>
-                      <div className="font-medium text-sm truncate" title={chapter.title}>{chapter.title}</div>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1 truncate">
-                          <FileText className="w-3 h-3 shrink-0" />
-                          {getWordCount(chapter).toLocaleString()}
-                        </span>
-                        <span>·</span>
-                        <span className="truncate">{chapter.subsections.length} sections</span>
-                      </div>
-                    </div>
-                  </div>
-                </motion.button>
-              );
-            })}
-          </div>
-        </ScrollArea>
-      </Card>
+  const isComplete_all = chapters.length > 0 && chapters.every(c => c.status === "completed");
 
-      {/* Chapter Content */}
+  // Character detail view component
+  const renderCharacterDetail = () => {
+    if (!selectedCharacter) {
+      return (
+        <Card className="flex-1 flex flex-col overflow-hidden min-h-0">
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center space-y-2">
+              <Users className="w-10 h-10 mx-auto text-muted-foreground/40" />
+              <p className="text-muted-foreground text-sm">Select a character to view details</p>
+            </div>
+          </div>
+        </Card>
+      );
+    }
+
+    return (
       <Card className="flex-1 flex flex-col overflow-hidden min-h-0">
-        <div className="p-4 border-b shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => setSelectedChapter(Math.max(0, selectedChapter - 1))} disabled={selectedChapter === 0}>
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <div>
-                <div className="text-xs text-muted-foreground uppercase tracking-wider">
-                  Chapter {currentChapter.chapterNumber} of {chapters.length}
-                </div>
-                <h2 className="font-serif text-xl font-semibold">{currentChapter.title}</h2>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <Badge variant={currentChapter.status === "completed" ? "success" : "secondary"} className="text-xs">
-                  {statusConfig[currentChapter.status].label}
-                </Badge>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {completedSubsections}/{totalSubsections} sections · {chapterProgress}%
-                </div>
-              </div>
-              {onGenerateChapter && currentChapter.status !== "completed" && (
-                <Button variant="hero" size="sm" onClick={() => onGenerateChapter(selectedChapter)}>
-                  <Play className="w-3.5 h-3.5" />
-                  Write
-                </Button>
-              )}
-              <Button variant="ghost" size="icon" onClick={() => setSelectedChapter(Math.min(chapters.length - 1, selectedChapter + 1))} disabled={selectedChapter === chapters.length - 1}>
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
         <ScrollArea className="flex-1 min-h-0">
           <CardContent className="p-6 pb-12">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={selectedChapter}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                {currentChapter.subsections.map((sub, subIdx) => renderSubsectionContent(sub, subIdx, selectedChapter))}
-              </motion.div>
-            </AnimatePresence>
+            <CharacterGallery 
+              characters={[selectedCharacter]} 
+              visualStyleGuide={book.outline?.visualStyleGuide} 
+            />
           </CardContent>
         </ScrollArea>
       </Card>
+    );
+  };
+
+  return (
+    <div className="h-[calc(100vh-theme(spacing.32))] flex gap-4 min-h-0 pb-6">
+      {/* Sidebar */}
+      <Card className="w-64 shrink-0 flex flex-col min-h-0">
+        <div className="p-4 border-b shrink-0">
+          {isComplete_all && hasCharacters ? (
+            <Tabs value={sidebarTab} onValueChange={(v) => { setSidebarTab(v as "chapters" | "characters"); if (v === "chapters") setSelectedCharacterId(null); }}>
+              <TabsList className="w-full">
+                <TabsTrigger value="chapters" className="flex-1 gap-1.5 text-xs">
+                  <BookOpen className="w-3.5 h-3.5" />
+                  Chapters
+                </TabsTrigger>
+                <TabsTrigger value="characters" className="flex-1 gap-1.5 text-xs">
+                  <Users className="w-3.5 h-3.5" />
+                  Characters
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          ) : (
+            <>
+              <h3 className="font-medium text-sm flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                Chapters
+              </h3>
+              {!isComplete_all && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {chapters.length} chapters · {chapters.filter(c => c.status === "completed").length} completed
+                </p>
+              )}
+              {hasCharacters && (
+                <button 
+                  onClick={() => { setSidebarTab("characters"); }}
+                  className="text-xs text-primary hover:underline mt-1 flex items-center gap-1"
+                >
+                  <Users className="w-3 h-3" />
+                  View Characters
+                </button>
+              )}
+            </>
+          )}
+        </div>
+
+        <ScrollArea className="flex-1 min-h-0">
+          {sidebarTab === "chapters" ? (
+            <div className="p-3 space-y-1">
+              {chapters.map((chapter, idx) => {
+                const StatusIcon = statusConfig[chapter.status].icon;
+                const isActive = idx === selectedChapter && !selectedCharacterId;
+                return (
+                  <motion.button
+                    key={chapter.id}
+                    onClick={() => { setSelectedChapter(idx); setSelectedCharacterId(null); }}
+                    className={cn("w-[14rem] text-left p-3 rounded-lg transition-colors", isActive ? "bg-primary/10" : "hover:bg-muted")}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                  >
+                    <div className="flex items-start gap-2">
+                      <StatusIcon className={cn("w-4 h-4 mt-0.5 shrink-0", statusConfig[chapter.status].color, statusConfig[chapter.status].animate && "animate-spin")} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-muted-foreground mb-0.5">Chapter {chapter.chapterNumber}</div>
+                        <div className="font-medium text-sm truncate" title={chapter.title}>{chapter.title}</div>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1 truncate">
+                            <FileText className="w-3 h-3 shrink-0" />
+                            {getWordCount(chapter).toLocaleString()}
+                          </span>
+                          <span>·</span>
+                          <span className="truncate">{chapter.subsections.length} sections</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="p-3 space-y-1">
+              {book.outline?.characters?.map((character) => {
+                const isActive = selectedCharacterId === character.id;
+                return (
+                  <motion.button
+                    key={character.id}
+                    onClick={() => setSelectedCharacterId(character.id)}
+                    className={cn("w-[14rem] text-left p-3 rounded-lg transition-colors flex items-center gap-3", isActive ? "bg-primary/10" : "hover:bg-muted")}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                  >
+                    <div className="shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                      {character.portraitUrl ? (
+                        <img src={character.portraitUrl} alt={character.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-4 h-4 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate">{character.name}</div>
+                      <div className="text-xs text-muted-foreground capitalize">{character.role}</div>
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
+          )}
+        </ScrollArea>
+      </Card>
+
+      {/* Main Content */}
+      {sidebarTab === "characters" ? (
+        renderCharacterDetail()
+      ) : (
+        <Card className="flex-1 flex flex-col overflow-hidden min-h-0">
+          <div className="p-4 border-b shrink-0">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button variant="ghost" size="icon" onClick={() => setSelectedChapter(Math.max(0, selectedChapter - 1))} disabled={selectedChapter === 0}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Chapter {currentChapter.chapterNumber} of {chapters.length}
+                  </div>
+                  {editingChapterIdx === selectedChapter ? (
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        ref={editChapterRef}
+                        value={editChapterTitle}
+                        onChange={(e) => setEditChapterTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleSaveChapterTitle(selectedChapter);
+                          if (e.key === "Escape") setEditingChapterIdx(null);
+                        }}
+                        className="font-serif text-xl font-semibold h-auto py-1 w-64"
+                      />
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSaveChapterTitle(selectedChapter)}>
+                        <Check className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingChapterIdx(null)}>
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div 
+                      className="flex items-center gap-2 group cursor-pointer" 
+                      onClick={() => { setEditingChapterIdx(selectedChapter); setEditChapterTitle(currentChapter.title); }}
+                    >
+                      <h2 className="font-serif text-xl font-semibold">{currentChapter.title}</h2>
+                      <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <Badge variant={currentChapter.status === "completed" ? "success" : "secondary"} className="text-xs">
+                    {statusConfig[currentChapter.status].label}
+                  </Badge>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {completedSubsections}/{totalSubsections} sections · {chapterProgress}%
+                  </div>
+                </div>
+                {onGenerateChapter && currentChapter.status !== "completed" && (
+                  <Button variant="hero" size="sm" onClick={() => onGenerateChapter(selectedChapter)}>
+                    <Play className="w-3.5 h-3.5" />
+                    Write
+                  </Button>
+                )}
+                <Button variant="ghost" size="icon" onClick={() => setSelectedChapter(Math.min(chapters.length - 1, selectedChapter + 1))} disabled={selectedChapter === chapters.length - 1}>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <ScrollArea className="flex-1 min-h-0">
+            <CardContent className="p-6 pb-12">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={selectedChapter}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {currentChapter.subsections.map((sub, subIdx) => renderSubsectionContent(sub, subIdx, selectedChapter))}
+                </motion.div>
+              </AnimatePresence>
+            </CardContent>
+          </ScrollArea>
+        </Card>
+      )}
     </div>
   );
 }
