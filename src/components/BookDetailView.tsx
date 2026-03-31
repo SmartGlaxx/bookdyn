@@ -10,7 +10,7 @@ import { useBookGeneration } from "@/hooks/useBookGeneration";
 import { useBooks } from "@/hooks/useBooks";
 import { useTurbo } from "@/hooks/useTurbo";
 import { GenerationStatus } from "@/components/GenerationStatus";
-import { CharacterGallery } from "@/components/CharacterGallery";
+
 import { ChapterView } from "@/components/ChapterView";
 import { RegenerateBookDialog } from "@/components/RegenerateBookDialog";
 import { WritingModeSelector } from "@/components/WritingModeSelector";
