@@ -15,7 +15,7 @@ function contentToXhtml(content: string): string {
   return paragraphs.map((p) => `<p>${escapeXml(p.trim())}</p>`).join("\n");
 }
 
-export function exportBookToEpub(book: Book) {
+export async function exportBookToEpub(book: Book) {
   const zip = new JSZip();
   const bookId = `urn:uuid:${book.id}`;
   const chapters = book.outline?.chapters || [];

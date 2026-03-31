@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import { Book } from "@/types/book";
 
-export function exportBookToPdf(book: Book) {
+export async function exportBookToPdf(book: Book) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
