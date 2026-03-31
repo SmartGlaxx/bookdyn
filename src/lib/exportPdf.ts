@@ -17,7 +17,7 @@ export async function exportBookToPdf(book: Book) {
   };
 
   // ---- Cover Page (if cover image exists) ----
-  if (book.cover_url) {
+  if (book.coverUrl) {
     try {
       const img = new Image();
       img.crossOrigin = "anonymous";
