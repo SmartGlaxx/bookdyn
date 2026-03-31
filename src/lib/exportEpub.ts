@@ -41,7 +41,7 @@ export async function exportBookToEpub(book: Book) {
   const toc: string[] = [];
 
   // Cover page (if cover image exists)
-  if (book.cover_url) {
+  if (book.coverUrl) {
     try {
       const img = new Image();
       img.crossOrigin = "anonymous";
