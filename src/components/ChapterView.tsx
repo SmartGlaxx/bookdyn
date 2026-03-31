@@ -61,6 +61,12 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   const isLandscapeMobile = isMobile && windowHeight < 500;
 
   useEffect(() => {
+    if (editingChapterIdx !== null && editChapterRef.current) {
+      editChapterRef.current.focus();
+      editChapterRef.current.select();
+    }
+  }, [editingChapterIdx]);
+
     const handleResize = () => setWindowHeight(window.innerHeight);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
