@@ -113,6 +113,14 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
     onUpdateBook(book.id, { outline: updatedOutline, wordCount: totalWords });
   }, [onUpdateBook, book.outline, book.id]);
 
+  const handleSaveChapterTitle = useCallback((chapterIdx: number) => {
+    if (!onUpdateBook || !book.outline || !editChapterTitle.trim()) return;
+    const updatedOutline = JSON.parse(JSON.stringify(book.outline));
+    updatedOutline.chapters[chapterIdx].title = editChapterTitle.trim();
+    onUpdateBook(book.id, { outline: updatedOutline });
+    setEditingChapterIdx(null);
+  }, [onUpdateBook, book.outline, book.id, editChapterTitle]);
+
   if (!book.outline || chapters.length === 0) {
     return (
       <Card className="h-full flex items-center justify-center">
