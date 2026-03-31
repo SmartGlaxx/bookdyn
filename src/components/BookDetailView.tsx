@@ -175,9 +175,9 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
     }
   };
 
-  const handleExportEpub = () => {
+  const handleExportEpub = async () => {
     try {
-      exportBookToEpub(book);
+      await exportBookToEpub(book);
       toast.success("EPUB exported successfully");
     } catch (err) {
       toast.error("Failed to export EPUB");
