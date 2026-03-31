@@ -5,8 +5,6 @@ import { AutomationLevel } from "@/types/book";
 import { Input } from "@/components/ui/input";
 import BookSettings from "@/components/BookSettings";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Book, BOOK_TYPE_INFO } from "@/types/book";
 import { useBookGeneration } from "@/hooks/useBookGeneration";
 import { useBooks } from "@/hooks/useBooks";
