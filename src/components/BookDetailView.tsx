@@ -374,40 +374,15 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
         )}
 
         <div className="h-[calc(100vh-theme(spacing.20))]">
-          <div className="flex flex-col h-full min-h-0">
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)} className="flex flex-col h-full min-h-0">
-              <TabsList className="w-fit mb-4 shrink-0 sticky top-0 z-10 mx-4 md:mx-0">
-                <TabsTrigger value="chapter" className="gap-2">
-                  <BookText className="w-4 h-4" />
-                  Chapters
-                </TabsTrigger>
-                {hasCharacters && (
-                  <TabsTrigger value="characters" className="gap-2">
-                    <Users className="w-4 h-4" />
-                    Characters
-                  </TabsTrigger>
-                )}
-              </TabsList>
-
-              <div className="flex-1 min-h-0 overflow-hidden">
-                {viewMode === "characters" && hasCharacters ? (
-                  <ScrollArea className="h-full rounded-xl border bg-card p-6">
-                    <CharacterGallery characters={book.outline!.characters!} visualStyleGuide={book.outline!.visualStyleGuide} />
-                  </ScrollArea>
-                ) : (
-                  <ChapterView 
-                    book={book} 
-                    onGenerateChapter={canGenerateChapter && !isAwaitingApproval ? generateChapter : undefined}
-                    onUpdateBook={updateBook}
-                    automationLevel={automationLevel}
-                    searchQuery={showSearch ? searchQuery : ""}
-                    navigateToChapter={searchNavigateChapter}
-                    onNavigateHandled={() => setSearchNavigateChapter(null)}
-                  />
-                )}
-              </div>
-            </Tabs>
-          </div>
+          <ChapterView 
+            book={book} 
+            onGenerateChapter={canGenerateChapter && !isAwaitingApproval ? generateChapter : undefined}
+            onUpdateBook={updateBook}
+            automationLevel={automationLevel}
+            searchQuery={showSearch ? searchQuery : ""}
+            navigateToChapter={searchNavigateChapter}
+            onNavigateHandled={() => setSearchNavigateChapter(null)}
+          />
         </div>
       </main>
 
