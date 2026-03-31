@@ -165,9 +165,9 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
     });
   };
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
     try {
-      exportBookToPdf(book);
+      await exportBookToPdf(book);
       toast.success("PDF exported successfully");
     } catch (err) {
       toast.error("Failed to export PDF");
