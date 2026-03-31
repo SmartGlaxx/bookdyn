@@ -67,6 +67,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
     }
   }, [editingChapterIdx]);
 
+  useEffect(() => {
     const handleResize = () => setWindowHeight(window.innerHeight);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
