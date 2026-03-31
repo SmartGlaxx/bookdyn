@@ -105,7 +105,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
     onActivityRecorded: turbo.recordActivity,
   });
 
-  const hasCharacters = book.outline?.characters && book.outline.characters.length > 0;
+  
   const automationLevel = book.controls?.automationLevel || "guided";
 
   const handleModeChange = (mode: AutomationLevel) => {
