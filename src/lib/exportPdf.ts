@@ -24,7 +24,7 @@ export async function exportBookToPdf(book: Book) {
       await new Promise<void>((resolve, reject) => {
         img.onload = () => resolve();
         img.onerror = () => reject(new Error("Failed to load cover"));
-        img.src = book.cover_url!;
+        img.src = book.coverUrl!;
       });
       const canvas = document.createElement("canvas");
       canvas.width = img.naturalWidth;
