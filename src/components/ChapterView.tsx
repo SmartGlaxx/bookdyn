@@ -48,8 +48,14 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   const [manualText, setManualText] = useState("");
   const manualTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 800);
+  const [sidebarTab, setSidebarTab] = useState<"chapters" | "characters">("chapters");
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
+  const [editingChapterIdx, setEditingChapterIdx] = useState<number | null>(null);
+  const [editChapterTitle, setEditChapterTitle] = useState("");
+  const editChapterRef = useRef<HTMLInputElement>(null);
   const chapters = book.outline?.chapters || [];
-  const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
+  const hasCharacters = book.outline?.characters && book.outline.characters.length > 0;
+  const isComplete = book.status === "completed" || chapters.every(c => c.status === "completed");
   const isMobile = useIsMobile();
   const isLandscapeMobile = isMobile && windowHeight < 500;
 
