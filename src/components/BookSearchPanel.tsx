@@ -90,6 +90,7 @@ export function BookSearchPanel({ book, onUpdateBook, onClose, onNavigateToChapt
   const [activeResultIdx, setActiveResultIdx] = useState(0);
   const [editingResult, setEditingResult] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
+  const [caseSensitive, setCaseSensitive] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Undo/Redo history
