@@ -501,7 +501,7 @@ export function BookSearchPanel({ book, onUpdateBook, onClose, onNavigateToChapt
                 ))
               )}
             </div>
-          </ScrollArea>
+          </div>
         </>
       )}
     </motion.div>
