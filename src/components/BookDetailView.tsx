@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Pencil, Check, X, RefreshCw, FileText, Zap, ChevronDown, Search } from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Pencil, Check, X, RefreshCw, FileText, Zap, ChevronDown, Search, Pen, Replace } from "lucide-react";
 import { AutomationLevel } from "@/types/book";
 import { Input } from "@/components/ui/input";
 import BookSettings from "@/components/BookSettings";
@@ -10,12 +10,13 @@ import { useBookGeneration } from "@/hooks/useBookGeneration";
 import { useBooks } from "@/hooks/useBooks";
 import { useTurbo } from "@/hooks/useTurbo";
 import { GenerationStatus } from "@/components/GenerationStatus";
+import { Separator } from "@/components/ui/separator";
 
 import { ChapterView } from "@/components/ChapterView";
 import { RegenerateBookDialog } from "@/components/RegenerateBookDialog";
 import { WritingModeSelector } from "@/components/WritingModeSelector";
 import { ApprovalGate } from "@/components/ApprovalGate";
-import { UserMenuDropdown } from "@/components/UserMenuDropdown";
+import { AppSidebar } from "@/components/AppSidebar";
 import { TestimonialModal } from "@/components/TestimonialModal";
 import { BookSearchPanel } from "@/components/BookSearchPanel";
 import { exportBookToPdf } from "@/lib/exportPdf";
