@@ -48,7 +48,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
               <Plus className="w-5 h-5" />
             </Button>
 
-            <UserMenuDropdown />
+            <AppSidebar />
           </div>
         </div>
       </div>
