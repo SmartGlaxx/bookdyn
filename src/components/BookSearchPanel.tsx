@@ -362,6 +362,15 @@ export function BookSearchPanel({ book, onUpdateBook, onClose, onNavigateToChapt
           </div>
           <Separator orientation="vertical" className="h-5" />
           <Button
+            variant={caseSensitive ? "secondary" : "ghost"}
+            size="icon"
+            className="h-7 w-7 text-xs font-bold"
+            onClick={() => setCaseSensitive(!caseSensitive)}
+            title="Match Case"
+          >
+            Aa
+          </Button>
+          <Button
             variant={showReplace ? "secondary" : "ghost"}
             size="icon"
             className="h-7 w-7"
