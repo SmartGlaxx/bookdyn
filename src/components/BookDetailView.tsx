@@ -300,11 +300,6 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                 <ArrowLeft className="w-4 h-4" />
                 <span className="hidden sm:inline">Back</span>
               </Button>
-              <WritingModeSelector
-                value={automationLevel}
-                onChange={handleModeChange}
-                disabled={isGenerating}
-              />
             </div>
             <div className="flex items-center gap-2">
               {!hasOutline && canStart && (
@@ -369,19 +364,6 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-              {(isComplete || book.outline) && !isGenerating && !isAwaitingApproval && (
-                <Button variant="ghost" size="icon" onClick={() => setShowRegenDialog(true)} title="Regenerate book">
-                  <RefreshCw className="w-4 h-4" />
-                </Button>
-              )}
-              {hasOutline && (
-                <Button variant="ghost" size="icon" onClick={() => setShowSearch(s => !s)} title="Search book (Ctrl+F)">
-                  <Search className="w-4 h-4" />
-                </Button>
-              )}
-              <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)}>
-                <Settings className="w-5 h-5" />
-              </Button>
             </div>
           </div>
         </div>
