@@ -1,7 +1,7 @@
 import { BookOpen, Sparkles, Plus, Flame, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTurbo } from "@/hooks/useTurbo";
-import { UserMenuDropdown } from "@/components/UserMenuDropdown";
+import { AppSidebar } from "@/components/AppSidebar";
 
 interface NavigationProps {
   onCreateBook: () => void;
