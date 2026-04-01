@@ -189,7 +189,7 @@ export function BookSearchPanel({ book, onUpdateBook, onClose, onNavigateToChapt
       }
     }
     return found;
-  }, [searchQuery, book.outline]);
+  }, [searchQuery, book.outline, caseSensitive]);
 
   // Navigate to chapter when clicking a result
   const handleResultClick = useCallback((idx: number) => {
