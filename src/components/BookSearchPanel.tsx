@@ -426,7 +426,7 @@ export function BookSearchPanel({ book, onUpdateBook, onClose, onNavigateToChapt
       {searchQuery.trim() && (
         <>
           <Separator />
-          <ScrollArea className="max-h-72">
+          <ScrollArea className="max-h-80 overflow-y-auto">
             <div className="p-2 space-y-1">
               {results.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">No results found</p>
