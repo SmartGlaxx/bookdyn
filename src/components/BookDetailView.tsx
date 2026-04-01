@@ -322,7 +322,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
         </div>
       </header>
 
-      <main className="flex-1 container max-w-7xl mx-auto px-0 md:px-4 pb-4 md:pb-6">
+      <main className="flex-1 container max-w-7xl mx-auto px-0 md:px-4 pt-3 pb-4 md:pb-6">
         {/* Book Search Panel */}
         <AnimatePresence>
           {showSearch && hasOutline && (
