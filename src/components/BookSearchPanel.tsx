@@ -237,7 +237,7 @@ export function BookSearchPanel({ book, onUpdateBook, onClose, onNavigateToChapt
     for (const ch of updatedOutline.chapters) {
       for (const sub of ch.subsections) {
         if (!sub.content) continue;
-        const regex = new RegExp(searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+        const regex = new RegExp(searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), caseSensitive ? "g" : "gi");
         const matches = sub.content.match(regex);
         if (matches) {
           count += matches.length;
