@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Pencil, Check, X, RefreshCw, FileText, Zap, ChevronDown, Search } from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Pencil, Check, X, RefreshCw, FileText, Zap, ChevronDown, Search, Pen, Replace } from "lucide-react";
 import { AutomationLevel } from "@/types/book";
 import { Input } from "@/components/ui/input";
 import BookSettings from "@/components/BookSettings";
@@ -10,12 +10,13 @@ import { useBookGeneration } from "@/hooks/useBookGeneration";
 import { useBooks } from "@/hooks/useBooks";
 import { useTurbo } from "@/hooks/useTurbo";
 import { GenerationStatus } from "@/components/GenerationStatus";
+import { Separator } from "@/components/ui/separator";
 
 import { ChapterView } from "@/components/ChapterView";
 import { RegenerateBookDialog } from "@/components/RegenerateBookDialog";
 import { WritingModeSelector } from "@/components/WritingModeSelector";
 import { ApprovalGate } from "@/components/ApprovalGate";
-import { UserMenuDropdown } from "@/components/UserMenuDropdown";
+import { AppSidebar } from "@/components/AppSidebar";
 import { TestimonialModal } from "@/components/TestimonialModal";
 import { BookSearchPanel } from "@/components/BookSearchPanel";
 import { exportBookToPdf } from "@/lib/exportPdf";
@@ -223,8 +224,72 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                 <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             )}
-            {/* User avatar in book detail page */}
-            <UserMenuDropdown />
+            {/* User sidebar with book-specific items */}
+            <AppSidebar>
+              {/* Writing Mode */}
+              <div className="px-4 py-2 space-y-2">
+                <span className="text-xs font-medium text-muted-foreground">Writing Mode</span>
+                <WritingModeSelector
+                  value={automationLevel}
+                  onChange={handleModeChange}
+                  disabled={isGenerating}
+                />
+              </div>
+              <Separator className="my-1" />
+              {/* Search */}
+              {hasOutline && (
+                <div className="px-2 py-1">
+                  <button
+                    onClick={() => setShowSearch(s => !s)}
+                    className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
+                  >
+                    <Search className="w-4 h-4" />
+                    Find & Replace
+                  </button>
+                </div>
+              )}
+              {/* Export */}
+              {isComplete && (
+                <div className="px-2 py-1 space-y-0.5">
+                  <button
+                    onClick={handleExportPdf}
+                    className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
+                  >
+                    <FileText className="w-4 h-4" />
+                    Export as PDF
+                  </button>
+                  <button
+                    onClick={handleExportEpub}
+                    className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
+                  >
+                    <BookText className="w-4 h-4" />
+                    Export as EPUB
+                  </button>
+                </div>
+              )}
+              {/* Regenerate */}
+              {(isComplete || book.outline) && !isGenerating && !isAwaitingApproval && (
+                <div className="px-2 py-1">
+                  <button
+                    onClick={() => setShowRegenDialog(true)}
+                    className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left text-destructive"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Regenerate Book
+                  </button>
+                </div>
+              )}
+              {/* Settings */}
+              <div className="px-2 py-1">
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
+                >
+                  <Settings className="w-4 h-4" />
+                  Book Settings
+                </button>
+              </div>
+            </AppSidebar>
           </div>
 
 
@@ -235,11 +300,6 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                 <ArrowLeft className="w-4 h-4" />
                 <span className="hidden sm:inline">Back</span>
               </Button>
-              <WritingModeSelector
-                value={automationLevel}
-                onChange={handleModeChange}
-                disabled={isGenerating}
-              />
             </div>
             <div className="flex items-center gap-2">
               {!hasOutline && canStart && (
@@ -304,19 +364,6 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-              {(isComplete || book.outline) && !isGenerating && !isAwaitingApproval && (
-                <Button variant="ghost" size="icon" onClick={() => setShowRegenDialog(true)} title="Regenerate book">
-                  <RefreshCw className="w-4 h-4" />
-                </Button>
-              )}
-              {hasOutline && (
-                <Button variant="ghost" size="icon" onClick={() => setShowSearch(s => !s)} title="Search book (Ctrl+F)">
-                  <Search className="w-4 h-4" />
-                </Button>
-              )}
-              <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)}>
-                <Settings className="w-5 h-5" />
-              </Button>
             </div>
           </div>
         </div>
