@@ -153,7 +153,7 @@ export function BookSearchPanel({ book, onUpdateBook, onClose, onNavigateToChapt
   // Search logic
   const results = useMemo<SearchResult[]>(() => {
     if (!searchQuery.trim() || !book.outline) return [];
-    const query = searchQuery.toLowerCase();
+    const query = caseSensitive ? searchQuery : searchQuery.toLowerCase();
     const found: SearchResult[] = [];
     const chapters = book.outline.chapters || [];
 
@@ -163,11 +163,11 @@ export function BookSearchPanel({ book, onUpdateBook, onClose, onNavigateToChapt
         const sub = ch.subsections[si];
         if (!sub.content) continue;
         const content = sub.content;
-        const contentLower = content.toLowerCase();
+        const searchContent = caseSensitive ? content : content.toLowerCase();
         let searchPos = 0;
 
-        while (searchPos < contentLower.length) {
-          const idx = contentLower.indexOf(query, searchPos);
+        while (searchPos < searchContent.length) {
+          const idx = searchContent.indexOf(query, searchPos);
           if (idx === -1) break;
 
           const { snippet, matchStartInSnippet, matchEndInSnippet } = extractSnippet(content, idx, idx + query.length);
