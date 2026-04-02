@@ -415,7 +415,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
           </motion.div>
         )}
 
-        <div className="h-[calc(100vh-theme(spacing.20))]">
+        <div className="flex-1 min-h-0">
           <ChapterView 
             book={book} 
             onGenerateChapter={canGenerateChapter && !isAwaitingApproval ? generateChapter : undefined}

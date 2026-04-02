@@ -48,49 +48,49 @@ export function WritingModeSelector({ value, onChange, disabled }: WritingModeSe
   const activeMode = MODES.find((m) => m.value === value);
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground font-medium whitespace-nowrap hidden sm:inline">Writing Mode</span>
-        <Select
-          value={value}
-          onValueChange={(v) => {
-            if (v === "auto-draft" && !canAutoDraft) return;
-            onChange(v as AutomationLevel);
-          }}
-          disabled={disabled}
-        >
-          <SelectTrigger className="h-8 w-[160px] text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {MODES.map((mode) => {
-              const Icon = mode.icon;
-              const isLocked = mode.value === "auto-draft" && !canAutoDraft;
-              return (
-                <SelectItem
-                  key={mode.value}
-                  value={mode.value}
-                  disabled={isLocked}
-                  className={cn(isLocked && "opacity-50")}
-                >
-                  <div className="flex items-center gap-2">
-                    {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Icon className="w-3.5 h-3.5" />}
-                    <div className="text-left">
-                      <div className="font-medium">{mode.label}</div>
-                      <div className="text-[10px] text-muted-foreground">{mode.description}</div>
-                    </div>
-                  </div>
-                </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
-      </div>
-      {activeMode && (
-        <p className="text-[10px] text-muted-foreground pl-0 sm:pl-[85px] italic">
-          {activeMode.helper}
-        </p>
-      )}
-    </div>
+    <Select
+      value={value}
+      onValueChange={(v) => {
+        if (v === "auto-draft" && !canAutoDraft) return;
+        onChange(v as AutomationLevel);
+      }}
+      disabled={disabled}
+    >
+      <SelectTrigger className="h-auto w-full text-xs py-2">
+        <SelectValue>
+          {activeMode && (
+            <div className="flex items-center gap-2 text-left min-w-0">
+              {(() => { const Icon = activeMode.icon; return <Icon className="w-3.5 h-3.5 shrink-0" />; })()}
+              <div className="min-w-0">
+                <div className="font-medium">{activeMode.label}</div>
+                <div className="text-[10px] text-muted-foreground truncate">{activeMode.description}</div>
+              </div>
+            </div>
+          )}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {MODES.map((mode) => {
+          const Icon = mode.icon;
+          const isLocked = mode.value === "auto-draft" && !canAutoDraft;
+          return (
+            <SelectItem
+              key={mode.value}
+              value={mode.value}
+              disabled={isLocked}
+              className={cn(isLocked && "opacity-50")}
+            >
+              <div className="flex items-center gap-2">
+                {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Icon className="w-3.5 h-3.5" />}
+                <div className="text-left">
+                  <div className="font-medium">{mode.label}</div>
+                  <div className="text-[10px] text-muted-foreground">{mode.description}</div>
+                </div>
+              </div>
+            </SelectItem>
+          );
+        })}
+      </SelectContent>
+    </Select>
   );
 }
