@@ -227,8 +227,8 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
             {/* User sidebar with book-specific items */}
             <AppSidebar>
               {/* Writing Mode */}
-              <div className="px-4 py-2 space-y-2">
-                <span className="text-xs font-medium text-muted-foreground">Writing Mode</span>
+              <div className="px-4 py-2">
+                <span className="text-xs font-medium text-muted-foreground mb-1.5 block">Writing Mode</span>
                 <WritingModeSelector
                   value={automationLevel}
                   onChange={handleModeChange}
