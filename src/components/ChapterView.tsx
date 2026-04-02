@@ -425,11 +425,11 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   };
 
   return (
-    <div className="h-[calc(100vh-theme(spacing.32))] flex gap-4 min-h-0 pb-6">
+    <div className="h-[calc(100vh-theme(spacing.32))] flex gap-4 min-h-0 py-3">
       {/* Sidebar */}
       <Card className="w-64 shrink-0 flex flex-col min-h-0">
         <div className="p-4 border-b shrink-0">
-          {isComplete_all && hasCharacters ? (
+          {hasCharacters ? (
             <Tabs value={sidebarTab} onValueChange={(v) => { setSidebarTab(v as "chapters" | "characters"); if (v === "chapters") setSelectedCharacterId(null); }}>
               <TabsList className="w-full">
                 <TabsTrigger value="chapters" className="flex-1 gap-1.5 text-xs">
@@ -443,26 +443,10 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
               </TabsList>
             </Tabs>
           ) : (
-            <>
-              <h3 className="font-medium text-sm flex items-center gap-2">
-                <BookOpen className="w-4 h-4" />
-                Chapters
-              </h3>
-              {!isComplete_all && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {chapters.length} chapters · {chapters.filter(c => c.status === "completed").length} completed
-                </p>
-              )}
-              {hasCharacters && (
-                <button 
-                  onClick={() => { setSidebarTab("characters"); }}
-                  className="text-xs text-primary hover:underline mt-1 flex items-center gap-1"
-                >
-                  <Users className="w-3 h-3" />
-                  View Characters
-                </button>
-              )}
-            </>
+            <h3 className="font-medium text-sm flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              Chapters
+            </h3>
           )}
         </div>
 
