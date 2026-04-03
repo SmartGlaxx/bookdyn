@@ -59,9 +59,34 @@ export function useTurbo() {
     });
   }, [user]);
 
+  // Record a zero-word activity on login to keep streak alive
+  const recordLoginActivity = useCallback(async () => {
+    if (!user) return;
+    try {
+      await supabase.rpc("record_writing_activity", {
+        _user_id: user.id,
+        _words: 0,
+        _credits: 0,
+      });
+      // Refresh status after recording
+      await fetchStatus();
+    } catch (err) {
+      console.error("Login activity recording failed:", err);
+    }
+  }, [user, fetchStatus]);
+
   useEffect(() => {
     fetchStatus();
   }, [fetchStatus]);
+
+  // Auto-record daily login activity
+  useEffect(() => {
+    if (!user) return;
+    const key = `streak_login_${user.id}_${new Date().toISOString().slice(0, 10)}`;
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, "1");
+    recordLoginActivity();
+  }, [user, recordLoginActivity]);
 
   const recordActivity = useCallback(async (words: number, credits: number) => {
     if (!user) return;
