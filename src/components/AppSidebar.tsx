@@ -107,10 +107,19 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
             {!turbo.isLoading && (
               <div className="px-4 py-2 space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1">
-                    <Flame className="w-3.5 h-3.5 text-orange-500" />
-                    Streak
-                  </span>
+                  <TooltipProvider delayDuration={300}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="flex items-center gap-1 cursor-help">
+                          <Flame className="w-3.5 h-3.5 text-orange-500" />
+                          Streak
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-[200px] text-xs">
+                        Your writing streak counts consecutive days you've been active. Keep it going!
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <span className="font-semibold">{turbo.streakDays} / {turbo.STREAK_GOAL} days</span>
                 </div>
                 <Progress value={turbo.streakProgress} className="h-1.5" variant="warning" />

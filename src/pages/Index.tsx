@@ -353,10 +353,10 @@ const Index = () => {
                         key={book.id}
                         className="absolute inset-0 rounded-[2px_6px_6px_2px] overflow-hidden bg-card border border-border"
                         style={{
-                          transformOrigin: "bottom right",
-                          transform: `rotate(-${angle}deg)`,
+                          transformOrigin: "bottom left",
+                          transform: `rotate(${angle}deg)`,
                           zIndex: i,
-                          boxShadow: "2px 2px 6px rgba(0,0,0,0.15)",
+                          boxShadow: "-2px 2px 6px rgba(0,0,0,0.15)",
                         }}
                       >
                         {book.coverUrl ? (
