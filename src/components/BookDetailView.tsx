@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Pencil, Check, X, RefreshCw, FileText, Zap, ChevronDown, Search, Pen, Replace } from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Pencil, Check, X, RefreshCw, FileText, Zap, ChevronDown, Search, Pen, Replace, BookOpen } from "lucide-react";
 import { AutomationLevel } from "@/types/book";
 import { Input } from "@/components/ui/input";
 import BookSettings from "@/components/BookSettings";
@@ -61,7 +61,6 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
     }
   }, [isEditingSubtitle]);
 
-  // Track first chapter completion & show testimonial
   useEffect(() => {
     if (!user || firstChapterTrackedRef.current) return;
     const hasCompletedChapter = book.outline?.chapters?.some(ch => ch.status === "completed");
@@ -70,18 +69,13 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
 
     (async () => {
       try {
-        // Mark first chapter completed in profile
         await supabase.rpc("mark_first_chapter_completed", { _user_id: user.id });
-        
-        // Check if testimonial was already prompted
         const { data: profile } = await supabase
           .from("profiles")
           .select("testimonial_prompted")
           .eq("id", user.id)
           .single();
-        
         if (profile && !profile.testimonial_prompted) {
-          // Small delay so generation toast clears
           setTimeout(() => setShowTestimonial(true), 2000);
         }
       } catch (err) {
@@ -101,12 +95,11 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
     generateOutline,
     generateChapter,
     approveAndContinue,
-  } = useBookGeneration(book, { 
+  } = useBookGeneration(book, {
     onUpdateBook: updateBook,
     onActivityRecorded: turbo.recordActivity,
   });
 
-  
   const automationLevel = book.controls?.automationLevel || "guided";
 
   const handleModeChange = (mode: AutomationLevel) => {
@@ -195,130 +188,90 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen flex flex-col">
+      {/* Unified header — mirrors Navigation layout */}
       <header className="sticky top-0 z-40 glass border-b">
-        <div className="container max-w-7xl mx-auto px-4 py-3">
-          {/* Title row */}
-          <div className="mb-1 flex items-center gap-2">
-            {isEditingTitle ? (
-              <div className="flex items-center gap-2 flex-1">
-                <Input
-                  ref={titleInputRef}
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSaveTitle();
-                    if (e.key === "Escape") handleCancelTitle();
-                  }}
-                  className="text-xl font-serif font-semibold h-auto py-1"
-                />
-                <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={handleSaveTitle}>
-                  <Check className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={handleCancelTitle}>
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 group cursor-pointer flex-1" onClick={() => setIsEditingTitle(true)}>
-                <h1 className="text-xl font-serif font-semibold">{book.title}</h1>
-                <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-            )}
-            {/* User sidebar with book-specific items */}
-            <AppSidebar>
-              {/* Writing Mode */}
-              <div className="px-4 py-2">
-                <span className="text-xs font-medium text-muted-foreground mb-1.5 block">Writing Mode</span>
-                <WritingModeSelector
-                  value={automationLevel}
-                  onChange={handleModeChange}
-                  disabled={isGenerating}
-                />
-              </div>
-              <Separator className="my-1" />
-              {/* Search */}
-              {hasOutline && (
-                <div className="px-2 py-1">
-                  <button
-                    onClick={() => setShowSearch(s => !s)}
-                    className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
-                  >
-                    <Search className="w-4 h-4" />
-                    Find & Replace
-                  </button>
-                </div>
-              )}
-              {/* Export */}
-              {isComplete && (
-                <div className="px-2 py-1 space-y-0.5">
-                  <button
-                    onClick={handleExportPdf}
-                    className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
-                  >
-                    <FileText className="w-4 h-4" />
-                    Export as PDF
-                  </button>
-                  <button
-                    onClick={handleExportEpub}
-                    className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
-                  >
-                    <BookText className="w-4 h-4" />
-                    Export as EPUB
-                  </button>
-                </div>
-              )}
-              {/* Regenerate */}
-              {(isComplete || book.outline) && !isGenerating && !isAwaitingApproval && (
-                <div className="px-2 py-1">
-                  <button
-                    onClick={() => setShowRegenDialog(true)}
-                    className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left text-destructive"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    Regenerate Book
-                  </button>
-                </div>
-              )}
-              {/* Settings */}
-              <div className="px-2 py-1">
-                <button
-                  onClick={() => setShowSettings(true)}
-                  className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
-                >
-                  <Settings className="w-4 h-4" />
-                  Book Settings
-                </button>
-              </div>
-            </AppSidebar>
-          </div>
-
-
-          {/* Controls row */}
+        <div className="container max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 -ml-2">
-                <ArrowLeft className="w-4 h-4" />
-                <span className="hidden sm:inline">Back</span>
+            {/* Left: back + title */}
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground h-10 w-10 hover:opacity-90 hover:text-primary-foreground">
+                <ArrowLeft className="w-5 h-5" />
               </Button>
+
+              {isEditingTitle ? (
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <Input
+                    ref={titleInputRef}
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveTitle();
+                      if (e.key === "Escape") handleCancelTitle();
+                    }}
+                    className="text-xl font-serif font-semibold h-auto py-1"
+                  />
+                  <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={handleSaveTitle}>
+                    <Check className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="shrink-0 h-8 w-8" onClick={handleCancelTitle}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div
+                  className="flex items-center gap-2 group cursor-pointer min-w-0 flex-1"
+                  onClick={() => setIsEditingTitle(true)}
+                >
+                  <h1 className="font-serif font-bold text-xl truncate">{book.title}</h1>
+                  <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-2">
+
+            {/* Right: action buttons + sidebar */}
+            <div className="flex items-center gap-2 shrink-0">
+              {/* Desktop action buttons */}
               {!hasOutline && canStart && (
-                <Button variant="hero" size="sm" onClick={generateOutline}>
+                <Button variant="hero" size="sm" onClick={generateOutline} className="hidden sm:inline-flex">
                   <FileText className="w-4 h-4" />
                   Generate Outline
                 </Button>
               )}
 
               {canGenerateChapter && nextIncompleteChapter >= 0 && !isAwaitingApproval && (
-                <Button variant="hero" size="sm" onClick={() => generateChapter(nextIncompleteChapter)}>
-                  <Play className="w-4 h-4" />
-                  <span className="hidden sm:inline">Write Chapter {nextIncompleteChapter + 1}</span>
-                </Button>
+                <>
+                  {/* Desktop: full button */}
+                  <Button variant="hero" size="sm" onClick={() => generateChapter(nextIncompleteChapter)} className="hidden sm:inline-flex">
+                    <Play className="w-4 h-4" />
+                    Write Chapter {nextIncompleteChapter + 1}
+                  </Button>
+                  {/* Mobile: dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="hero" size="icon" className="sm:hidden">
+                        <Play className="w-5 h-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => generateChapter(nextIncompleteChapter)}>
+                        <Play className="w-4 h-4 mr-2" />
+                        Write Chapter {nextIncompleteChapter + 1}
+                      </DropdownMenuItem>
+                      {hasOutline && !isComplete && !isAwaitingApproval &&
+                        (automationLevel === "semi-auto" || automationLevel === "auto-draft") && (
+                        <DropdownMenuItem onClick={handleStartFullGeneration}>
+                          <Zap className="w-4 h-4 mr-2" />
+                          Generate All
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
               )}
 
-              {hasOutline && !isGenerating && !isComplete && !isAwaitingApproval && 
-               (automationLevel === "semi-auto" || automationLevel === "auto-draft") && (
-                <Button variant="outline" size="sm" onClick={handleStartFullGeneration}>
+              {hasOutline && !isGenerating && !isComplete && !isAwaitingApproval &&
+                (automationLevel === "semi-auto" || automationLevel === "auto-draft") && (
+                <Button variant="outline" size="sm" onClick={handleStartFullGeneration} className="hidden sm:inline-flex">
                   <Zap className="w-4 h-4" />
                   {automationLevel === "auto-draft" ? "Auto Draft" : "Generate All"}
                 </Button>
@@ -328,7 +281,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                 <>
                   <Button variant="outline" size="sm" onClick={pauseGeneration}>
                     <Pause className="w-4 h-4" />
-                    Pause
+                    <span className="hidden sm:inline">Pause</span>
                   </Button>
                   <Button variant="ghost" size="icon" onClick={stopGeneration}>
                     <Square className="w-4 h-4" />
@@ -346,7 +299,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
               {isComplete && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="gap-2">
+                    <Button variant="ghost" size="sm" className="gap-1">
                       <Download className="w-4 h-4" />
                       <span className="hidden sm:inline">Export</span>
                       <ChevronDown className="w-3 h-3" />
@@ -364,13 +317,74 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
+
+              {/* User sidebar */}
+              <AppSidebar>
+                <div className="px-4 py-2">
+                  <span className="text-xs font-medium text-muted-foreground mb-1.5 block">Writing Mode</span>
+                  <WritingModeSelector
+                    value={automationLevel}
+                    onChange={handleModeChange}
+                    disabled={isGenerating}
+                  />
+                </div>
+                <Separator className="my-1" />
+                {hasOutline && (
+                  <div className="px-2 py-1">
+                    <button
+                      onClick={() => setShowSearch(s => !s)}
+                      className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
+                    >
+                      <Search className="w-4 h-4" />
+                      Find & Replace
+                    </button>
+                  </div>
+                )}
+                {isComplete && (
+                  <div className="px-2 py-1 space-y-0.5">
+                    <button
+                      onClick={handleExportPdf}
+                      className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
+                    >
+                      <FileText className="w-4 h-4" />
+                      Export as PDF
+                    </button>
+                    <button
+                      onClick={handleExportEpub}
+                      className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
+                    >
+                      <BookText className="w-4 h-4" />
+                      Export as EPUB
+                    </button>
+                  </div>
+                )}
+                {(isComplete || book.outline) && !isGenerating && !isAwaitingApproval && (
+                  <div className="px-2 py-1">
+                    <button
+                      onClick={() => setShowRegenDialog(true)}
+                      className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left text-destructive"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Regenerate Book
+                    </button>
+                  </div>
+                )}
+                <div className="px-2 py-1">
+                  <button
+                    onClick={() => setShowSettings(true)}
+                    className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Book Settings
+                  </button>
+                </div>
+              </AppSidebar>
             </div>
           </div>
         </div>
       </header>
 
       <main className="flex-1 container max-w-7xl mx-auto px-0 md:px-4 pt-3 pb-4 md:pb-6">
-        {/* Book Search Panel */}
         <AnimatePresence>
           {showSearch && hasOutline && (
             <div className="mb-3 px-4 md:px-0">
@@ -385,7 +399,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
             </div>
           )}
         </AnimatePresence>
-        {/* Generation Status */}
+
         {(isGenerating || isPaused || isAwaitingApproval) && generationState.phase !== "completed" && (
           <motion.div className="mb-2 px-4 md:px-0" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
             <GenerationStatus
@@ -398,7 +412,6 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
           </motion.div>
         )}
 
-        {/* Approval Gate - without edit/rewrite buttons */}
         {isAwaitingApproval && generationState.approvalRequest && (
           <motion.div className="mb-4 px-4 md:px-0" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
             <ApprovalGate
@@ -416,8 +429,8 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
         )}
 
         <div className="flex-1 min-h-0">
-          <ChapterView 
-            book={book} 
+          <ChapterView
+            book={book}
             onGenerateChapter={canGenerateChapter && !isAwaitingApproval ? generateChapter : undefined}
             onUpdateBook={updateBook}
             automationLevel={automationLevel}
