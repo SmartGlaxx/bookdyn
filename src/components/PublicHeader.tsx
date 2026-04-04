@@ -11,9 +11,9 @@ const PublicHeader = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-50 glass border-b border-border">
-      <div className="container max-w-6xl mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
+    <nav className="sticky top-0 z-[100] glass border-b border-border" style={{ height: 64 }}>
+      <div className="container max-w-6xl mx-auto px-4 h-full flex items-center">
+        <div className="flex items-center justify-between w-full">
           {/* Logo — matches dashboard header */}
           <a href="https://authoryti.com" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-accent">
@@ -51,30 +51,31 @@ const PublicHeader = () => {
           </button>
         </div>
 
-        {/* Mobile dropdown */}
-        {mobileOpen && (
-          <div className="sm:hidden mt-4 pb-2 space-y-2 border-t border-border pt-4">
-            {NAV_LINKS.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="block text-sm font-medium text-muted-foreground hover:text-foreground py-2 transition-colors"
-                onClick={() => setMobileOpen(false)}
-              >
-                {link.label}
-              </a>
-            ))}
-            <Link
-              to="/waitlist"
-              className="flex items-center gap-2 text-sm font-semibold py-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
+      </div>
+
+      {/* Mobile dropdown — outside nav container, fixed overlay */}
+      {mobileOpen && (
+        <div className="sm:hidden fixed top-[64px] left-0 right-0 bottom-0 z-[200] bg-background p-6 space-y-2 border-t border-border overflow-y-auto">
+          {NAV_LINKS.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              className="block text-sm font-medium text-muted-foreground hover:text-foreground py-3 transition-colors border-b border-border"
               onClick={() => setMobileOpen(false)}
             >
-              <Sparkles className="w-4 h-4 text-primary" />
-              Join Waitlist
-            </Link>
-          </div>
-        )}
-      </div>
+              {link.label}
+            </a>
+          ))}
+          <Link
+            to="/waitlist"
+            className="flex items-center gap-2 text-sm font-semibold py-3 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
+            onClick={() => setMobileOpen(false)}
+          >
+            <Sparkles className="w-4 h-4 text-primary" />
+            Join Waitlist
+          </Link>
+        </div>
+      )}
     </nav>
   );
 };
