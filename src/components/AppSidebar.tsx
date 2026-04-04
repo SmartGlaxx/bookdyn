@@ -125,10 +125,19 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
                 <Progress value={turbo.streakProgress} className="h-1.5" variant="warning" />
 
                 <div className="flex items-center justify-between text-xs mt-1">
-                  <span className="flex items-center gap-1">
-                    <PenTool className="w-3.5 h-3.5 text-primary" />
-                    Words Written
-                  </span>
+                  <TooltipProvider delayDuration={300}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="flex items-center gap-1 cursor-help">
+                          <PenTool className="w-3.5 h-3.5 text-primary" />
+                          Words Written
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="max-w-[200px] text-xs">
+                        Total words generated across all your books. Keep writing to unlock Turbo!
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <span className="font-semibold">{(turbo.totalWordsWritten / 1000).toFixed(1)}K / {(turbo.WORDS_GOAL / 1000).toFixed(0)}K</span>
                 </div>
                 <Progress value={turbo.wordsProgress} className="h-1.5" />
