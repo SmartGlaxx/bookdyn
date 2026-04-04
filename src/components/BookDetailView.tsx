@@ -191,7 +191,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
       {/* Unified header — mirrors Navigation layout */}
       <header className="sticky top-0 z-40 glass border-b border-border" style={{ height: 64 }}>
         <div className="container max-w-7xl mx-auto px-4 h-full flex items-center">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between w-full">
             {/* Left: back + title */}
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground h-10 w-10 hover:opacity-90 hover:text-primary-foreground">
