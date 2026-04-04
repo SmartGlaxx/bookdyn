@@ -189,8 +189,8 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen flex flex-col">
       {/* Unified header — mirrors Navigation layout */}
-      <header className="sticky top-0 z-40 glass border-b">
-        <div className="container max-w-7xl mx-auto px-4 py-4">
+      <header className="sticky top-0 z-40 glass border-b border-border" style={{ height: 64 }}>
+        <div className="container max-w-7xl mx-auto px-4 h-full flex items-center">
           <div className="flex items-center justify-between">
             {/* Left: back + title */}
             <div className="flex items-center gap-2 min-w-0 flex-1">

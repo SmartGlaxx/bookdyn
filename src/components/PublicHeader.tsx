@@ -11,8 +11,8 @@ const PublicHeader = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-50 glass border-b border-border">
-      <div className="container max-w-6xl mx-auto px-4 py-4">
+    <nav className="sticky top-0 z-[100] glass border-b border-border" style={{ height: 64 }}>
+      <div className="container max-w-6xl mx-auto px-4 h-full flex items-center">
         <div className="flex items-center justify-between">
           {/* Logo — matches dashboard header */}
           <a href="https://authoryti.com" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
