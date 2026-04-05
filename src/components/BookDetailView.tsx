@@ -194,9 +194,17 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
           <div className="flex items-center justify-between w-full">
             {/* Left: back + title */}
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground h-10 w-10 hover:opacity-90 hover:text-primary-foreground">
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
+              <button
+                onClick={onBack}
+                className="shrink-0 flex items-center justify-center rounded-xl hover:opacity-90 transition-opacity"
+                style={{
+                  width: 40,
+                  height: 40,
+                  background: "linear-gradient(135deg, hsl(35 92% 48%) 0%, hsl(25 95% 55%) 100%)",
+                }}
+              >
+                <ArrowLeft className="w-5 h-5 text-primary-foreground" strokeWidth={1.5} />
+              </button>
 
               {isEditingTitle ? (
                 <div className="flex items-center gap-2 flex-1 min-w-0">
