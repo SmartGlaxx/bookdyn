@@ -12,28 +12,19 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
   const turbo = useTurbo();
 
   return (
-    <nav
-      className="sticky top-0 z-50"
-      style={{
-        height: 64,
-        borderBottom: "1px solid hsl(var(--border))",
-        background: "hsl(222 30% 7% / 0.95)",
-        backdropFilter: "blur(20px)",
-      }}
-    >
-      <div className="h-full flex items-center mx-auto" style={{ maxWidth: 1200, padding: "0 24px" }}>
+    <nav className="sticky top-0 z-50 glass border-b border-border" style={{ height: 64 }}>
+      <div className="container max-w-6xl mx-auto px-4 h-full flex items-center">
         <div className="flex items-center justify-between w-full">
           <a href="https://authoryti.com" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div
-              className="flex items-center justify-center"
+              className="flex items-center justify-center rounded-xl"
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 12,
-                background: "linear-gradient(135deg, hsl(35,92%,48%) 0%, hsl(25,95%,55%) 100%)",
+                width: 40,
+                height: 40,
+                background: "linear-gradient(135deg, hsl(35 92% 48%) 0%, hsl(25 95% 55%) 100%)",
               }}
             >
-              <BookOpen size={22} strokeWidth={1.5} color="#fff" />
+              <BookOpen className="w-5 h-5 text-primary-foreground" strokeWidth={1.5} />
             </div>
             <h1
               style={{
