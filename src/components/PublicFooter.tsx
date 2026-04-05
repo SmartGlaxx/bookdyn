@@ -30,10 +30,7 @@ const PublicFooter = () => {
   const year = new Date().getFullYear();
 
   return (
-    <footer
-      className="border-t border-border"
-      style={{ background: "hsl(222 30% 5%)" }}
-    >
+    <footer style={{ background: "hsl(222 30% 5%)" }}>
       {/* Gradient line at top */}
       <div
         className="h-px w-full"
@@ -43,20 +40,24 @@ const PublicFooter = () => {
         }}
       />
 
-      <div className="container max-w-6xl mx-auto px-4 py-16">
+      <div
+        className="mx-auto"
+        style={{ maxWidth: 1200, padding: "80px 24px 48px" }}
+      >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-12 mb-16">
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div
-                className="flex items-center justify-center rounded-xl"
+                className="flex items-center justify-center"
                 style={{
-                  width: 40,
-                  height: 40,
-                  background: "linear-gradient(135deg, hsl(35 92% 48%) 0%, hsl(25 95% 55%) 100%)",
+                  width: 36,
+                  height: 36,
+                  borderRadius: 12,
+                  background: "linear-gradient(135deg, hsl(35,92%,48%) 0%, hsl(25,95%,55%) 100%)",
                 }}
               >
-                <BookOpen className="w-5 h-5 text-primary-foreground" strokeWidth={1.5} />
+                <BookOpen size={22} strokeWidth={1.5} color="#fff" />
               </div>
               <span
                 style={{
@@ -79,7 +80,10 @@ const PublicFooter = () => {
           {/* Link columns */}
           {FOOTER_COLS.map((col) => (
             <div key={col.heading} className="space-y-4">
-              <h4 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              <h4
+                className="text-xs font-semibold uppercase tracking-widest text-muted-foreground"
+                style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+              >
                 {col.heading}
               </h4>
               <div className="flex flex-col gap-2.5">

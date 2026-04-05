@@ -189,21 +189,31 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen flex flex-col">
       {/* Unified header — mirrors Navigation layout */}
-      <header className="sticky top-0 z-40 glass border-b border-border" style={{ height: 64 }}>
-        <div className="container max-w-7xl mx-auto px-4 h-full flex items-center">
+      <header
+        className="sticky top-0 z-40"
+        style={{
+          height: 64,
+          borderBottom: "1px solid hsl(var(--border))",
+          background: "hsl(222 30% 7% / 0.95)",
+          backdropFilter: "blur(20px)",
+        }}
+      >
+        <div className="h-full flex items-center mx-auto" style={{ maxWidth: 1200, padding: "0 24px" }}>
           <div className="flex items-center justify-between w-full">
             {/* Left: back + title */}
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <button
                 onClick={onBack}
-                className="shrink-0 flex items-center justify-center rounded-xl hover:opacity-90 transition-opacity"
+                className="shrink-0 flex items-center justify-center hover:opacity-80 transition-opacity"
                 style={{
-                  width: 40,
-                  height: 40,
-                  background: "linear-gradient(135deg, hsl(35 92% 48%) 0%, hsl(25 95% 55%) 100%)",
+                  width: 36,
+                  height: 36,
+                  borderRadius: 12,
+                  border: "1px solid hsl(var(--border))",
+                  background: "transparent",
                 }}
               >
-                <ArrowLeft className="w-5 h-5 text-primary-foreground" strokeWidth={1.5} />
+                <ArrowLeft size={20} strokeWidth={1.5} className="text-foreground" />
               </button>
 
               {isEditingTitle ? (
