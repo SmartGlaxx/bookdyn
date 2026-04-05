@@ -12,22 +12,31 @@ const PublicHeader = () => {
 
   return (
     <nav
-      className="sticky top-0 z-[100] border-b border-border backdrop-blur-[20px]"
-      style={{ height: 64, background: "hsl(222 30% 7% / 0.95)" }}
+      className="sticky top-0 z-[100]"
+      style={{
+        height: 64,
+        borderBottom: "1px solid hsl(var(--border))",
+        background: "hsl(222 30% 7% / 0.95)",
+        backdropFilter: "blur(20px)",
+      }}
     >
-      <div className="container max-w-6xl mx-auto px-4 h-full flex items-center">
+      <div
+        className="h-full flex items-center mx-auto"
+        style={{ maxWidth: 1200, padding: "0 24px" }}
+      >
         <div className="flex items-center justify-between w-full">
-          {/* Logo — matches SiteLayout */}
+          {/* Logo — matches SiteLayout exactly */}
           <a href="https://authoryti.com" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div
-              className="flex items-center justify-center rounded-xl"
+              className="flex items-center justify-center"
               style={{
-                width: 40,
-                height: 40,
-                background: "linear-gradient(135deg, hsl(35 92% 48%) 0%, hsl(25 95% 55%) 100%)",
+                width: 36,
+                height: 36,
+                borderRadius: 12,
+                background: "linear-gradient(135deg, hsl(35,92%,48%) 0%, hsl(25,95%,55%) 100%)",
               }}
             >
-              <BookOpen className="w-5 h-5 text-primary-foreground" strokeWidth={1.5} />
+              <BookOpen size={22} strokeWidth={1.5} color="#fff" />
             </div>
             <span
               style={{
@@ -43,7 +52,7 @@ const PublicHeader = () => {
           </a>
 
           {/* Desktop nav */}
-          <div className="hidden sm:flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-8">
             {NAV_LINKS.map((link) => (
               <a
                 key={link.label}
@@ -57,7 +66,7 @@ const PublicHeader = () => {
               to="/waitlist"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold hover:opacity-90 transition-opacity"
               style={{
-                background: "linear-gradient(135deg, hsl(35 92% 48%) 0%, hsl(25 95% 55%) 100%)",
+                background: "linear-gradient(135deg, hsl(35,92%,48%) 0%, hsl(25,95%,55%) 100%)",
                 color: "#fff",
               }}
             >
@@ -79,8 +88,8 @@ const PublicHeader = () => {
       {/* Mobile dropdown */}
       {mobileOpen && (
         <div
-          className="sm:hidden fixed left-0 right-0 bottom-0 z-[200] border-t border-border overflow-y-auto"
-          style={{ top: 64, background: "hsl(222 30% 7%)", padding: 24 }}
+          className="sm:hidden fixed left-0 right-0 bottom-0 z-[200] overflow-y-auto"
+          style={{ top: 64, background: "hsl(222 30% 7%)", borderTop: "1px solid hsl(var(--border))", padding: 24 }}
         >
           <div className="flex flex-col gap-0">
             {NAV_LINKS.map((link) => (
@@ -88,6 +97,7 @@ const PublicHeader = () => {
                 key={link.label}
                 href={link.href}
                 className="block text-lg font-semibold text-foreground py-3.5 border-b border-border transition-colors"
+                style={{ textDecoration: "none" }}
                 onClick={() => setMobileOpen(false)}
               >
                 {link.label}
@@ -99,7 +109,7 @@ const PublicHeader = () => {
               to="/waitlist"
               className="flex items-center justify-center gap-2 py-3.5 px-6 rounded-full text-base font-bold"
               style={{
-                background: "linear-gradient(135deg, hsl(35 92% 48%) 0%, hsl(25 95% 55%) 100%)",
+                background: "linear-gradient(135deg, hsl(35,92%,48%) 0%, hsl(25,95%,55%) 100%)",
                 color: "#fff",
               }}
               onClick={() => setMobileOpen(false)}
