@@ -4,8 +4,7 @@ import { Pencil, RefreshCw, Check, X, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { sanitizeText } from "@/lib/sanitize";
-import { sanitizeHtml } from "@/lib/sanitize";
+import { sanitizeHtml, sanitizeRichText } from "@/lib/sanitize";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RichTextToolbar } from "@/components/RichTextToolbar";
@@ -70,10 +69,11 @@ export function ParagraphEditor({
 
   const handleSave = () => {
     if (!editText.trim()) return;
-    const cleaned = sanitizeText(normalizeWhitespace(editText)).substring(0, MAX_PARAGRAPH_LENGTH);
+    const cleaned = sanitizeRichText(normalizeWhitespace(editText)).substring(0, MAX_PARAGRAPH_LENGTH);
     if (!cleaned) return;
     const newContent = updateParagraph(cleaned);
     onContentUpdate(newContent);
+    setEditText(cleaned);
     setIsEditing(false);
     toast.success("Paragraph updated");
   };
