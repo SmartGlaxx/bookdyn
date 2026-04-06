@@ -327,6 +327,11 @@ ANTI-REPETITION RULE (STRICTLY ENFORCED):
 - If the previous section ended mid-scene, continue from exactly that point — do not restart the scene.
 - Each subsection must introduce NEW events, NEW dialogue, or NEW developments. Zero overlap with previous content.
 
+FORMAT & WORD BAN RULES (STRICTLY ENFORCED):
+- NEVER use markdown formatting such as **, *, ##, or any other markdown syntax in your output. Write in plain prose only.
+- NEVER use the word "magic" or "magical" in any context. Find more specific, vivid alternatives (e.g. "enchantment", "sorcery", "extraordinary", "remarkable", "uncanny").
+- Do not use asterisks for emphasis. Use the words themselves to convey emphasis through sentence structure and word choice.
+
 ${tonalAnchors?.length > 0 ? `TONAL ANCHORS (match this style):\n${tonalAnchors.join("\n\n")}\n` : ""}
 
 ${isChildrensBook ? `

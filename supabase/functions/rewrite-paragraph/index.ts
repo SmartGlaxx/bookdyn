@@ -107,9 +107,11 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
+    const formatBanRule = "\n\nFORMAT & WORD BAN RULES (STRICTLY ENFORCED):\n- NEVER use markdown formatting such as **, *, ##, or any markdown syntax. Write in plain prose only.\n- NEVER use the word \"magic\" or \"magical\". Use alternatives like \"enchantment\", \"sorcery\", \"extraordinary\", \"remarkable\", \"uncanny\".\n- Do not use asterisks for emphasis.";
+
     const systemPrompt = guidedAction
-      ? getGuidedPrompt(guidedAction, paragraph, bookTitle || "", chapterTitle || "", subsectionTitle || "", fullContent, subsectionGoal)
-      : `You are a professional editor. Rewrite the given paragraph while maintaining the same meaning, tone, and context. Keep it natural and flowing within the chapter "${chapterTitle || ""}", section "${subsectionTitle || ""}" of the book "${bookTitle || ""}". Improve prose quality, vary sentence structure, and use richer vocabulary. Return ONLY the rewritten paragraph text, nothing else. No quotes, no labels, no explanation.`;
+      ? getGuidedPrompt(guidedAction, paragraph, bookTitle || "", chapterTitle || "", subsectionTitle || "", fullContent, subsectionGoal) + formatBanRule
+      : `You are a professional editor. Rewrite the given paragraph while maintaining the same meaning, tone, and context. Keep it natural and flowing within the chapter "${chapterTitle || ""}", section "${subsectionTitle || ""}" of the book "${bookTitle || ""}". Improve prose quality, vary sentence structure, and use richer vocabulary. Return ONLY the rewritten paragraph text, nothing else. No quotes, no labels, no explanation.${formatBanRule}`;
 
     const userMessage = guidedAction ? "Execute the instruction above." : paragraph;
 
