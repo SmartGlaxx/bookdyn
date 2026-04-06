@@ -1,12 +1,14 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Pencil, RefreshCw, Check, X, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { sanitizeText } from "@/lib/sanitize";
+import { sanitizeHtml } from "@/lib/sanitize";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { RichTextToolbar } from "@/components/RichTextToolbar";
 
 interface ParagraphEditorProps {
   paragraph: string;
@@ -123,6 +125,33 @@ export function ParagraphEditor({
     }
   };
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Escape") handleCancel();
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSave();
+    // Rich text shortcuts
+    if ((e.metaKey || e.ctrlKey) && textareaRef.current) {
+      const tag = e.key === "b" ? "b" : e.key === "i" ? "i" : e.key === "u" ? "u" : null;
+      if (tag) {
+        e.preventDefault();
+        const ta = textareaRef.current;
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        const selected = editText.substring(start, end);
+        if (!selected) return;
+        const open = `<${tag}>`;
+        const close = `</${tag}>`;
+        const newVal = editText.substring(0, start) + open + selected + close + editText.substring(end);
+        if (newVal.length <= MAX_PARAGRAPH_LENGTH) {
+          setEditText(newVal);
+          requestAnimationFrame(() => {
+            ta.focus();
+            ta.setSelectionRange(start + open.length, end + open.length);
+          });
+        }
+      }
+    }
+  }, [editText, handleCancel, handleSave]);
+
   if (isEditing) {
     return (
       <motion.div
@@ -130,18 +159,19 @@ export function ParagraphEditor({
         animate={{ opacity: 1 }}
         className="relative group"
       >
+         <div className="flex items-center gap-2 mb-1.5">
+           <RichTextToolbar textareaRef={textareaRef} value={editText} onChange={(v) => { if (v.length <= MAX_PARAGRAPH_LENGTH) setEditText(v); }} />
+           <span className="text-[11px] text-muted-foreground">Select text then format</span>
+         </div>
          <Textarea
            ref={textareaRef}
            value={editText}
            onChange={(e) => {
              if (e.target.value.length <= MAX_PARAGRAPH_LENGTH) setEditText(e.target.value);
            }}
-           onKeyDown={(e) => {
-             if (e.key === "Escape") handleCancel();
-             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSave();
-           }}
+           onKeyDown={handleKeyDown}
            maxLength={MAX_PARAGRAPH_LENGTH}
-           className="min-h-[100px] leading-relaxed text-foreground/90 resize-y"
+           className="min-h-[100px] leading-relaxed text-foreground/90 resize-y font-mono text-sm"
            placeholder="Write your paragraph..."
          />
           <div className="flex items-center justify-between mt-2">
