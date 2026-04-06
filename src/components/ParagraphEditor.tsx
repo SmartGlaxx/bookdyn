@@ -205,9 +205,8 @@ export function ParagraphEditor({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <p className="whitespace-pre-wrap leading-relaxed text-foreground/90 break-words">
-        {highlightText ? highlightText(sanitizeText(paragraph)) : sanitizeText(paragraph)}
-      </p>
+      <p className="whitespace-pre-wrap leading-relaxed text-foreground/90 break-words"
+         dangerouslySetInnerHTML={{ __html: sanitizeHtml(paragraph) }} />
 
       {/* Floating toolbar */}
       {!readOnly && (
