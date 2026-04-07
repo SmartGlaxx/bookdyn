@@ -69,7 +69,7 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
             </Avatar>
           </Button>
         </SheetTrigger>
-        <SheetContent side="right" className="w-72 p-0 flex flex-col">
+        <SheetContent side="right" className="w-[80%] max-w-[320px] p-0 flex flex-col">
           <SheetHeader className="p-4 pb-0">
             <SheetTitle className="flex items-center gap-2 text-sm font-normal">
               <User className="w-4 h-4 text-muted-foreground" />
@@ -83,8 +83,8 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
             {/* Plan */}
             <div className="px-4 py-2">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-muted-foreground">Plan</span>
-                <span className="text-xs font-semibold text-foreground">
+                <span className="text-sm text-muted-foreground">Plan</span>
+                <span className="text-sm font-semibold text-foreground">
                   {getPlanDisplayName(turbo.plan)}
                 </span>
               </div>
@@ -106,7 +106,7 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
             {/* Streak & Words progress */}
             {!turbo.isLoading && (
               <div className="px-4 py-2 space-y-2">
-                <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center justify-between text-sm">
                   <TooltipProvider delayDuration={300}>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -124,7 +124,7 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
                 </div>
                 <Progress value={turbo.streakProgress} className="h-1.5" variant="warning" />
 
-                <div className="flex items-center justify-between text-xs mt-1">
+                <div className="flex items-center justify-between text-sm mt-1">
                   <TooltipProvider delayDuration={300}>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -158,14 +158,14 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
             <div className="px-2 py-1 space-y-0.5">
               <button
                 onClick={handleManageBilling}
-                className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
+                className="w-full flex items-center gap-2 px-2 py-2 text-base font-semibold rounded-md hover:bg-muted transition-colors text-left"
               >
                 <Coins className="w-4 h-4" />
                 Billing & Credits
               </button>
               <button
                 onClick={() => { setFeedbackOpen(true); setOpen(false); }}
-                className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
+                className="w-full flex items-center gap-2 px-2 py-2 text-base font-semibold rounded-md hover:bg-muted transition-colors text-left"
               >
                 <MessageSquare className="w-4 h-4" />
                 Give Feedback
@@ -173,7 +173,7 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
               {user?.email === "mailsmartcodes@gmail.com" && (
                 <button
                   onClick={() => { navigate("/admin/feedback"); setOpen(false); }}
-                  className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
+                  className="w-full flex items-center gap-2 px-2 py-2 text-base font-semibold rounded-md hover:bg-muted transition-colors text-left"
                 >
                   <MessageSquare className="w-4 h-4" />
                   Feedback Dashboard
