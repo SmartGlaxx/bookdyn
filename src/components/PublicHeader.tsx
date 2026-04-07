@@ -20,21 +20,22 @@ const PublicHeader = () => {
           {/* Logo — matches SiteLayout */}
           <a href="https://authoryti.com" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div
-              className="flex items-center justify-center rounded-xl"
+              className="flex items-center justify-center"
               style={{
                 width: 40,
                 height: 40,
-                background: "linear-gradient(135deg, hsl(35 92% 48%) 0%, hsl(25 95% 55%) 100%)",
+                borderRadius: 12,
+                background: "linear-gradient(135deg, hsl(35,92%,48%) 0%, hsl(25,95%,55%) 100%)",
               }}
             >
-              <BookOpen className="w-5 h-5 text-primary-foreground" strokeWidth={1.5} />
+              <BookOpen className="text-primary-foreground" size={20} strokeWidth={1.5} />
             </div>
             <span
               style={{
                 fontFamily: "'Playfair Display', serif",
                 fontWeight: 700,
-                fontSize: 20,
-                letterSpacing: "-0.01em",
+                fontSize: 22,
+                letterSpacing: "-0.02em",
                 color: "hsl(var(--foreground))",
               }}
             >
@@ -69,9 +70,10 @@ const PublicHeader = () => {
           {/* Mobile hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="sm:hidden p-2 rounded-lg hover:bg-muted transition-colors"
+            className="sm:hidden flex items-center justify-center"
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 8, color: "hsl(var(--foreground))" }}
           >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileOpen ? <X size={24} strokeWidth={1.5} /> : <Menu size={24} strokeWidth={1.5} />}
           </button>
         </div>
       </div>
