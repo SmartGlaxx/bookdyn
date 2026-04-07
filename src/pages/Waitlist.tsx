@@ -117,29 +117,27 @@ export default function WaitlistPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="w-full max-w-md flex flex-col gap-3">
-              <div className="flex gap-2">
-                <input
-                  type="email"
-                  required
-                  placeholder="you@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="flex-1 min-w-0 px-5 py-3.5 rounded-full border border-border bg-card/80 text-foreground text-sm outline-none focus:border-primary/50 transition-colors"
-                />
-                <button
-                  type="submit"
-                  disabled={status === "loading"}
-                  className="px-6 py-3.5 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-medium text-sm whitespace-nowrap flex items-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-60 glow"
-                >
-                  {status === "loading" ? (
-                    "Joining..."
-                  ) : (
-                    <>
-                      Join the Waitlist <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </div>
+              <input
+                type="email"
+                required
+                placeholder="you@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-5 py-3.5 rounded-full border border-border bg-card/80 text-foreground text-sm outline-none focus:border-primary/50 transition-colors"
+              />
+              <button
+                type="submit"
+                disabled={status === "loading"}
+                className="w-full px-6 py-3.5 rounded-full bg-gradient-to-r from-primary to-accent text-primary-foreground font-medium text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-60 glow"
+              >
+                {status === "loading" ? (
+                  "Joining..."
+                ) : (
+                  <>
+                    Join the Waitlist <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
 
               {status === "exists" && (
                 <p className="text-sm text-primary text-center mt-1">
