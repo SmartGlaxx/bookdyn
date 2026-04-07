@@ -17,21 +17,22 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
         <div className="flex items-center justify-between w-full">
           <a href="https://authoryti.com" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div
-              className="flex items-center justify-center rounded-xl"
+              className="flex items-center justify-center"
               style={{
                 width: 40,
                 height: 40,
-                background: "linear-gradient(135deg, hsl(35 92% 48%) 0%, hsl(25 95% 55%) 100%)",
+                borderRadius: 12,
+                background: "linear-gradient(135deg, hsl(35,92%,48%) 0%, hsl(25,95%,55%) 100%)",
               }}
             >
-              <BookOpen className="w-5 h-5 text-primary-foreground" strokeWidth={1.5} />
+              <BookOpen className="text-primary-foreground" size={20} strokeWidth={1.5} />
             </div>
             <h1
               style={{
                 fontFamily: "'Playfair Display', serif",
                 fontWeight: 700,
-                fontSize: 20,
-                letterSpacing: "-0.01em",
+                fontSize: 22,
+                letterSpacing: "-0.02em",
               }}
             >
               Authoryti
