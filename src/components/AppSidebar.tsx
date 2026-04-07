@@ -83,8 +83,8 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
             {/* Plan */}
             <div className="px-4 py-2">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-muted-foreground">Plan</span>
-                <span className="text-xs font-semibold text-foreground">
+                <span className="text-sm text-muted-foreground">Plan</span>
+                <span className="text-sm font-semibold text-foreground">
                   {getPlanDisplayName(turbo.plan)}
                 </span>
               </div>
@@ -106,7 +106,7 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
             {/* Streak & Words progress */}
             {!turbo.isLoading && (
               <div className="px-4 py-2 space-y-2">
-                <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center justify-between text-sm">
                   <TooltipProvider delayDuration={300}>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -124,7 +124,7 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
                 </div>
                 <Progress value={turbo.streakProgress} className="h-1.5" variant="warning" />
 
-                <div className="flex items-center justify-between text-xs mt-1">
+                <div className="flex items-center justify-between text-sm mt-1">
                   <TooltipProvider delayDuration={300}>
                     <Tooltip>
                       <TooltipTrigger asChild>
