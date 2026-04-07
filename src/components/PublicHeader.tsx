@@ -20,15 +20,14 @@ const PublicHeader = () => {
           {/* Logo — matches SiteLayout */}
           <a href="https://authoryti.com" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div
-              className="flex items-center justify-center"
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                background: "linear-gradient(135deg, hsl(35,92%,48%) 0%, hsl(25,95%,55%) 100%)",
+                padding: 8,
+                borderRadius: 10,
+                background: "hsla(35,92%,55%,0.12)",
+                display: "flex",
               }}
             >
-              <BookOpen className="text-primary-foreground" size={20} strokeWidth={1.5} />
+              <BookOpen size={20} color="var(--primary)" />
             </div>
             <span
               style={{
