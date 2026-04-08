@@ -24,7 +24,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
                 display: "flex",
               }}
             >
-              <BookOpen size={20} color="hsl(35,92%,55%)" strokeWidth={2} />
+              <BookOpen size={20} color="var(--primary)" />
             </div>
             <h1
               style={{

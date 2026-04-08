@@ -15,7 +15,9 @@ const PublicHeader = () => {
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [menuOpen]);
 
   return (
@@ -128,9 +130,20 @@ const PublicHeader = () => {
       >
         <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between" style={{ height: 64 }}>
           {/* Logo */}
-          <a href="https://authoryti.com" className="flex items-center gap-3 hover:opacity-80 transition-opacity" style={{ textDecoration: "none" }}>
-            <div style={{ padding: 8, borderRadius: 10, background: "hsla(35,92%,55%,0.12)", display: "flex" }}>
-              <BookOpen size={20} color="var(--primary)" strokeWidth={2} />
+          <a
+            href="https://authoryti.com"
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            style={{ textDecoration: "none" }}
+          >
+            <div
+              style={{
+                padding: 8,
+                borderRadius: 10,
+                background: "hsla(35,92%,55%,0.12)",
+                display: "flex",
+              }}
+            >
+              <BookOpen size={20} color="var(--primary)" />
             </div>
             <span
               style={{
@@ -158,9 +171,13 @@ const PublicHeader = () => {
                 transition: "color 0.2s",
               };
               return isInternal ? (
-                <Link key={label} to={href} style={style}>{label}</Link>
+                <Link key={label} to={href} style={style}>
+                  {label}
+                </Link>
               ) : (
-                <a key={label} href={href} style={style}>{label}</a>
+                <a key={label} href={href} style={style}>
+                  {label}
+                </a>
               );
             })}
           </div>
@@ -191,7 +208,13 @@ const PublicHeader = () => {
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             className="md:hidden flex items-center justify-center"
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 8, color: "hsl(var(--foreground))" }}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 8,
+              color: "hsl(var(--foreground))",
+            }}
             aria-label="Toggle menu"
           >
             {menuOpen ? <X size={24} strokeWidth={1.5} /> : <Menu size={24} strokeWidth={1.5} />}
