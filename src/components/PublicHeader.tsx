@@ -130,15 +130,15 @@ const PublicHeader = () => {
           {/* Logo */}
           <a href="https://authoryti.com" className="flex items-center gap-3 hover:opacity-80 transition-opacity" style={{ textDecoration: "none" }}>
             <div style={{ padding: 8, borderRadius: 10, background: "hsla(35,92%,55%,0.12)", display: "flex" }}>
-              <BookOpen size={20} color="hsl(35,92%,55%)" strokeWidth={2} />
+              <BookOpen size={20} color="var(--primary)" strokeWidth={2} />
             </div>
             <span
               style={{
-                fontFamily: "'Playfair Display', serif",
+                fontFamily: "'Playfair Display', Georgia, serif",
                 fontWeight: 700,
-                fontSize: 22,
-                letterSpacing: "-0.02em",
-                color: "hsl(var(--foreground))",
+                fontSize: 20,
+                letterSpacing: "-0.01em",
+                color: "var(--fg)",
               }}
             >
               Authoryti

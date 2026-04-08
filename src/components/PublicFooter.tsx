@@ -62,15 +62,15 @@ const PublicFooter = () => {
                   display: "flex",
                 }}
               >
-                <BookOpen size={20} color="hsl(35,92%,55%)" strokeWidth={2} />
+                <BookOpen size={20} color="var(--primary)" strokeWidth={2} />
               </div>
               <span
                 style={{
-                  fontFamily: "'Playfair Display', serif",
+                  fontFamily: "'Playfair Display', Georgia, serif",
                   fontWeight: 700,
                   fontSize: 20,
                   letterSpacing: "-0.01em",
-                  color: "hsl(var(--foreground))",
+                  color: "var(--fg)",
                 }}
               >
                 Authoryti
