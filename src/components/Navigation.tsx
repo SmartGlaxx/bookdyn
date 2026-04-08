@@ -24,7 +24,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
                 display: "flex",
               }}
             >
-              <BookOpen size={20} color="var(--primary)" strokeWidth={2} />
+              <BookOpen size={20} color="hsl(35,92%,55%)" strokeWidth={2} />
             </div>
             <h1
               style={{
@@ -32,6 +32,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
                 fontWeight: 700,
                 fontSize: 20,
                 letterSpacing: "-0.01em",
+                color: "var(--fg)",
               }}
             >
               Authoryti
