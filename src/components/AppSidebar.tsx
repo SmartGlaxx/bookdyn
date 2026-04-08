@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { LogOut, User, Flame, PenTool, MessageSquare, Coins, X } from "lucide-react";
+import { LogOut, User, Flame, PenTool, MessageSquare, Coins } from "lucide-react";
 import { FeedbackModal } from "@/components/FeedbackModal";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,8 +11,7 @@ import { UnifiedMeter } from "@/components/UnifiedMeter";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 interface AppSidebarProps {
   className?: string;
@@ -69,19 +68,27 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
             </Avatar>
           </Button>
         </SheetTrigger>
-        <SheetContent side="right" className="w-[80%] max-w-[320px] p-0 flex flex-col">
-          <SheetHeader className="p-4 pb-0">
-            <SheetTitle className="flex items-center gap-2 text-sm font-normal">
-              <User className="w-4 h-4 text-muted-foreground" />
+        <SheetContent
+          side="right"
+          className="w-[80%] max-w-[320px] p-0 flex flex-col border-l border-border"
+          style={{
+            background: "hsl(222 30% 7%)",
+            boxShadow: "-4px 0 24px rgba(0,0,0,0.3)",
+          }}
+        >
+          {/* Header with email */}
+          <div className="px-6 pt-6 pb-0">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <User className="w-4 h-4" />
               <span className="truncate">{user?.email}</span>
-            </SheetTitle>
-          </SheetHeader>
+            </div>
+          </div>
 
-          <div className="flex-1 overflow-y-auto">
-            <Separator className="my-2" />
+          <div className="flex-1 overflow-y-auto" style={{ marginTop: 16 }}>
+            <div className="h-px w-full" style={{ background: "hsl(var(--border))" }} />
 
             {/* Plan */}
-            <div className="px-4 py-2">
+            <div className="px-6 py-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-muted-foreground">Plan</span>
                 <span className="text-sm font-semibold text-foreground">
@@ -101,11 +108,11 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
               )}
             </div>
 
-            <Separator className="my-2" />
+            <div className="h-px w-full" style={{ background: "hsl(var(--border))" }} />
 
             {/* Streak & Words progress */}
             {!turbo.isLoading && (
-              <div className="px-4 py-2 space-y-2">
+              <div className="px-6 py-3 space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <TooltipProvider delayDuration={300}>
                     <Tooltip>
@@ -144,51 +151,50 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
               </div>
             )}
 
-            <Separator className="my-2" />
+            <div className="h-px w-full" style={{ background: "hsl(var(--border))" }} />
 
             {/* Extra items injected by book display page */}
             {children && (
               <>
                 {children}
-                <Separator className="my-2" />
+                <div className="h-px w-full" style={{ background: "hsl(var(--border))" }} />
               </>
             )}
 
-            {/* Menu items */}
-            <div className="px-2 py-1 space-y-0.5">
+            {/* Menu items — SiteLayout style */}
+            <div className="px-6">
               <button
                 onClick={handleManageBilling}
-                className="w-full flex items-center gap-2 px-2 py-2 text-base font-semibold rounded-md hover:bg-muted transition-colors text-left"
+                className="w-full flex items-center gap-3 text-left text-foreground transition-colors"
+                style={{ fontSize: 18, fontWeight: 600, padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
               >
-                <Coins className="w-4 h-4" />
+                <Coins className="w-5 h-5" />
                 Billing & Credits
               </button>
               <button
                 onClick={() => { setFeedbackOpen(true); setOpen(false); }}
-                className="w-full flex items-center gap-2 px-2 py-2 text-base font-semibold rounded-md hover:bg-muted transition-colors text-left"
+                className="w-full flex items-center gap-3 text-left text-foreground transition-colors"
+                style={{ fontSize: 18, fontWeight: 600, padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
               >
-                <MessageSquare className="w-4 h-4" />
+                <MessageSquare className="w-5 h-5" />
                 Give Feedback
               </button>
               {user?.email === "mailsmartcodes@gmail.com" && (
                 <button
                   onClick={() => { navigate("/admin/feedback"); setOpen(false); }}
-                  className="w-full flex items-center gap-2 px-2 py-2 text-base font-semibold rounded-md hover:bg-muted transition-colors text-left"
+                  className="w-full flex items-center gap-3 text-left text-foreground transition-colors"
+                  style={{ fontSize: 18, fontWeight: 600, padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
                 >
-                  <MessageSquare className="w-4 h-4" />
+                  <MessageSquare className="w-5 h-5" />
                   Feedback Dashboard
                 </button>
               )}
-            </div>
-
-            <Separator className="my-2" />
-
-            <div className="px-2 py-1">
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left text-destructive"
+                className="w-full flex items-center gap-3 text-left text-destructive transition-colors"
+                style={{ fontSize: 18, fontWeight: 600, padding: "14px 0" }}
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-5 h-5" />
                 Sign out
               </button>
             </div>

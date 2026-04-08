@@ -26,6 +26,12 @@ const FOOTER_COLS = [
   },
 ];
 
+const SOCIALS = [
+  { l: "X", h: "#" },
+  { l: "in", h: "#" },
+  { l: "gh", h: "#" },
+];
+
 const PublicFooter = () => {
   const year = new Date().getFullYear();
 
@@ -43,20 +49,20 @@ const PublicFooter = () => {
         }}
       />
 
-      <div className="container max-w-6xl mx-auto px-4 py-16">
+      <div className="max-w-[1200px] mx-auto px-6 py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-12 mb-16">
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div
-                className="flex items-center justify-center rounded-xl"
                 style={{
-                  width: 40,
-                  height: 40,
-                  background: "linear-gradient(135deg, hsl(35 92% 48%) 0%, hsl(25 95% 55%) 100%)",
+                  padding: 8,
+                  borderRadius: 10,
+                  background: "hsla(35,92%,55%,0.12)",
+                  display: "flex",
                 }}
               >
-                <BookOpen className="w-5 h-5 text-primary-foreground" strokeWidth={1.5} />
+                <BookOpen size={20} color="hsl(35,92%,55%)" strokeWidth={2} />
               </div>
               <span
                 style={{
@@ -74,6 +80,30 @@ const PublicFooter = () => {
               The AI-powered book creation engine. From blank page to complete
               manuscript — faster than you ever thought possible.
             </p>
+
+            {/* Social icons */}
+            <div className="flex items-center gap-2 pt-2">
+              {SOCIALS.map(({ l, h }) => (
+                <a
+                  key={l}
+                  href={h}
+                  className="flex items-center justify-center text-xs font-semibold text-muted-foreground border border-border rounded-lg transition-all"
+                  style={{ width: 36, height: 36 }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "hsla(35,92%,55%,0.5)";
+                    e.currentTarget.style.color = "hsl(35,92%,55%)";
+                    e.currentTarget.style.background = "hsla(35,92%,55%,0.08)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "";
+                    e.currentTarget.style.color = "";
+                    e.currentTarget.style.background = "transparent";
+                  }}
+                >
+                  {l}
+                </a>
+              ))}
+            </div>
           </div>
 
           {/* Link columns */}
@@ -103,9 +133,20 @@ const PublicFooter = () => {
           <p className="text-xs text-muted-foreground">
             © {year} Authoryti, Inc. All rights reserved.
           </p>
+
+          <div className="flex items-center gap-2">
+            <span
+              className="inline-block rounded-full"
+              style={{ width: 8, height: 8, background: "hsl(142,71%,45%)" }}
+            />
+            <span className="text-xs text-muted-foreground">
+              All systems operational
+            </span>
+          </div>
+
           <p className="text-xs text-muted-foreground">
             Crafted with{" "}
-            <span className="text-primary">♦</span> for writers everywhere
+            <span style={{ color: "hsl(35,92%,55%)" }}>♦</span> for writers everywhere
           </p>
         </div>
       </div>

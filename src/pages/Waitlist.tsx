@@ -55,7 +55,7 @@ export default function WaitlistPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <PublicHeader />
 
-      <div className="flex-1 relative overflow-hidden flex items-center justify-center px-4 py-16">
+      <div className="flex-1 relative overflow-hidden flex items-center justify-center px-4 py-16" style={{ paddingTop: 81 }}>
         {/* Background blobs with golden accent */}
         <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
         <div className="absolute bottom-[-15%] right-[-10%] w-[500px] h-[500px] rounded-full bg-accent/5 blur-[100px] pointer-events-none" />
