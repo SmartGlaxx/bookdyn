@@ -75,7 +75,16 @@ const Auth = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse flex items-center gap-3">
-          <BookOpen size={20} color="var(--primary)" />
+          <div
+            style={{
+              padding: 8,
+              borderRadius: 10,
+              background: "hsla(35,92%,55%,0.12)",
+              display: "flex",
+            }}
+          >
+            <BookOpen size={20} color="var(--primary)" />
+          </div>
           <span className="text-lg font-medium">Loading...</span>
         </div>
       </div>

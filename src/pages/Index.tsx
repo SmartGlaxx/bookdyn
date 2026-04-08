@@ -477,8 +477,14 @@ const Index = () => {
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col items-center justify-center py-24 text-center space-y-6"
             >
-              <div className="p-6 rounded-full bg-primary/10">
-                {/* <BookOpen className="w-12 h-12 text-primary" /> */}
+              <div
+                style={{
+                  padding: 8,
+                  borderRadius: 10,
+                  background: "hsla(35,92%,55%,0.12)",
+                  display: "flex",
+                }}
+              >
                 <BookOpen size={20} color="var(--primary)" />
               </div>
               <div className="space-y-2 max-w-md">

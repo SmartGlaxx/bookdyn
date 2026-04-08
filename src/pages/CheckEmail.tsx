@@ -19,8 +19,14 @@ const CheckEmail = () => {
         className="w-full max-w-md relative z-10"
       >
         <div className="flex items-center justify-center gap-3 mb-10">
-          <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-accent glow">
-            {/* <BookOpen className="w-7 h-7 text-primary-foreground" /> */}
+          <div
+            style={{
+              padding: 8,
+              borderRadius: 10,
+              background: "hsla(35,92%,55%,0.12)",
+              display: "flex",
+            }}
+          >
             <BookOpen size={20} color="var(--primary)" />
           </div>
           <div>

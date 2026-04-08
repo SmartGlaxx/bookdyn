@@ -464,7 +464,14 @@ const LandingPage = ({ onCreateBook, bookCount }: LandingPageProps) => {
         <div className="container max-w-6xl mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
+              <div
+                style={{
+                  padding: 8,
+                  borderRadius: 10,
+                  background: "hsla(35,92%,55%,0.12)",
+                  display: "flex",
+                }}
+              >
                 <BookOpen size={20} color="var(--primary)" />
               </div>
               <span className="font-serif font-bold text-lg">Authoryti</span>
