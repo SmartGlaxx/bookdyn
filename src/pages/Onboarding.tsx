@@ -1,7 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, ArrowRight, Sparkles, PenTool, BookMarked, Baby, Cpu, Target, Rocket, Palette, SkipForward } from "lucide-react";
+import {
+  BookOpen,
+  ArrowRight,
+  Sparkles,
+  PenTool,
+  BookMarked,
+  Baby,
+  Cpu,
+  Target,
+  Rocket,
+  Palette,
+  SkipForward,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,7 +44,9 @@ const Onboarding = () => {
   const completeOnboarding = async () => {
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       const { error } = await supabase
@@ -105,7 +119,8 @@ const Onboarding = () => {
       >
         <div className="flex items-center justify-center gap-3 mb-8">
           <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-accent glow">
-            <BookOpen className="w-7 h-7 text-primary-foreground" />
+            {/* <BookOpen className="w-7 h-7 text-primary-foreground" /> */}
+            <BookOpen size={20} color="var(--primary)" />
           </div>
           <div>
             <h1 className="font-serif font-bold text-2xl">Welcome to Authoryti</h1>
@@ -175,21 +190,11 @@ const Onboarding = () => {
             </AnimatePresence>
 
             <div className="flex gap-3 mt-6">
-              <Button
-                variant="ghost"
-                className="flex-1"
-                onClick={handleSkip}
-                disabled={saving}
-              >
+              <Button variant="ghost" className="flex-1" onClick={handleSkip} disabled={saving}>
                 <SkipForward className="w-4 h-4 mr-1" />
                 Skip
               </Button>
-              <Button
-                variant="hero"
-                className="flex-1"
-                onClick={handleNext}
-                disabled={saving}
-              >
+              <Button variant="hero" className="flex-1" onClick={handleNext} disabled={saving}>
                 {saving ? "Saving..." : step === 1 ? "Get Started" : "Next"}
                 <ArrowRight className="w-4 h-4 ml-1" />
               </Button>

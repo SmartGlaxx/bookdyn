@@ -29,7 +29,9 @@ const ResetPassword = () => {
     }
 
     // Also listen for auth state changes (recovery event)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") {
         setIsValidSession(true);
       }
@@ -86,7 +88,8 @@ const ResetPassword = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse flex items-center gap-3">
-          <BookOpen className="w-8 h-8 text-primary" />
+          {/* <BookOpen className="w-8 h-8 text-primary" /> */}
+          <BookOpen size={20} color="var(--primary)" />
           <span className="text-lg font-medium">Loading...</span>
         </div>
       </div>
@@ -128,15 +131,14 @@ const ResetPassword = () => {
       >
         <div className="flex items-center justify-center gap-3 mb-8">
           <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-accent glow">
-            <BookOpen className="w-8 h-8 text-primary-foreground" />
+            {/* <BookOpen className="w-8 h-8 text-primary-foreground" /> */}
+            <BookOpen size={20} color="var(--primary)" />
           </div>
         </div>
 
         <Card className="border-border/50 shadow-lg">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-serif">
-              {isSuccess ? "Password Updated" : "Set New Password"}
-            </CardTitle>
+            <CardTitle className="text-2xl font-serif">{isSuccess ? "Password Updated" : "Set New Password"}</CardTitle>
             <CardDescription>
               {isSuccess ? "Redirecting you to sign in..." : "Enter your new password below"}
             </CardDescription>

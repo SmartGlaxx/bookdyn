@@ -20,7 +20,8 @@ const CheckEmail = () => {
       >
         <div className="flex items-center justify-center gap-3 mb-10">
           <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-accent glow">
-            <BookOpen className="w-7 h-7 text-primary-foreground" />
+            {/* <BookOpen className="w-7 h-7 text-primary-foreground" /> */}
+            <BookOpen size={20} color="var(--primary)" />
           </div>
           <div>
             <h1 className="font-serif font-bold text-2xl">Authoryti</h1>
@@ -37,7 +38,8 @@ const CheckEmail = () => {
             </div>
             <CardTitle className="text-2xl font-serif">Check Your Email</CardTitle>
             <CardDescription className="text-base leading-relaxed mt-2">
-              We've sent a confirmation link to your email address. Please click the link to verify your account and get started.
+              We've sent a confirmation link to your email address. Please click the link to verify your account and get
+              started.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -46,11 +48,7 @@ const CheckEmail = () => {
                 Didn't receive the email? Check your spam folder or try signing up again.
               </p>
             </div>
-            <Button
-              className="w-full h-11"
-              variant="outline"
-              onClick={() => navigate("/auth")}
-            >
+            <Button className="w-full h-11" variant="outline" onClick={() => navigate("/auth")}>
               Back to Sign In
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
