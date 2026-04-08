@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { LogOut, User, Flame, PenTool, MessageSquare, Coins, X } from "lucide-react";
+import { LogOut, User, Flame, PenTool, MessageSquare, Coins } from "lucide-react";
 import { FeedbackModal } from "@/components/FeedbackModal";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,8 +11,7 @@ import { UnifiedMeter } from "@/components/UnifiedMeter";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 interface AppSidebarProps {
   className?: string;
