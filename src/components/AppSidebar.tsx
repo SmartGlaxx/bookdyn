@@ -152,51 +152,50 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
               </div>
             )}
 
-            <Separator className="my-2" />
+            <div className="h-px w-full" style={{ background: "hsl(var(--border))" }} />
 
             {/* Extra items injected by book display page */}
             {children && (
               <>
                 {children}
-                <Separator className="my-2" />
+                <div className="h-px w-full" style={{ background: "hsl(var(--border))" }} />
               </>
             )}
 
-            {/* Menu items */}
-            <div className="px-2 py-1 space-y-0.5">
+            {/* Menu items — SiteLayout style */}
+            <div className="px-6">
               <button
                 onClick={handleManageBilling}
-                className="w-full flex items-center gap-2 px-2 py-2 text-base font-semibold rounded-md hover:bg-muted transition-colors text-left"
+                className="w-full flex items-center gap-3 text-left text-foreground transition-colors"
+                style={{ fontSize: 18, fontWeight: 600, padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
               >
-                <Coins className="w-4 h-4" />
+                <Coins className="w-5 h-5" />
                 Billing & Credits
               </button>
               <button
                 onClick={() => { setFeedbackOpen(true); setOpen(false); }}
-                className="w-full flex items-center gap-2 px-2 py-2 text-base font-semibold rounded-md hover:bg-muted transition-colors text-left"
+                className="w-full flex items-center gap-3 text-left text-foreground transition-colors"
+                style={{ fontSize: 18, fontWeight: 600, padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
               >
-                <MessageSquare className="w-4 h-4" />
+                <MessageSquare className="w-5 h-5" />
                 Give Feedback
               </button>
               {user?.email === "mailsmartcodes@gmail.com" && (
                 <button
                   onClick={() => { navigate("/admin/feedback"); setOpen(false); }}
-                  className="w-full flex items-center gap-2 px-2 py-2 text-base font-semibold rounded-md hover:bg-muted transition-colors text-left"
+                  className="w-full flex items-center gap-3 text-left text-foreground transition-colors"
+                  style={{ fontSize: 18, fontWeight: 600, padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
                 >
-                  <MessageSquare className="w-4 h-4" />
+                  <MessageSquare className="w-5 h-5" />
                   Feedback Dashboard
                 </button>
               )}
-            </div>
-
-            <Separator className="my-2" />
-
-            <div className="px-2 py-1">
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left text-destructive"
+                className="w-full flex items-center gap-3 text-left text-destructive transition-colors"
+                style={{ fontSize: 18, fontWeight: 600, padding: "14px 0" }}
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="w-5 h-5" />
                 Sign out
               </button>
             </div>
