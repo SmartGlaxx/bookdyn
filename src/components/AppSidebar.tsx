@@ -85,11 +85,11 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
-            <Separator className="my-2" />
+          <div className="flex-1 overflow-y-auto" style={{ marginTop: 16 }}>
+            <div className="h-px w-full" style={{ background: "hsl(var(--border))" }} />
 
             {/* Plan */}
-            <div className="px-4 py-2">
+            <div className="px-6 py-3">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-muted-foreground">Plan</span>
                 <span className="text-sm font-semibold text-foreground">
@@ -109,11 +109,11 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
               )}
             </div>
 
-            <Separator className="my-2" />
+            <div className="h-px w-full" style={{ background: "hsl(var(--border))" }} />
 
             {/* Streak & Words progress */}
             {!turbo.isLoading && (
-              <div className="px-4 py-2 space-y-2">
+              <div className="px-6 py-3 space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <TooltipProvider delayDuration={300}>
                     <Tooltip>
