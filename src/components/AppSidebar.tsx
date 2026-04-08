@@ -69,13 +69,21 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
             </Avatar>
           </Button>
         </SheetTrigger>
-        <SheetContent side="right" className="w-[80%] max-w-[320px] p-0 flex flex-col">
-          <SheetHeader className="p-4 pb-0">
-            <SheetTitle className="flex items-center gap-2 text-sm font-normal">
-              <User className="w-4 h-4 text-muted-foreground" />
+        <SheetContent
+          side="right"
+          className="w-[80%] max-w-[320px] p-0 flex flex-col border-l border-border"
+          style={{
+            background: "hsl(222 30% 7%)",
+            boxShadow: "-4px 0 24px rgba(0,0,0,0.3)",
+          }}
+        >
+          {/* Header with email */}
+          <div className="px-6 pt-6 pb-0">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <User className="w-4 h-4" />
               <span className="truncate">{user?.email}</span>
-            </SheetTitle>
-          </SheetHeader>
+            </div>
+          </div>
 
           <div className="flex-1 overflow-y-auto">
             <Separator className="my-2" />
