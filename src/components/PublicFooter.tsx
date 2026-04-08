@@ -36,12 +36,16 @@ const PublicFooter = () => {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-border" style={{ background: "hsl(222 30% 5%)" }}>
+    <footer
+      className="border-t border-border"
+      style={{ background: "hsl(222 30% 5%)" }}
+    >
       {/* Gradient line at top */}
       <div
         className="h-px w-full"
         style={{
-          background: "linear-gradient(90deg, transparent 0%, hsl(35 92% 48% / 0.4) 50%, transparent 100%)",
+          background:
+            "linear-gradient(90deg, transparent 0%, hsl(35 92% 48% / 0.4) 50%, transparent 100%)",
         }}
       />
 
@@ -58,7 +62,7 @@ const PublicFooter = () => {
                   display: "flex",
                 }}
               >
-                <BookOpen size={20} color="hsl(35,92%,55%)" strokeWidth={2} />
+                <BookOpen size={20} color="var(--primary)" strokeWidth={2} />
               </div>
               <span
                 style={{
@@ -73,8 +77,8 @@ const PublicFooter = () => {
               </span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
-              The AI-powered book creation engine. From blank page to complete manuscript — faster than you ever thought
-              possible.
+              The AI-powered book creation engine. From blank page to complete
+              manuscript — faster than you ever thought possible.
             </p>
 
             {/* Social icons */}
@@ -105,7 +109,9 @@ const PublicFooter = () => {
           {/* Link columns */}
           {FOOTER_COLS.map((col) => (
             <div key={col.heading} className="space-y-4">
-              <h4 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{col.heading}</h4>
+              <h4 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                {col.heading}
+              </h4>
               <div className="flex flex-col gap-2.5">
                 {col.links.map((link) => (
                   <a
@@ -124,18 +130,23 @@ const PublicFooter = () => {
         <div className="h-px w-full bg-border mb-8" />
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <p className="text-xs text-muted-foreground">© {year} Authoryti, Inc. All rights reserved.</p>
+          <p className="text-xs text-muted-foreground">
+            © {year} Authoryti, Inc. All rights reserved.
+          </p>
 
           <div className="flex items-center gap-2">
             <span
               className="inline-block rounded-full"
               style={{ width: 8, height: 8, background: "hsl(142,71%,45%)" }}
             />
-            <span className="text-xs text-muted-foreground">All systems operational</span>
+            <span className="text-xs text-muted-foreground">
+              All systems operational
+            </span>
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Crafted with <span style={{ color: "hsl(35,92%,55%)" }}>♦</span> for writers everywhere
+            Crafted with{" "}
+            <span style={{ color: "hsl(35,92%,55%)" }}>♦</span> for writers everywhere
           </p>
         </div>
       </div>
