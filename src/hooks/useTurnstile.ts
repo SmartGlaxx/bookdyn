@@ -33,6 +33,7 @@ export function useTurnstile({ siteKey, onVerify, onError, onExpire }: UseTurnst
       "expired-callback": onExpire,
       theme: "auto",
       size: "flexible",
+      appearance: "interaction-only",
     });
   }, [siteKey, onVerify, onError, onExpire]);
 
