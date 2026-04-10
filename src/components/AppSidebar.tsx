@@ -123,7 +123,7 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
                         </span>
                       </TooltipTrigger>
                       <TooltipContent side="bottom" className="max-w-[200px] text-xs">
-                        Consecutive days active. Grows each day you use the app; resets if you miss a day.
+                        Consecutive active days. Grows daily with usage; decreases if you miss days.
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

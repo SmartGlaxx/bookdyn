@@ -50,7 +50,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-[220px] text-xs">
-                    Consecutive days active. Grows each day you use the app; resets if you miss a day.
+                    Consecutive active days. Grows daily with usage; decreases if you miss days.
                   </TooltipContent>
                 </Tooltip>
               )}
