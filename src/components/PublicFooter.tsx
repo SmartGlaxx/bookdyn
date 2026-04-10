@@ -60,7 +60,7 @@ const PublicFooter = () => {
               >
                 <BookOpen size={20} color="hsl(35,92%,55%)" strokeWidth={2} />
               </div>
-              <span
+              <h1
                 style={{
                   fontFamily: "'Playfair Display', serif",
                   fontWeight: 700,
@@ -70,7 +70,7 @@ const PublicFooter = () => {
                 }}
               >
                 Authoryti
-              </span>
+              </h1>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
               The AI-powered book creation engine. From blank page to complete manuscript — faster than you ever thought
