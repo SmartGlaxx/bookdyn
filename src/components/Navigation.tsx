@@ -103,122 +103,24 @@
 
 // export default Navigation;
 
-import { BookOpen, Sparkles, Plus, Flame, Zap, PenTool } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useTurbo } from "@/hooks/useTurbo";
-import { AppSidebar } from "@/components/AppSidebar";
+import { BookOpen } from "lucide-react";
+import Link from "next/link";
 
 interface NavigationProps {
   onCreateBook: () => void;
 }
 
+const NAV_LINKS = [
+  ["Features", "/features"],
+  ["Pricing", "/pricing"],
+  ["Blog", "/blog"],
+  ["Docs", "/docs"],
+  ["Join Waitlist", "https://app.authoryti.com/waitlist"],
+];
+
 const Navigation = ({ onCreateBook }: NavigationProps) => {
-  const turbo = useTurbo();
-
   return (
-    <nav className="sl-nav">
-      <div className="sl-nav-container">
-        {/* Logo */}
-        <a
-          href="https://authoryti.com"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            textDecoration: "none",
-          }}
-        >
-          <div
-            style={{
-              padding: 8,
-              borderRadius: 10,
-              background: "hsla(35,92%,55%,0.12)",
-              display: "flex",
-            }}
-          >
-            <BookOpen size={20} color="var(--primary)" />
-          </div>
-          <h1
-            style={{
-              fontFamily: "'Playfair Display', serif",
-              fontWeight: 700,
-              fontSize: 22,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Authoryti
-          </h1>
-        </a>
-
-        {/* Desktop navigation links - empty to match original functionality */}
-        <div className="sl-nav-links">{/* No links - preserving original behavior */}</div>
-
-        {/* Desktop CTA and stats */}
-        <div className="sl-nav-actions">
-          <TooltipProvider delayDuration={300}>
-            {/* Streak badge */}
-            {!turbo.isLoading && turbo.streakDays > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="hidden sm:flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-orange-500/10 text-orange-500 cursor-help">
-                    <Flame className="w-3.5 h-3.5" />
-                    {turbo.streakDays}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-[220px] text-xs">
-                  Your writing streak — consecutive days you've been active. Keep it going!
-                </TooltipContent>
-              </Tooltip>
-            )}
-
-            {/* Words written badge */}
-            {!turbo.isLoading && turbo.totalWordsWritten > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="hidden sm:flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-primary/10 text-primary cursor-help">
-                    <PenTool className="w-3.5 h-3.5" />
-                    {(turbo.totalWordsWritten / 1000).toFixed(1)}K
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-[220px] text-xs">
-                  Total words written across all your books.
-                </TooltipContent>
-              </Tooltip>
-            )}
-
-            {turbo.turboUnlocked && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="hidden sm:flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-amber-500/10 text-amber-500 cursor-help">
-                    <Zap className="w-3.5 h-3.5" />
-                    Turbo
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="max-w-[220px] text-xs">
-                  Turbo mode unlocked! Enjoy boosted word generation capacity.
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </TooltipProvider>
-
-          <Button variant="hero" size="sm" onClick={onCreateBook} className="hidden sm:inline-flex">
-            <Sparkles className="w-4 h-4" />
-            New Book
-          </Button>
-          <Button variant="hero" size="icon" onClick={onCreateBook} className="sm:hidden">
-            <Plus className="w-5 h-5" />
-          </Button>
-
-          <AppSidebar />
-        </div>
-
-        {/* Hamburger button - hidden to match original (AppSidebar handles mobile menu) */}
-        <button className="sl-hamburger" style={{ display: "none" }} aria-label="Toggle menu">
-          <span />
-        </button>
-      </div>
-
+    <>
       <style>{`
         /* Force nav to stay on top - FIXED POSITION */
         .sl-nav {
@@ -284,7 +186,97 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
           }
         }
       `}</style>
-    </nav>
+
+      {/* ── NAVIGATION - FIXED AT TOP ── */}
+      <nav className="sl-nav">
+        <div className="sl-nav-container">
+          {/* Logo */}
+          <Link
+            href="/"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              textDecoration: "none",
+            }}
+          >
+            <div
+              style={{
+                padding: 8,
+                borderRadius: 10,
+                background: "hsla(35,92%,55%,0.12)",
+                display: "flex",
+              }}
+            >
+              <BookOpen size={20} color="var(--primary)" />
+            </div>
+            <h1
+              style={{
+                fontFamily: "'Playfair Display', serif",
+                fontWeight: 700,
+                fontSize: 22,
+                letterSpacing: "-0.02em",
+              }}
+            >
+              Authoryti
+            </h1>
+          </Link>
+
+          {/* Desktop navigation links */}
+          <div className="sl-nav-links">
+            {NAV_LINKS.map(([label, href]) => (
+              <Link
+                key={label}
+                href={href}
+                style={{
+                  fontSize: 14,
+                  color: label === "Join Waitlist" ? "var(--primary)" : "var(--muted)",
+                  fontWeight: label === "Join Waitlist" ? 700 : 500,
+                  transition: "color 0.15s",
+                  textDecoration: "none",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.color = label === "Join Waitlist" ? "hsl(35,92%,70%)" : "var(--fg)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.color = label === "Join Waitlist" ? "var(--primary)" : "var(--muted)")
+                }
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Desktop CTA button */}
+          <div className="sl-nav-actions">
+            <button
+              onClick={onCreateBook}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "10px 22px",
+                borderRadius: 999,
+                background: "linear-gradient(135deg, hsl(35,92%,48%) 0%, hsl(25,95%,55%) 100%)",
+                color: "#fff",
+                fontWeight: 700,
+                fontSize: 14,
+                boxShadow: "0 4px 20px hsla(35,92%,55%,0.3)",
+                textDecoration: "none",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              Start Writing
+            </button>
+          </div>
+
+          {/* Hamburger button */}
+          <button className="sl-hamburger" aria-label="Toggle menu">
+            <span>☰</span>
+          </button>
+        </div>
+      </nav>
+    </>
   );
 };
 
