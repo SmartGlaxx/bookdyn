@@ -50,7 +50,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="max-w-[220px] text-xs">
-                    Your writing streak — consecutive days you've been active. Keep it going!
+                    Consecutive days active. Grows each day you use the app; resets if you miss a day.
                   </TooltipContent>
                 </Tooltip>
               )}

@@ -123,7 +123,7 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
                         </span>
                       </TooltipTrigger>
                       <TooltipContent side="bottom" className="max-w-[200px] text-xs">
-                        Your writing streak counts consecutive days you've been active. Keep it going!
+                        Consecutive days active. Grows each day you use the app; resets if you miss a day.
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
