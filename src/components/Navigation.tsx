@@ -104,7 +104,7 @@
 // export default Navigation;
 
 import { BookOpen } from "lucide-react";
-import Link from "next/link";
+// Using <a> tags instead of Next.js Link (this is a Vite project)
 
 interface NavigationProps {
   onCreateBook: () => void;
