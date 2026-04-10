@@ -180,17 +180,28 @@ const PublicHeader = () => {
             <Link
               to="/waitlist"
               style={{
+                // display: "inline-flex",
+                // alignItems: "center",
+                // gap: 8,
+                // padding: "10px 20px",
+                // borderRadius: 999,
+                // background: "linear-gradient(135deg, hsl(35,92%,48%) 0%, hsl(25,95%,55%) 100%)",
+                // color: "#fff",
+                // fontWeight: 700,
+                // fontSize: 14,
+                // textDecoration: "none",
+                // transition: "opacity 0.2s",
+
                 display: "inline-flex",
                 alignItems: "center",
-                gap: 8,
-                padding: "10px 20px",
+                padding: "10px 22px",
                 borderRadius: 999,
                 background: "linear-gradient(135deg, hsl(35,92%,48%) 0%, hsl(25,95%,55%) 100%)",
                 color: "#fff",
                 fontWeight: 700,
                 fontSize: 14,
+                boxShadow: "0 4px 20px hsla(35,92%,55%,0.3)",
                 textDecoration: "none",
-                transition: "opacity 0.2s",
               }}
             >
               Start Writing
