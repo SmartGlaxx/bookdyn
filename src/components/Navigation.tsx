@@ -191,7 +191,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
       <nav className="sl-nav">
         <div className="sl-nav-container">
           {/* Logo */}
-          <Link
+          <a
             href="/"
             style={{
               display: "flex",
@@ -220,12 +220,12 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
             >
               Authoryti
             </h1>
-          </Link>
+          </a>
 
           {/* Desktop navigation links */}
           <div className="sl-nav-links">
             {NAV_LINKS.map(([label, href]) => (
-              <Link
+              <a
                 key={label}
                 href={href}
                 style={{
@@ -243,7 +243,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
                 }
               >
                 {label}
-              </Link>
+              </a>
             ))}
           </div>
 
