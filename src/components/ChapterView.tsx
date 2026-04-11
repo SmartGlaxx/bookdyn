@@ -57,8 +57,8 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   const chapters = book.outline?.chapters || [];
   const hasCharacters = book.outline?.characters && book.outline.characters.length > 0;
   const isVisualBook = VISUAL_BOOK_TYPES.includes(book.bookType);
-  const selectedTemplate = book.selectedTemplateId
-    ? BOOK_TEMPLATES.find(t => t.id === book.selectedTemplateId)
+  const selectedTemplate = book.controls?.selectedTemplateId
+    ? BOOK_TEMPLATES.find(t => t.id === book.controls.selectedTemplateId)
     : null;
   const selectedCharacter = selectedCharacterId ? book.outline?.characters?.find(c => c.id === selectedCharacterId) : null;
   const isMobile = useIsMobile();

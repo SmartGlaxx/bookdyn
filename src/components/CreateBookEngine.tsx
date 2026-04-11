@@ -137,9 +137,9 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
     // Auto-select first template for visual book types, clear for others
     if (VISUAL_BOOK_TYPES.includes(type)) {
       const firstTemplate = BOOK_TEMPLATES.find(t => t.bookType === type);
-      if (firstTemplate) updateForm("selectedTemplateId", firstTemplate.id);
+      if (firstTemplate) updateControls("selectedTemplateId", firstTemplate.id);
     } else {
-      updateForm("selectedTemplateId", undefined);
+      updateControls("selectedTemplateId", undefined);
     }
   };
 
@@ -305,8 +305,8 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                   {isVisualBookType && formData.bookType && (
                     <TemplateSelector
                       bookType={formData.bookType}
-                      selectedTemplateId={formData.selectedTemplateId}
-                      onSelect={(id) => updateForm("selectedTemplateId", id)}
+                      selectedTemplateId={formData.controls?.selectedTemplateId}
+                      onSelect={(id) => updateControls("selectedTemplateId", id)}
                     />
                   )}
                 </motion.div>
