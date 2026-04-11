@@ -134,7 +134,16 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
     if (formData.audience && allowed && !allowed.includes(formData.audience)) {
       updateForm("audience", "");
     }
+    // Auto-select first template for visual book types, clear for others
+    if (VISUAL_BOOK_TYPES.includes(type)) {
+      const firstTemplate = BOOK_TEMPLATES.find(t => t.bookType === type);
+      if (firstTemplate) updateForm("selectedTemplateId", firstTemplate.id);
+    } else {
+      updateForm("selectedTemplateId", undefined);
+    }
   };
+
+  const isVisualBookType = VISUAL_BOOK_TYPES.includes(formData.bookType || "novel");
 
   const filteredBookTypes = useMemo(() => {
     return Object.entries(BOOK_TYPE_INFO).filter(
