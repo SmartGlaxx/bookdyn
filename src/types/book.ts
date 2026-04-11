@@ -19,8 +19,148 @@ export type BookType =
   | "poetry"
   | "drama"
   | "reference"
-  | "illustrated-guide"
   | "custom";
+
+// ============= VISUAL BOOK TYPES & TEMPLATES =============
+export const VISUAL_BOOK_TYPES: BookType[] = ["children", "comic", "cookbook", "science-popular", "magazine"];
+
+export type ImageShape = "square" | "rectangle" | "circle" | "hexagon" | "triangle" | "rounded-rect";
+export type ImagePosition = "left" | "right" | "center" | "full-width";
+export type ImageSize = "small" | "medium" | "large";
+
+export interface ImageLayoutSlot {
+  shape: ImageShape;
+  position: ImagePosition;
+  size: ImageSize;
+  wrapText: boolean;
+}
+
+export interface BookTemplate {
+  id: string;
+  name: string;
+  description: string;
+  bookType: BookType;
+  layouts: ImageLayoutSlot[];
+  previewStyle: string; // CSS class hint for preview
+}
+
+export const BOOK_TEMPLATES: BookTemplate[] = [
+  // Children's Book
+  {
+    id: "children-storybook",
+    name: "Classic Storybook",
+    description: "Large centered illustrations with text below — warm and inviting",
+    bookType: "children",
+    layouts: [
+      { shape: "rounded-rect", position: "center", size: "large", wrapText: false },
+      { shape: "circle", position: "right", size: "medium", wrapText: true },
+    ],
+    previewStyle: "storybook",
+  },
+  {
+    id: "children-adventure",
+    name: "Adventure Spread",
+    description: "Dynamic layouts with side illustrations and wrapped text",
+    bookType: "children",
+    layouts: [
+      { shape: "rounded-rect", position: "left", size: "medium", wrapText: true },
+      { shape: "hexagon", position: "right", size: "small", wrapText: true },
+    ],
+    previewStyle: "adventure",
+  },
+  // Comic / Graphic Novel
+  {
+    id: "comic-panel",
+    name: "Panel Grid",
+    description: "Bold rectangular panels with speech-bubble style text areas",
+    bookType: "comic",
+    layouts: [
+      { shape: "rectangle", position: "full-width", size: "large", wrapText: false },
+      { shape: "square", position: "left", size: "medium", wrapText: true },
+    ],
+    previewStyle: "panel",
+  },
+  {
+    id: "comic-dynamic",
+    name: "Dynamic Action",
+    description: "Angled frames with overlapping text for energetic storytelling",
+    bookType: "comic",
+    layouts: [
+      { shape: "triangle", position: "right", size: "large", wrapText: true },
+      { shape: "rectangle", position: "left", size: "medium", wrapText: true },
+    ],
+    previewStyle: "action",
+  },
+  // Cookbook
+  {
+    id: "cookbook-classic",
+    name: "Recipe Card",
+    description: "Clean centered food photography with recipe text wrapped elegantly",
+    bookType: "cookbook",
+    layouts: [
+      { shape: "rounded-rect", position: "center", size: "large", wrapText: false },
+      { shape: "circle", position: "left", size: "small", wrapText: true },
+    ],
+    previewStyle: "recipe",
+  },
+  {
+    id: "cookbook-magazine",
+    name: "Gourmet Layout",
+    description: "Side-by-side photo and text with accent shapes for a premium feel",
+    bookType: "cookbook",
+    layouts: [
+      { shape: "square", position: "right", size: "large", wrapText: true },
+      { shape: "hexagon", position: "left", size: "small", wrapText: true },
+    ],
+    previewStyle: "gourmet",
+  },
+  // Science (Popular)
+  {
+    id: "science-infographic",
+    name: "Infographic Style",
+    description: "Diagrams and visuals integrated with explanatory text flow",
+    bookType: "science-popular",
+    layouts: [
+      { shape: "rectangle", position: "right", size: "medium", wrapText: true },
+      { shape: "circle", position: "left", size: "small", wrapText: true },
+    ],
+    previewStyle: "infographic",
+  },
+  {
+    id: "science-textbook",
+    name: "Visual Companion",
+    description: "Full-width figures with caption areas and flowing body text",
+    bookType: "science-popular",
+    layouts: [
+      { shape: "rounded-rect", position: "full-width", size: "large", wrapText: false },
+      { shape: "square", position: "right", size: "medium", wrapText: true },
+    ],
+    previewStyle: "companion",
+  },
+  // Magazine
+  {
+    id: "magazine-editorial",
+    name: "Editorial Spread",
+    description: "Bold hero images with column text wrapping — magazine-grade layout",
+    bookType: "magazine",
+    layouts: [
+      { shape: "rectangle", position: "full-width", size: "large", wrapText: false },
+      { shape: "rounded-rect", position: "left", size: "medium", wrapText: true },
+    ],
+    previewStyle: "editorial",
+  },
+  {
+    id: "magazine-feature",
+    name: "Feature Article",
+    description: "Mixed shapes with pull-quotes and wrapped imagery",
+    bookType: "magazine",
+    layouts: [
+      { shape: "hexagon", position: "right", size: "medium", wrapText: true },
+      { shape: "circle", position: "left", size: "small", wrapText: true },
+    ],
+    previewStyle: "feature",
+  },
+];
 
 export type BookStatus = "planning" | "ready_to_write" | "writing" | "completed" | "paused";
 export type POV = "first-person" | "second-person" | "third-person-limited" | "third-person-omniscient";
@@ -103,6 +243,9 @@ export interface BookControls {
   
   // Teaser
   teaserStyle: TeaserStyle;
+
+  // Template for visual book types
+  selectedTemplateId?: string;
 }
 
 export interface Subsection {
@@ -316,7 +459,7 @@ export const BOOK_TYPE_INFO: Record<BookType, { label: string; icon: string; des
   // Creative
   poetry: { label: "Poetry", icon: "✨", description: "Verse and poetic compositions", category: "creative" },
   drama: { label: "Drama / Screenplay", icon: "🎬", description: "Plays and film scripts", category: "creative" },
-  "illustrated-guide": { label: "Illustrated Guide", icon: "🖼️", description: "Visual-heavy instructional content", category: "creative" },
+  
   
   // Specialized
   magazine: { label: "Magazine / Periodical", icon: "📰", description: "Ongoing issues or episodic content", category: "specialized" },
@@ -442,7 +585,7 @@ export const BOOK_TYPE_AUDIENCES: Record<BookType, string[]> = {
   // Creative
   poetry: ["16-plus", "general-readers", "academics-undergraduate", "scholars-researchers"],
   drama: ["16-plus", "general-readers", "academics-undergraduate"],
-  "illustrated-guide": ["older-children-10-15", "16-plus", "general-readers"],
+  
 
   // Specialized
   magazine: ["16-plus", "general-readers", "professionals"],
@@ -494,6 +637,7 @@ export const GENRE_PRESETS: Record<BookCategory, string[]> = {
 // Helper to get default controls based on book type
 export const getDefaultControls = (bookType: BookType): BookControls => {
   const category = BOOK_TYPE_INFO[bookType].category;
+  const isVisual = VISUAL_BOOK_TYPES.includes(bookType);
   
   const baseControls: BookControls = {
     velocity: 5,
@@ -517,7 +661,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
     },
     automationLevel: "guided",
     depthLevel: "intermediate",
-    imageGeneration: false,
+    imageGeneration: isVisual,
     autoResume: true,
     divergenceAllowed: false,
     teaserStyle: "none",
@@ -533,6 +677,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
         entityComplexity: 6,
         perspectiveMultiplexing: 4,
         divergenceAllowed: true,
+        imageGeneration: isVisual,
       };
     case "educational":
       return {
@@ -541,6 +686,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
         scope: 7,
         depthLevel: "comprehensive",
         temporalContext: { era: "timeless", timelineStructure: "linear" },
+        imageGeneration: isVisual,
       };
     case "creative":
       return {
@@ -555,6 +701,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
         creativity: 2,
         scope: 8,
         automationLevel: "assisted",
+        imageGeneration: isVisual,
       };
     default:
       return baseControls;
