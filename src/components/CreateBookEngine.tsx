@@ -47,7 +47,10 @@ import {
   TimelineStructure,
   SpatialScope,
   TeaserStyle,
+  VISUAL_BOOK_TYPES,
+  BOOK_TEMPLATES,
 } from "@/types/book";
+import { TemplateSelector } from "@/components/TemplateSelector";
 
 interface CreateBookEngineProps {
   onClose: () => void;
