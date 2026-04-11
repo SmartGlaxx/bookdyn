@@ -635,6 +635,7 @@ export const GENRE_PRESETS: Record<BookCategory, string[]> = {
 // Helper to get default controls based on book type
 export const getDefaultControls = (bookType: BookType): BookControls => {
   const category = BOOK_TYPE_INFO[bookType].category;
+  const isVisual = VISUAL_BOOK_TYPES.includes(bookType);
   
   const baseControls: BookControls = {
     velocity: 5,
@@ -658,7 +659,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
     },
     automationLevel: "guided",
     depthLevel: "intermediate",
-    imageGeneration: false,
+    imageGeneration: isVisual,
     autoResume: true,
     divergenceAllowed: false,
     teaserStyle: "none",
@@ -674,6 +675,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
         entityComplexity: 6,
         perspectiveMultiplexing: 4,
         divergenceAllowed: true,
+        imageGeneration: isVisual,
       };
     case "educational":
       return {
@@ -682,6 +684,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
         scope: 7,
         depthLevel: "comprehensive",
         temporalContext: { era: "timeless", timelineStructure: "linear" },
+        imageGeneration: isVisual,
       };
     case "creative":
       return {
@@ -696,6 +699,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
         creativity: 2,
         scope: 8,
         automationLevel: "assisted",
+        imageGeneration: isVisual,
       };
     default:
       return baseControls;

@@ -198,7 +198,7 @@ idle → generating-outline → generating-characters → writing → summarizin
 **Business**: business, finance, accounting, economics
 **Technical**: technology, programming, ai-ml, engineering
 **Academic**: science-academic, science-popular, textbook, reference
-**Other**: magazine, illustrated-guide, custom
+**Other**: magazine, custom
 
 ### Each BookType defines:
 - label, description, icon
