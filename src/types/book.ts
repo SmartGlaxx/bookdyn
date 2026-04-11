@@ -583,7 +583,7 @@ export const BOOK_TYPE_AUDIENCES: Record<BookType, string[]> = {
   // Creative
   poetry: ["16-plus", "general-readers", "academics-undergraduate", "scholars-researchers"],
   drama: ["16-plus", "general-readers", "academics-undergraduate"],
-  "illustrated-guide": ["older-children-10-15", "16-plus", "general-readers"],
+  
 
   // Specialized
   magazine: ["16-plus", "general-readers", "professionals"],
