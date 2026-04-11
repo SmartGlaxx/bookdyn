@@ -419,6 +419,7 @@ export interface CreateBookInput {
   pov: POV;
   toneProfile: ToneProfile;
   controls: BookControls;
+  selectedTemplateId?: string;
 }
 
 // ============= BOOK TYPE CATEGORIES =============
