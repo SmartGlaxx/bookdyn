@@ -206,21 +206,102 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
         {sub.status === "writing" && <Loader2 className="w-5 h-5 text-primary shrink-0 animate-spin" />}
       </div>
 
-      {/* Image for children's books */}
-      {sub.imageUrl && isChildrensBook && (
+      {/* Image rendering with template-based layout */}
+      {sub.imageUrl && isVisualBook && selectedTemplate ? (
+        (() => {
+          const layoutIdx = subIdx % selectedTemplate.layouts.length;
+          const layout = selectedTemplate.layouts[layoutIdx];
+          if (layout.wrapText && sub.content) {
+            // Render image with text wrapped around it
+            return (
+              <div className="mb-4">
+                <TemplateImage imageUrl={sub.imageUrl} alt={`Illustration for ${sub.title}`} layout={layout}>
+                  <div className="prose prose-sm dark:prose-invert max-w-none overflow-hidden">
+                    {renderParagraphs(sub.content, chapterIdx, subIdx, sub)}
+                  </div>
+                </TemplateImage>
+                {sub.status === "completed" && onUpdateBook && (
+                  <div className="mt-2 border-t border-dashed border-muted pt-2">
+                    <GuidedWritingToolbar
+                      bookId={book.id}
+                      bookTitle={book.title}
+                      chapterTitle={chapters[chapterIdx]?.title || ""}
+                      subsectionTitle={sub.title}
+                      currentContent={sub.content}
+                      subsectionGoal={sub.goal}
+                      showContinue={automationLevel === "guided"}
+                      onContentAppend={(appendText) => handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + appendText)}
+                      onContentReplace={(newContent) => handleSubsectionContentUpdate(chapterIdx, subIdx, newContent)}
+                      onManualAdd={() => {
+                        setManualAddState({ chapterIdx, subIdx, type: "text" });
+                        setManualText("");
+                        setTimeout(() => manualTextareaRef.current?.focus(), 50);
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          }
+          // Non-wrapping layout: image above text
+          return (
+            <>
+              <TemplateImage imageUrl={sub.imageUrl} alt={`Illustration for ${sub.title}`} layout={layout} />
+              {sub.content ? (
+                <>
+                  <div className="prose prose-sm dark:prose-invert max-w-none pl-11 overflow-hidden">
+                    {renderParagraphs(sub.content, chapterIdx, subIdx, sub)}
+                  </div>
+                  {sub.status === "completed" && onUpdateBook && (
+                    <div className="pl-11 mt-2 border-t border-dashed border-muted pt-2">
+                      <GuidedWritingToolbar
+                        bookId={book.id}
+                        bookTitle={book.title}
+                        chapterTitle={chapters[chapterIdx]?.title || ""}
+                        subsectionTitle={sub.title}
+                        currentContent={sub.content}
+                        subsectionGoal={sub.goal}
+                        showContinue={automationLevel === "guided"}
+                        onContentAppend={(appendText) => handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + appendText)}
+                        onContentReplace={(newContent) => handleSubsectionContentUpdate(chapterIdx, subIdx, newContent)}
+                        onManualAdd={() => {
+                          setManualAddState({ chapterIdx, subIdx, type: "text" });
+                          setManualText("");
+                          setTimeout(() => manualTextareaRef.current?.focus(), 50);
+                        }}
+                      />
+                    </div>
+                  )}
+                </>
+              ) : sub.status === "writing" ? (
+                <div className="pl-11 flex items-center gap-2 text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Writing content...</span>
+                </div>
+              ) : (
+                <div className="pl-11 flex flex-col items-start gap-2">
+                  <p className="text-muted-foreground italic text-sm">No content yet for this section.</p>
+                  {isFirstEmpty && onGenerateChapter && (
+                    <Button variant="hero" size="sm" onClick={() => onGenerateChapter(chapterIdx)} className="gap-1.5">
+                      <Play className="w-3.5 h-3.5" />
+                      Generate Text
+                    </Button>
+                  )}
+                </div>
+              )}
+            </>
+          );
+        })()
+      ) : sub.imageUrl && isVisualBook ? (
         <motion.div className="mb-6 max-w-lg mx-auto" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
           <AspectRatio ratio={16 / 9}>
             <img src={sub.imageUrl} alt={`Illustration for ${sub.title}`} className="rounded-xl object-cover w-full h-full shadow-lg" />
           </AspectRatio>
         </motion.div>
-      )}
+      ) : null}
 
-      {/* Content with paragraph editing */}
-      {sub.content ? (
-        <>
-          <div className="prose prose-sm dark:prose-invert max-w-none pl-11 overflow-hidden">
-            {renderParagraphs(sub.content, chapterIdx, subIdx, sub)}
-          </div>
+      {/* Content with paragraph editing — only when NOT already rendered by template wrapping */}
+      {(!sub.imageUrl || !isVisualBook || !selectedTemplate || !selectedTemplate.layouts[subIdx % selectedTemplate.layouts.length]?.wrapText) && sub.content ? (
           {/* Writing toolbar - shows after content for completed subsections */}
           {sub.status === "completed" && onUpdateBook && (
             <div className="pl-11 mt-2 border-t border-dashed border-muted pt-2">
