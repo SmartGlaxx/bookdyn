@@ -409,7 +409,6 @@ export interface Book {
   entities: string[];
   concepts: string[];
   coverUrl?: string;
-  selectedTemplateId?: string;
 }
 
 export interface CreateBookInput {
@@ -422,7 +421,6 @@ export interface CreateBookInput {
   pov: POV;
   toneProfile: ToneProfile;
   controls: BookControls;
-  selectedTemplateId?: string;
 }
 
 // ============= BOOK TYPE CATEGORIES =============
