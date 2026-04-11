@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .clearfix::after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
 
 
 @layer base {
