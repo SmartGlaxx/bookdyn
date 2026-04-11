@@ -243,6 +243,9 @@ export interface BookControls {
   
   // Teaser
   teaserStyle: TeaserStyle;
+
+  // Template for visual book types
+  selectedTemplateId?: string;
 }
 
 export interface Subsection {
