@@ -301,103 +301,113 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
       ) : null}
 
       {/* Content with paragraph editing — only when NOT already rendered by template wrapping */}
-      {(!sub.imageUrl || !isVisualBook || !selectedTemplate || !selectedTemplate.layouts[subIdx % selectedTemplate.layouts.length]?.wrapText) && sub.content ? (
-          {/* Writing toolbar - shows after content for completed subsections */}
-          {sub.status === "completed" && onUpdateBook && (
-            <div className="pl-11 mt-2 border-t border-dashed border-muted pt-2">
-              <GuidedWritingToolbar
-                bookId={book.id}
-                bookTitle={book.title}
-                chapterTitle={chapters[chapterIdx]?.title || ""}
-                subsectionTitle={sub.title}
-                currentContent={sub.content}
-                subsectionGoal={sub.goal}
-                showContinue={automationLevel === "guided"}
-                onContentAppend={(appendText) => {
-                  handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + appendText);
-                }}
-                onContentReplace={(newContent) => {
-                  handleSubsectionContentUpdate(chapterIdx, subIdx, newContent);
-                }}
-                onManualAdd={() => {
-                  setManualAddState({ chapterIdx, subIdx, type: "text" });
-                  setManualText("");
-                  setTimeout(() => manualTextareaRef.current?.focus(), 50);
-                }}
-              />
-              {/* Manual write inline editor */}
-              {manualAddState?.chapterIdx === chapterIdx && manualAddState?.subIdx === subIdx && (
-                <div className="mt-2 space-y-2">
-                   <Textarea
-                     ref={manualTextareaRef}
-                     value={manualText}
-                     onChange={(e) => {
-                       if (e.target.value.length <= 5000) setManualText(e.target.value);
-                     }}
-                     placeholder="Write your paragraph here..."
-                     className="min-h-[80px] text-sm leading-relaxed"
-                     maxLength={5000}
-                     onKeyDown={(e) => {
-                       if (e.key === "Escape") { setManualAddState(null); setManualText(""); }
-                       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                         const cleaned = sanitizeText(manualText.trim().replace(/\n{3,}/g, "\n\n")).substring(0, 5000);
-                         if (cleaned) {
-                           handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + "\n\n" + cleaned);
-                           setManualAddState(null);
-                           setManualText("");
-                         }
-                       }
-                     }}
-                   />
-                   <div className="flex items-center justify-between">
-                     <div className="flex items-center gap-1.5">
-                       <Button variant="hero" size="sm" onClick={() => {
-                         const cleaned = sanitizeText(manualText.trim().replace(/\n{3,}/g, "\n\n")).substring(0, 5000);
-                         if (cleaned) {
-                           handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + "\n\n" + cleaned);
-                           setManualAddState(null);
-                           setManualText("");
-                         }
-                       }}>
-                         <Check className="w-3.5 h-3.5" />
-                         Add
-                       </Button>
-                       <Button variant="ghost" size="sm" onClick={() => { setManualAddState(null); setManualText(""); }}>
-                         <X className="w-3.5 h-3.5" />
-                         Cancel
-                       </Button>
-                       <span className="text-[11px] text-muted-foreground ml-2">⌘+Enter to add · Esc to cancel</span>
-                     </div>
-                     <span className={cn("text-[11px]", manualText.length > 4500 ? "text-destructive" : "text-muted-foreground")}>
-                       {manualText.length}/5,000
-                     </span>
-                   </div>
+      {(() => {
+        const isTemplateWrapped = sub.imageUrl && isVisualBook && selectedTemplate && selectedTemplate.layouts[subIdx % selectedTemplate.layouts.length]?.wrapText;
+        if (isTemplateWrapped) return null; // Already rendered above
+
+        if (sub.content) {
+          return (
+            <>
+              <div className="prose prose-sm dark:prose-invert max-w-none pl-11 overflow-hidden">
+                {renderParagraphs(sub.content, chapterIdx, subIdx, sub)}
+              </div>
+              {sub.status === "completed" && onUpdateBook && (
+                <div className="pl-11 mt-2 border-t border-dashed border-muted pt-2">
+                  <GuidedWritingToolbar
+                    bookId={book.id}
+                    bookTitle={book.title}
+                    chapterTitle={chapters[chapterIdx]?.title || ""}
+                    subsectionTitle={sub.title}
+                    currentContent={sub.content}
+                    subsectionGoal={sub.goal}
+                    showContinue={automationLevel === "guided"}
+                    onContentAppend={(appendText) => {
+                      handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + appendText);
+                    }}
+                    onContentReplace={(newContent) => {
+                      handleSubsectionContentUpdate(chapterIdx, subIdx, newContent);
+                    }}
+                    onManualAdd={() => {
+                      setManualAddState({ chapterIdx, subIdx, type: "text" });
+                      setManualText("");
+                      setTimeout(() => manualTextareaRef.current?.focus(), 50);
+                    }}
+                  />
+                  {manualAddState?.chapterIdx === chapterIdx && manualAddState?.subIdx === subIdx && (
+                    <div className="mt-2 space-y-2">
+                       <Textarea
+                         ref={manualTextareaRef}
+                         value={manualText}
+                         onChange={(e) => {
+                           if (e.target.value.length <= 5000) setManualText(e.target.value);
+                         }}
+                         placeholder="Write your paragraph here..."
+                         className="min-h-[80px] text-sm leading-relaxed"
+                         maxLength={5000}
+                         onKeyDown={(e) => {
+                           if (e.key === "Escape") { setManualAddState(null); setManualText(""); }
+                           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                             const cleaned = sanitizeText(manualText.trim().replace(/\n{3,}/g, "\n\n")).substring(0, 5000);
+                             if (cleaned) {
+                               handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + "\n\n" + cleaned);
+                               setManualAddState(null);
+                               setManualText("");
+                             }
+                           }
+                         }}
+                       />
+                       <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-1.5">
+                           <Button variant="hero" size="sm" onClick={() => {
+                             const cleaned = sanitizeText(manualText.trim().replace(/\n{3,}/g, "\n\n")).substring(0, 5000);
+                             if (cleaned) {
+                               handleSubsectionContentUpdate(chapterIdx, subIdx, sub.content + "\n\n" + cleaned);
+                               setManualAddState(null);
+                               setManualText("");
+                             }
+                           }}>
+                             <Check className="w-3.5 h-3.5" />
+                             Add
+                           </Button>
+                           <Button variant="ghost" size="sm" onClick={() => { setManualAddState(null); setManualText(""); }}>
+                             <X className="w-3.5 h-3.5" />
+                             Cancel
+                           </Button>
+                           <span className="text-[11px] text-muted-foreground ml-2">⌘+Enter to add · Esc to cancel</span>
+                         </div>
+                         <span className={cn("text-[11px]", manualText.length > 4500 ? "text-destructive" : "text-muted-foreground")}>
+                           {manualText.length}/5,000
+                         </span>
+                       </div>
+                    </div>
+                  )}
                 </div>
               )}
+            </>
+          );
+        }
+        
+        if (sub.status === "writing") {
+          return (
+            <div className="pl-11 flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm">Writing content...</span>
             </div>
-          )}
-        </>
-      ) : sub.status === "writing" ? (
-        <div className="pl-11 flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span className="text-sm">Writing content...</span>
-        </div>
-      ) : (
-        <div className="pl-11 flex flex-col items-start gap-2">
-          <p className="text-muted-foreground italic text-sm">No content yet for this section.</p>
-          {isFirstEmpty && onGenerateChapter && (
-            <Button
-              variant="hero"
-              size="sm"
-              onClick={() => onGenerateChapter(chapterIdx)}
-              className="gap-1.5"
-            >
-              <Play className="w-3.5 h-3.5" />
-              Generate Text
-            </Button>
-          )}
-        </div>
-      )}
+          );
+        }
+        
+        return (
+          <div className="pl-11 flex flex-col items-start gap-2">
+            <p className="text-muted-foreground italic text-sm">No content yet for this section.</p>
+            {isFirstEmpty && onGenerateChapter && (
+              <Button variant="hero" size="sm" onClick={() => onGenerateChapter(chapterIdx)} className="gap-1.5">
+                <Play className="w-3.5 h-3.5" />
+                Generate Text
+              </Button>
+            )}
+          </div>
+        );
+      })()}
 
       {subIdx < (chapters[chapterIdx]?.subsections.length || 0) - 1 && <Separator className="mt-8" />}
     </div>
