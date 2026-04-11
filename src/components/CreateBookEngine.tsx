@@ -300,6 +300,15 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                       );
                     })}
                   </div>
+
+                  {/* Template selection for visual book types */}
+                  {isVisualBookType && formData.bookType && (
+                    <TemplateSelector
+                      bookType={formData.bookType}
+                      selectedTemplateId={formData.selectedTemplateId}
+                      onSelect={(id) => updateForm("selectedTemplateId", id)}
+                    />
+                  )}
                 </motion.div>
               )}
 
