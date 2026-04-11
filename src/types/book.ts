@@ -457,7 +457,7 @@ export const BOOK_TYPE_INFO: Record<BookType, { label: string; icon: string; des
   // Creative
   poetry: { label: "Poetry", icon: "✨", description: "Verse and poetic compositions", category: "creative" },
   drama: { label: "Drama / Screenplay", icon: "🎬", description: "Plays and film scripts", category: "creative" },
-  "illustrated-guide": { label: "Illustrated Guide", icon: "🖼️", description: "Visual-heavy instructional content", category: "creative" },
+  
   
   // Specialized
   magazine: { label: "Magazine / Periodical", icon: "📰", description: "Ongoing issues or episodic content", category: "specialized" },
