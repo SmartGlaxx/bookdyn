@@ -78,9 +78,9 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
         >
           {/* Header with email */}
           <div className="px-6 pt-6 pb-0">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <User className="w-4 h-4" />
-              <span className="truncate">{user?.email}</span>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+              <User className="w-4 h-4 flex-shrink-0" />
+              <span className="truncate block overflow-hidden text-ellipsis">{user?.email}</span>
             </div>
           </div>
 
@@ -165,36 +165,36 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
             <div className="px-6">
               <button
                 onClick={handleManageBilling}
-                className="w-full flex items-center gap-3 text-left text-foreground transition-colors"
+                className="w-full flex items-center gap-3 text-left text-foreground transition-colors md:text-[15px]"
                 style={{ fontSize: 18, fontWeight: 600, padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
               >
-                <Coins className="w-5 h-5" />
+                <Coins className="w-5 h-5 md:w-4 md:h-4" />
                 Billing & Credits
               </button>
               <button
                 onClick={() => { setFeedbackOpen(true); setOpen(false); }}
-                className="w-full flex items-center gap-3 text-left text-foreground transition-colors"
+                className="w-full flex items-center gap-3 text-left text-foreground transition-colors md:text-[15px]"
                 style={{ fontSize: 18, fontWeight: 600, padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
               >
-                <MessageSquare className="w-5 h-5" />
+                <MessageSquare className="w-5 h-5 md:w-4 md:h-4" />
                 Give Feedback
               </button>
               {user?.email === "mailsmartcodes@gmail.com" && (
                 <button
                   onClick={() => { navigate("/admin/feedback"); setOpen(false); }}
-                  className="w-full flex items-center gap-3 text-left text-foreground transition-colors"
+                  className="w-full flex items-center gap-3 text-left text-foreground transition-colors md:text-[15px]"
                   style={{ fontSize: 18, fontWeight: 600, padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
                 >
-                  <MessageSquare className="w-5 h-5" />
+                  <MessageSquare className="w-5 h-5 md:w-4 md:h-4" />
                   Feedback Dashboard
                 </button>
               )}
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-3 text-left text-destructive transition-colors"
+                className="w-full flex items-center gap-3 text-left text-destructive transition-colors md:text-[15px]"
                 style={{ fontSize: 18, fontWeight: 600, padding: "14px 0" }}
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-5 h-5 md:w-4 md:h-4" />
                 Sign out
               </button>
             </div>

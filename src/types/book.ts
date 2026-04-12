@@ -238,6 +238,7 @@ export interface BookControls {
   
   // Toggles
   imageGeneration: boolean;
+  imageFrequency?: number; // 1-10, controls how often images appear
   autoResume: boolean;
   divergenceAllowed: boolean;
   

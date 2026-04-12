@@ -702,6 +702,16 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                       checked={formData.controls?.imageGeneration}
                       onChange={(v) => updateControls("imageGeneration", v)}
                     />
+                    {formData.controls?.imageGeneration && (
+                      <CompactSlider
+                        label="Image Frequency"
+                        tooltip="How often images appear — lower means fewer images, higher means more"
+                        value={formData.controls?.imageFrequency || 5}
+                        onChange={(v) => updateControls("imageFrequency", v)}
+                        left="Sparse"
+                        right="Frequent"
+                      />
+                    )}
                     <ToggleRow
                       label="Auto-Resume"
                       tooltip="Continue generation after interruptions"
