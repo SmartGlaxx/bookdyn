@@ -46,7 +46,7 @@ const BookSettings = ({ book, onBack }: BookSettingsProps) => {
     >
       {/* Header */}
       <header className="sticky top-0 z-40 glass border-b">
-        <div className="container mx-auto px-4 py-4" style={{ maxWidth: "calc(100vw - 2rem)" }}>
+        <div className="container mx-auto px-4 py-4" style={{ maxWidth: "calc(100vw - 16rem)" }}>
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={onBack}>
               <ArrowLeft className="w-5 h-5" />
@@ -59,7 +59,7 @@ const BookSettings = ({ book, onBack }: BookSettingsProps) => {
         </div>
       </header>
 
-      <main className="flex-1 container mx-auto px-4 py-6" style={{ maxWidth: "calc(100vw - 2rem)" }}>
+      <main className="flex-1 container mx-auto px-4 py-6" style={{ maxWidth: "calc(100vw - 16rem)" }}>
         <ScrollArea className="h-[calc(100vh-120px)]">
           <div className="space-y-6 pr-4">
             {/* Book Type Section */}
