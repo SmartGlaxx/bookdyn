@@ -240,10 +240,15 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
             <div className="flex items-center gap-2 shrink-0">
               {/* Desktop action buttons */}
               {!hasOutline && canStart && (
-                <Button variant="hero" size="sm" onClick={generateOutline} className="hidden sm:inline-flex">
-                  <FileText className="w-4 h-4" />
-                  Generate Outline
-                </Button>
+                <>
+                  <Button variant="hero" size="sm" onClick={generateOutline} className="hidden sm:inline-flex">
+                    <FileText className="w-4 h-4" />
+                    Generate Outline
+                  </Button>
+                  <Button variant="hero" size="icon" onClick={generateOutline} className="sm:hidden">
+                    <FileText className="w-5 h-5" />
+                  </Button>
+                </>
               )}
 
               {canGenerateChapter && nextIncompleteChapter >= 0 && !isAwaitingApproval && (
@@ -392,7 +397,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
         </div>
       </header>
 
-      <main className="flex-1 container max-w-7xl mx-auto px-0 md:px-4 pt-3 pb-4 md:pb-6">
+      <main className="flex-1 container max-w-7xl mx-auto px-0 md:px-4" style={{ paddingTop: "0.5rem", paddingBottom: "0.5rem" }}>
         <AnimatePresence>
           {showSearch && hasOutline && (
             <div className="mb-3 px-4 md:px-0">

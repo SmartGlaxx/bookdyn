@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Book, Subsection, Chapter } from "@/types/book";
 import { GenerationState } from "@/hooks/useBookGeneration";
+import { TypewriterText } from "@/components/TypewriterText";
 import { PenTool, Image as ImageIcon } from "lucide-react";
 
 interface LiveContentViewProps {
@@ -69,7 +70,7 @@ export function LiveContentView({ book, generationState, viewMode }: LiveContent
                         animate={{ opacity: 1 }}
                         className="whitespace-pre-wrap leading-relaxed"
                       >
-                        {streamingContent}
+                        <TypewriterText text={streamingContent || ""} speed={80} />
                         {isWriting && (
                           <motion.span
                             className="inline-block w-2 h-4 bg-primary ml-1"
