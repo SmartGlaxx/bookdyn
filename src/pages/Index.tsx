@@ -48,42 +48,58 @@ const Index = () => {
   };
 
   // Filter function
-  const filterBooks = useCallback((list: Book[]) => {
-    return list.filter(b => {
-      if (filterCategory !== "all") {
-        const info = BOOK_TYPE_INFO[b.bookType];
-        if (info?.category !== filterCategory) return false;
-      }
-      if (filterType !== "all" && b.bookType !== filterType) return false;
-      if (filterCover === "with-cover" && !b.coverUrl) return false;
-      if (filterCover === "without-cover" && b.coverUrl) return false;
-      return true;
-    });
-  }, [filterCategory, filterType, filterCover]);
+  const filterBooks = useCallback(
+    (list: Book[]) => {
+      return list.filter((b) => {
+        if (filterCategory !== "all") {
+          const info = BOOK_TYPE_INFO[b.bookType];
+          if (info?.category !== filterCategory) return false;
+        }
+        if (filterType !== "all" && b.bookType !== filterType) return false;
+        if (filterCover === "with-cover" && !b.coverUrl) return false;
+        if (filterCover === "without-cover" && b.coverUrl) return false;
+        return true;
+      });
+    },
+    [filterCategory, filterType, filterCover],
+  );
 
   // Sort function
-  const sortBooks = useCallback((list: Book[]) => {
-    return [...list].sort((a, b) => {
-      switch (sortBy) {
-        case "bookType":
-          return a.bookType.localeCompare(b.bookType) || new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-        case "dateCompleted":
-          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-        default:
-          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-      }
-    });
-  }, [sortBy]);
+  const sortBooks = useCallback(
+    (list: Book[]) => {
+      return [...list].sort((a, b) => {
+        switch (sortBy) {
+          case "bookType":
+            return (
+              a.bookType.localeCompare(b.bookType) || new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+            );
+          case "dateCompleted":
+            return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+          default:
+            return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+        }
+      });
+    },
+    [sortBy],
+  );
 
   // Reset type filter when category changes
   useEffect(() => {
     setFilterType("all");
   }, [filterCategory]);
 
-  const activeFilterCount = [filterCategory !== "all", filterType !== "all", filterCover !== "all"].filter(Boolean).length;
+  const activeFilterCount = [filterCategory !== "all", filterType !== "all", filterCover !== "all"].filter(
+    Boolean,
+  ).length;
 
-  const wipBooks = useMemo(() => sortBooks(filterBooks(books.filter(b => b.status !== "completed"))), [books, sortBooks, filterBooks]);
-  const completedBooks = useMemo(() => sortBooks(filterBooks(books.filter(b => b.status === "completed"))), [books, sortBooks, filterBooks]);
+  const wipBooks = useMemo(
+    () => sortBooks(filterBooks(books.filter((b) => b.status !== "completed"))),
+    [books, sortBooks, filterBooks],
+  );
+  const completedBooks = useMemo(
+    () => sortBooks(filterBooks(books.filter((b) => b.status === "completed"))),
+    [books, sortBooks, filterBooks],
+  );
 
   const visibleWip = wipBooks.slice(0, wipVisible);
   const visibleCompleted = completedBooks.slice(0, completedVisible);
@@ -107,17 +123,20 @@ const Index = () => {
   // Infinite scroll
   useEffect(() => {
     observerRef.current?.disconnect();
-    observerRef.current = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        if (entry.target === sentinelWipRef.current && wipVisible < wipBooks.length) {
-          setWipVisible(v => Math.min(v + BOOKS_PER_PAGE, wipBooks.length));
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          if (entry.target === sentinelWipRef.current && wipVisible < wipBooks.length) {
+            setWipVisible((v) => Math.min(v + BOOKS_PER_PAGE, wipBooks.length));
+          }
+          if (entry.target === sentinelCompletedRef.current && completedVisible < completedBooks.length) {
+            setCompletedVisible((v) => Math.min(v + BOOKS_PER_PAGE, completedBooks.length));
+          }
         }
-        if (entry.target === sentinelCompletedRef.current && completedVisible < completedBooks.length) {
-          setCompletedVisible(v => Math.min(v + BOOKS_PER_PAGE, completedBooks.length));
-        }
-      }
-    }, { rootMargin: "200px" });
+      },
+      { rootMargin: "200px" },
+    );
 
     if (sentinelWipRef.current) observerRef.current.observe(sentinelWipRef.current);
     if (sentinelCompletedRef.current) observerRef.current.observe(sentinelCompletedRef.current);
@@ -159,9 +178,10 @@ const Index = () => {
     }
   };
 
-  const availableTypes = filterCategory === "all"
-    ? Object.entries(BOOK_TYPE_INFO)
-    : Object.entries(BOOK_TYPE_INFO).filter(([, info]) => info.category === filterCategory);
+  const availableTypes =
+    filterCategory === "all"
+      ? Object.entries(BOOK_TYPE_INFO)
+      : Object.entries(BOOK_TYPE_INFO).filter(([, info]) => info.category === filterCategory);
 
   const clearFilters = () => {
     setFilterCategory("all");
@@ -186,7 +206,9 @@ const Index = () => {
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
                 {Object.entries(BOOK_CATEGORIES).map(([key, cat]) => (
-                  <SelectItem key={key} value={key}>{cat.label}</SelectItem>
+                  <SelectItem key={key} value={key}>
+                    {cat.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -198,7 +220,9 @@ const Index = () => {
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
                 {availableTypes.map(([key, info]) => (
-                  <SelectItem key={key} value={key}>{info.icon} {info.label}</SelectItem>
+                  <SelectItem key={key} value={key}>
+                    {info.icon} {info.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -229,7 +253,7 @@ const Index = () => {
   const toolbar = (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-serif font-bold">Your Library</h2>
+        <h3 className="text-3xl font-serif font-bold">Your Library</h3>
         <div className="flex items-center gap-2">
           <Button
             variant={showFilters ? "secondary" : "outline"}
@@ -279,7 +303,14 @@ const Index = () => {
             animate={{ opacity: 1 }}
           >
             {visibleWip.map((book, index) => (
-              <BookCard key={book.id} book={book} index={index} onSelect={handleSelectBook} onDelete={handleDeleteBook} onUpdateCover={handleUpdateCover} />
+              <BookCard
+                key={book.id}
+                book={book}
+                index={index}
+                onSelect={handleSelectBook}
+                onDelete={handleDeleteBook}
+                onUpdateCover={handleUpdateCover}
+              />
             ))}
           </motion.div>
           {wipVisible < wipBooks.length && <div ref={sentinelWipRef} className="h-4" />}
@@ -301,7 +332,14 @@ const Index = () => {
             animate={{ opacity: 1 }}
           >
             {visibleCompleted.map((book, index) => (
-              <BookCard key={book.id} book={book} index={index} onSelect={handleSelectBook} onDelete={handleDeleteBook} onUpdateCover={handleUpdateCover} />
+              <BookCard
+                key={book.id}
+                book={book}
+                index={index}
+                onSelect={handleSelectBook}
+                onDelete={handleDeleteBook}
+                onUpdateCover={handleUpdateCover}
+              />
             ))}
           </motion.div>
           {completedVisible < completedBooks.length && <div ref={sentinelCompletedRef} className="h-4" />}
@@ -345,29 +383,32 @@ const Index = () => {
                   onClick={() => topBook && handleSelectBook(topBook)}
                 >
                   {/* Background cards (oldest to newest, back to front) */}
-                  {stackBooks.slice(1).reverse().map((book, i) => {
-                    const stackIndex = stackBooks.length - 1 - i; // position from back
-                    const angle = stackIndex * 4; // 4 degrees per card
-                    return (
-                      <div
-                        key={book.id}
-                        className="absolute inset-0 rounded-[2px_6px_6px_2px] overflow-hidden bg-card border border-border"
-                        style={{
-                          transformOrigin: "bottom left",
-                          transform: `rotate(${angle}deg)`,
-                          zIndex: i,
-                          boxShadow: "-2px 2px 6px rgba(0,0,0,0.15)",
-                        }}
-                      >
-                        {book.coverUrl ? (
-                          <img src={book.coverUrl} alt="" className="w-full h-full object-cover opacity-80" />
-                        ) : (
-                          <div className="w-full h-full bg-muted/60" />
-                        )}
-                        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-black/20" />
-                      </div>
-                    );
-                  })}
+                  {stackBooks
+                    .slice(1)
+                    .reverse()
+                    .map((book, i) => {
+                      const stackIndex = stackBooks.length - 1 - i; // position from back
+                      const angle = stackIndex * 4; // 4 degrees per card
+                      return (
+                        <div
+                          key={book.id}
+                          className="absolute inset-0 rounded-[2px_6px_6px_2px] overflow-hidden bg-card border border-border"
+                          style={{
+                            transformOrigin: "bottom left",
+                            transform: `rotate(${angle}deg)`,
+                            zIndex: i,
+                            boxShadow: "-2px 2px 6px rgba(0,0,0,0.15)",
+                          }}
+                        >
+                          {book.coverUrl ? (
+                            <img src={book.coverUrl} alt="" className="w-full h-full object-cover opacity-80" />
+                          ) : (
+                            <div className="w-full h-full bg-muted/60" />
+                          )}
+                          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-black/20" />
+                        </div>
+                      );
+                    })}
                   {/* Top book (latest) */}
                   {topBook && (
                     <div className="relative z-10 w-full h-full">
@@ -382,9 +423,19 @@ const Index = () => {
                   )}
                 </div>
                 {/* Remaining books shown individually if more than 5 */}
-                {typeBooks.length > 5 && typeBooks.slice(5).map((book, index) => (
-                  <BookCard key={book.id} book={book} index={index + 1} onSelect={handleSelectBook} onDelete={handleDeleteBook} onUpdateCover={handleUpdateCover} />
-                ))}
+                {typeBooks.length > 5 &&
+                  typeBooks
+                    .slice(5)
+                    .map((book, index) => (
+                      <BookCard
+                        key={book.id}
+                        book={book}
+                        index={index + 1}
+                        onSelect={handleSelectBook}
+                        onDelete={handleDeleteBook}
+                        onUpdateCover={handleUpdateCover}
+                      />
+                    ))}
               </motion.div>
             </div>
           );
@@ -393,7 +444,9 @@ const Index = () => {
         <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
           <Filter className="w-10 h-10 text-muted-foreground/50" />
           <p className="text-muted-foreground">No books match your filters</p>
-          <Button variant="outline" size="sm" onClick={clearFilters}>Clear Filters</Button>
+          <Button variant="outline" size="sm" onClick={clearFilters}>
+            Clear Filters
+          </Button>
         </div>
       )}
     </div>
@@ -430,7 +483,8 @@ const Index = () => {
               <div className="space-y-2 max-w-md">
                 <h3 className="text-2xl font-serif font-bold">Create Your First Book</h3>
                 <p className="text-muted-foreground">
-                  Transform your ideas into a complete, professionally structured book with AI-powered co-pilot generation.
+                  Transform your ideas into a complete, professionally structured book with AI-powered co-pilot
+                  generation.
                 </p>
               </div>
               <Button variant="hero" size="lg" onClick={() => setShowEngine(true)} className="group">
@@ -453,22 +507,22 @@ const Index = () => {
                   <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
                     <Filter className="w-10 h-10 text-muted-foreground/50" />
                     <p className="text-muted-foreground">No books match your filters</p>
-                    <Button variant="outline" size="sm" onClick={clearFilters}>Clear Filters</Button>
+                    <Button variant="outline" size="sm" onClick={clearFilters}>
+                      Clear Filters
+                    </Button>
                   </div>
-                ) : gridView}
+                ) : (
+                  gridView
+                )}
               </TabsContent>
-              <TabsContent value="shelves">
-                {shelvesView}
-              </TabsContent>
+              <TabsContent value="shelves">{shelvesView}</TabsContent>
             </Tabs>
           </div>
         )}
       </main>
 
       <AnimatePresence>
-        {showEngine && (
-          <CreateBookEngine onClose={() => setShowEngine(false)} onCreate={handleCreateBook} />
-        )}
+        {showEngine && <CreateBookEngine onClose={() => setShowEngine(false)} onCreate={handleCreateBook} />}
       </AnimatePresence>
     </div>
   );
