@@ -468,7 +468,7 @@ const Index = () => {
           <div className="container max-w-6xl mx-auto px-4 py-8">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-3xl font-serif font-bold">Your Library</h2>
+                <h3 className="text-3xl font-serif font-bold">Your Library</h3>
                 <p className="text-muted-foreground mt-1">No books yet</p>
               </div>
             </div>
