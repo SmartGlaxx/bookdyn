@@ -138,6 +138,10 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
     if (VISUAL_BOOK_TYPES.includes(type)) {
       const firstTemplate = BOOK_TEMPLATES.find(t => t.bookType === type);
       if (firstTemplate) updateControls("selectedTemplateId", firstTemplate.id);
+      // Smooth scroll to template section after render
+      setTimeout(() => {
+        document.getElementById("template-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 150);
     } else {
       updateControls("selectedTemplateId", undefined);
     }
@@ -303,11 +307,13 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
                   {/* Template selection for visual book types */}
                   {isVisualBookType && formData.bookType && (
-                    <TemplateSelector
-                      bookType={formData.bookType}
-                      selectedTemplateId={formData.controls?.selectedTemplateId}
-                      onSelect={(id) => updateControls("selectedTemplateId", id)}
-                    />
+                    <div id="template-section">
+                      <TemplateSelector
+                        bookType={formData.bookType}
+                        selectedTemplateId={formData.controls?.selectedTemplateId}
+                        onSelect={(id) => updateControls("selectedTemplateId", id)}
+                      />
+                    </div>
                   )}
                 </motion.div>
               )}

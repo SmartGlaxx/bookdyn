@@ -70,7 +70,7 @@ export function LiveContentView({ book, generationState, viewMode }: LiveContent
                         animate={{ opacity: 1 }}
                         className="whitespace-pre-wrap leading-relaxed"
                       >
-                        <TypewriterText text={streamingContent || ""} speed={80} />
+                        <TypewriterText text={streamingContent || ""} intervalMs={60} />
                         {isWriting && (
                           <motion.span
                             className="inline-block w-2 h-4 bg-primary ml-1"
