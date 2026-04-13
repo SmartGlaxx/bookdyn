@@ -165,36 +165,36 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
             <div className="px-6">
               <button
                 onClick={handleManageBilling}
-                className="w-full flex items-center gap-3 text-left text-xl md:text-lg text-foreground font-semibold transition-colors"
+                className="w-full flex items-center gap-3 text-left text-sm text-foreground font-medium transition-colors"
                 style={{ padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
               >
-                <Coins className="w-5 h-5 md:w-4 md:h-4" />
+                <Coins className="w-4 h-4" />
                 Billing & Credits
               </button>
               <button
                 onClick={() => { setFeedbackOpen(true); setOpen(false); }}
-                className="w-full flex items-center gap-3 text-left text-xl md:text-lg text-foreground font-semibold transition-colors"
+                className="w-full flex items-center gap-3 text-left text-sm text-foreground font-medium transition-colors"
                 style={{ padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
               >
-                <MessageSquare className="w-5 h-5 md:w-4 md:h-4" />
+                <MessageSquare className="w-4 h-4" />
                 Give Feedback
               </button>
               {user?.email === "mailsmartcodes@gmail.com" && (
                 <button
                   onClick={() => { navigate("/admin/feedback"); setOpen(false); }}
-                  className="w-full flex items-center gap-3 text-left text-xl md:text-lg text-foreground font-semibold transition-colors"
+                  className="w-full flex items-center gap-3 text-left text-sm text-foreground font-medium transition-colors"
                   style={{ padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
                 >
-                  <MessageSquare className="w-5 h-5 md:w-4 md:h-4" />
+                  <MessageSquare className="w-4 h-4" />
                   Feedback Dashboard
                 </button>
               )}
               <button
                 onClick={handleSignOut}
-                className="w-full flex items-center gap-3 text-left text-xl md:text-lg text-destructive font-semibold transition-colors"
+                className="w-full flex items-center gap-3 text-left text-sm text-destructive font-medium transition-colors"
                 style={{ padding: "14px 0" }}
               >
-                <LogOut className="w-5 h-5 md:w-4 md:h-4" />
+                <LogOut className="w-4 h-4" />
                 Sign out
               </button>
             </div>

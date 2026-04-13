@@ -417,7 +417,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   // Mobile view - accordion style
   if (isMobile) {
     return (
-      <ScrollArea className="h-[calc(100vh-theme(spacing.32))] w-full overflow-x-hidden">
+      <ScrollArea className="w-full overflow-x-hidden" style={{ height: "calc(100vh - 64px - 1rem)" }}>
         <div className="py-2 space-y-2">
           {chapters.map((chapter, idx) => {
             const StatusIcon = statusConfig[chapter.status].icon;
@@ -520,7 +520,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   };
 
   return (
-    <div className="h-[calc(100vh-theme(spacing.32))] flex gap-4 min-h-0 py-3">
+    <div className="flex gap-4 min-h-0" style={{ height: "calc(100vh - 64px - 1rem)" }}>
       {/* Sidebar */}
       <Card className="w-64 shrink-0 flex flex-col min-h-0">
         <div className="p-4 border-b shrink-0">
