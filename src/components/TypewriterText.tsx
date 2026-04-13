@@ -1,94 +1,106 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 interface TypewriterTextProps {
   text: string;
-  /** Words per second reveal speed */
-  speed?: number;
+  /** Milliseconds between each word (default 60ms ≈ ~1000 words/min) */
+  intervalMs?: number;
   onComplete?: () => void;
   children?: (visibleText: string) => React.ReactNode;
 }
 
 /**
- * Reveals text word-by-word at a configurable speed.
- * Tracks the last known length so only NEW text gets animated
- * (i.e. if the component re-renders with more text appended, only the delta animates).
+ * Streams text word-by-word using setInterval.
+ * Splits text into words, appends one word + space per tick.
+ * Clears interval when all words are rendered.
+ * Tracks previous text length so only NEW appended content animates.
  */
-export function TypewriterText({ text, speed = 60, children }: TypewriterTextProps) {
-  const words = text.split(/(\s+)/); // keep whitespace tokens
-  const [visibleCount, setVisibleCount] = useState(words.length); // start fully visible for already-present text
-  const prevLengthRef = useRef(text.length);
-  const animatingRef = useRef(false);
+export function TypewriterText({ text, intervalMs = 60, children }: TypewriterTextProps) {
+  const [displayText, setDisplayText] = useState("");
+  const prevTextRef = useRef("");
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const currentIndexRef = useRef(0);
+  const wordsRef = useRef<string[]>([]);
+  const baseTextRef = useRef("");
+
+  const clearTimer = useCallback(() => {
+    if (intervalRef.current !== null) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
-    // If text grew (new content appended), animate the new portion
-    if (text.length > prevLengthRef.current && !animatingRef.current) {
-      const prevText = text.slice(0, prevLengthRef.current);
-      const prevWords = prevText.split(/(\s+)/).length;
-      const allWords = text.split(/(\s+)/);
-      
-      animatingRef.current = true;
-      setVisibleCount(prevWords);
-      
-      const remaining = allWords.length - prevWords;
-      if (remaining <= 0) {
-        animatingRef.current = false;
-        prevLengthRef.current = text.length;
-        setVisibleCount(allWords.length);
+    if (text === prevTextRef.current) return;
+
+    const prevLen = prevTextRef.current.length;
+    prevTextRef.current = text;
+
+    // Text grew — animate the delta
+    if (text.length > prevLen) {
+      const alreadyShown = text.slice(0, prevLen);
+      const newPart = text.slice(prevLen);
+      const newWords = newPart.split(/\s+/).filter(Boolean);
+
+      if (newWords.length === 0) {
+        setDisplayText(text);
         return;
       }
 
-      const interval = 1000 / speed;
-      let current = prevWords;
-      
-      const timer = setInterval(() => {
-        current += 1;
-        setVisibleCount(current);
-        if (current >= allWords.length) {
-          clearInterval(timer);
-          animatingRef.current = false;
-          prevLengthRef.current = text.length;
+      clearTimer();
+      baseTextRef.current = alreadyShown;
+      wordsRef.current = newWords;
+      currentIndexRef.current = 0;
+      setDisplayText(alreadyShown);
+
+      intervalRef.current = setInterval(() => {
+        currentIndexRef.current += 1;
+        const slice = wordsRef.current.slice(0, currentIndexRef.current);
+        setDisplayText(baseTextRef.current + slice.join(" ") + " ");
+
+        if (currentIndexRef.current >= wordsRef.current.length) {
+          clearTimer();
+          setDisplayText(text); // ensure exact final text
         }
-      }, interval);
+      }, intervalMs);
+    } else if (prevLen === 0 && text.length > 0) {
+      // First render — animate from scratch
+      const words = text.split(/\s+/).filter(Boolean);
+      if (words.length === 0) {
+        setDisplayText(text);
+        return;
+      }
 
-      return () => {
-        clearInterval(timer);
-        animatingRef.current = false;
-      };
-    }
-    
-    // If this is the first render with content (prevLength was 0), animate from scratch
-    if (prevLengthRef.current === 0 && text.length > 0) {
-      animatingRef.current = true;
-      setVisibleCount(0);
-      
-      const interval = 1000 / speed;
-      let current = 0;
-      
-      const timer = setInterval(() => {
-        current += 1;
-        setVisibleCount(current);
-        if (current >= words.length) {
-          clearInterval(timer);
-          animatingRef.current = false;
-          prevLengthRef.current = text.length;
+      clearTimer();
+      baseTextRef.current = "";
+      wordsRef.current = words;
+      currentIndexRef.current = 0;
+      setDisplayText("");
+
+      intervalRef.current = setInterval(() => {
+        currentIndexRef.current += 1;
+        const slice = wordsRef.current.slice(0, currentIndexRef.current);
+        setDisplayText(slice.join(" ") + " ");
+
+        if (currentIndexRef.current >= wordsRef.current.length) {
+          clearTimer();
+          setDisplayText(text);
         }
-      }, interval);
-
-      return () => {
-        clearInterval(timer);
-        animatingRef.current = false;
-      };
+      }, intervalMs);
+    } else {
+      // Text shrunk or replaced — show immediately
+      clearTimer();
+      setDisplayText(text);
     }
 
-    prevLengthRef.current = text.length;
-    setVisibleCount(words.length);
-  }, [text, speed]);
+    return clearTimer;
+  }, [text, intervalMs, clearTimer]);
 
-  const visibleText = words.slice(0, visibleCount).join("");
+  // Cleanup on unmount
+  useEffect(() => clearTimer, [clearTimer]);
 
   if (children) {
-    return <>{children(visibleText)}</>;
+    return <>{children(displayText)}</>;
   }
 
-  return <>{visibleText}</>;
+  return <>{displayText}</>;
 }

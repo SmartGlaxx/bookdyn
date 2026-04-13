@@ -303,11 +303,13 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
                   {/* Template selection for visual book types */}
                   {isVisualBookType && formData.bookType && (
-                    <TemplateSelector
-                      bookType={formData.bookType}
-                      selectedTemplateId={formData.controls?.selectedTemplateId}
-                      onSelect={(id) => updateControls("selectedTemplateId", id)}
-                    />
+                    <div id="template-section">
+                      <TemplateSelector
+                        bookType={formData.bookType}
+                        selectedTemplateId={formData.controls?.selectedTemplateId}
+                        onSelect={(id) => updateControls("selectedTemplateId", id)}
+                      />
+                    </div>
                   )}
                 </motion.div>
               )}

@@ -101,7 +101,7 @@ export function TemplateSelector({ bookType, selectedTemplateId, onSelect }: Tem
           🎨 Choose a layout template for your book. This determines how images and text are arranged on each page.
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
         {templates.map((template) => {
           const isSelected = selectedTemplateId === template.id;
           return (
@@ -109,21 +109,21 @@ export function TemplateSelector({ bookType, selectedTemplateId, onSelect }: Tem
               key={template.id}
               whileTap={{ scale: 0.97 }}
               onClick={() => onSelect(template.id)}
-              className={`relative rounded-xl p-3 text-left transition-all border ${
+              className={`relative rounded-lg p-2 text-left transition-all border ${
                 isSelected
                   ? "border-primary bg-primary/5 ring-1 ring-primary/30"
                   : "border-border hover:border-primary/40 hover:bg-muted/50"
               }`}
             >
               {isSelected && (
-                <div className="absolute top-2 right-2 z-10">
-                  <Check className="w-4 h-4 text-primary" />
+                <div className="absolute top-1.5 right-1.5 z-10">
+                  <Check className="w-3 h-3 text-primary" />
                 </div>
               )}
               <TemplatePreview template={template} />
-              <div className="mt-2">
-                <div className="font-medium text-xs text-foreground">{template.name}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5 leading-snug line-clamp-2">
+              <div className="mt-1.5">
+                <div className="font-medium text-[10px] text-foreground">{template.name}</div>
+                <div className="text-[9px] text-muted-foreground mt-0.5 leading-snug line-clamp-1">
                   {template.description}
                 </div>
               </div>
