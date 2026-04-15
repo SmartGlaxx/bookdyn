@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { sanitizeText } from "@/lib/sanitize";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,8 +40,9 @@ export function CoverGeneratorModal({ open, onOpenChange, book, onCoverSelected 
     setStep("generate");
 
     try {
+      const cleanDesc = sanitizeText(description.trim()).substring(0, 2000);
       const { data, error } = await supabase.functions.invoke("generate-cover", {
-        body: { description, count, bookTitle: book.title, bookType: book.bookType, theme: book.theme },
+        body: { description: cleanDesc, count, bookTitle: book.title, bookType: book.bookType, theme: book.theme },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);

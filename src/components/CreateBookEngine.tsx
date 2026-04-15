@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { sanitizeText } from "@/lib/sanitize";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronRight, ChevronLeft, Sparkles, HelpCircle, Settings2, Palette, BookOpen, Sliders, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -170,7 +171,14 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
   const handleSubmit = () => {
     if (!canProceed()) return;
-    onCreate(formData as CreateBookInput);
+    // Sanitize user-entered text fields before submission
+    const sanitized = {
+      ...formData,
+      title: sanitizeText((formData.title || "").trim()).substring(0, 200),
+      theme: sanitizeText((formData.theme || "").trim()).substring(0, 1000),
+      subtitle: formData.subtitle ? sanitizeText(formData.subtitle.trim()).substring(0, 300) : undefined,
+    } as CreateBookInput;
+    onCreate(sanitized);
   };
 
   const stepAnim = {

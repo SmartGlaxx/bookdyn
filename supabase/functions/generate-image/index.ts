@@ -16,12 +16,32 @@ function wafCheck(req: Request): string | null {
   return null;
 }
 
+function detectPromptInjection(text: string): boolean {
+  if (!text || typeof text !== "string") return false;
+  const patterns = [
+    /ignore\s+(all\s+)?previous\s+instructions/i,
+    /you\s+are\s+now\s+/i,
+    /system\s*:\s*/i,
+    /\[INST\]/i,
+    /<<SYS>>/i,
+    /forget\s+(everything|all|your)\s/i,
+    /override\s+(your|the)\s+/i,
+  ];
+  return patterns.some(p => p.test(text));
+}
+
 function validateInput(body: any): string | null {
   if (!body || typeof body !== "object") return "Invalid request body";
   if (!body.bookType || typeof body.bookType !== "string") return "Missing bookType";
   if (!body.theme || typeof body.theme !== "string") return "Missing theme";
   if (body.theme.length > 2000) return "Theme too long";
   if (body.content && typeof body.content === "string" && body.content.length > 10000) return "Content too long";
+  if (body.imageOpportunity && typeof body.imageOpportunity === "string" && body.imageOpportunity.length > 5000) return "Image opportunity too long";
+  // Check for prompt injection in user-influenced fields
+  const fieldsToCheck = [body.theme, body.content, body.imageOpportunity, body.style].filter(Boolean);
+  for (const f of fieldsToCheck) {
+    if (typeof f === "string" && detectPromptInjection(f)) return "Input contains prohibited patterns";
+  }
   return null;
 }
 

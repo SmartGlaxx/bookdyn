@@ -16,11 +16,26 @@ function wafCheck(req: Request): string | null {
   return null;
 }
 
+function detectPromptInjection(text: string): boolean {
+  if (!text || typeof text !== "string") return false;
+  const patterns = [
+    /ignore\s+(all\s+)?previous\s+instructions/i,
+    /you\s+are\s+now\s+/i,
+    /system\s*:\s*/i,
+    /\[INST\]/i,
+    /<<SYS>>/i,
+    /forget\s+(everything|all|your)\s/i,
+    /override\s+(your|the)\s+/i,
+  ];
+  return patterns.some(p => p.test(text));
+}
+
 function validateInput(body: any): string | null {
   if (!body || typeof body !== "object") return "Invalid request body";
   if (!body.content || typeof body.content !== "string") return "Missing content";
   if (body.content.length > 100_000) return "Content too long";
   if (!body.type || !["subsection", "chapter"].includes(body.type)) return "Invalid type";
+  if (detectPromptInjection(body.content)) return "Input contains prohibited patterns";
   return null;
 }
 
