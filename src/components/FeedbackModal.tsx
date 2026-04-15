@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { sanitizeText } from "@/lib/sanitize";
 import { Star, MessageSquare } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";

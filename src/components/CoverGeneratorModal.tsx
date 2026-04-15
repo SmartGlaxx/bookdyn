@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { sanitizeText } from "@/lib/sanitize";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
