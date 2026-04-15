@@ -1,10 +1,50 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.90.1";
 
+// ── Security Config ──
+const MAX_PAYLOAD_BYTES = 50_000;
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+function wafCheck(req: Request): string | null {
+  const ua = (req.headers.get("user-agent") || "").toLowerCase();
+  const blocked = ["sqlmap", "nikto", "nessus", "masscan", "zgrab"];
+  for (const b of blocked) { if (ua.includes(b)) return `Blocked: ${b}`; }
+  return null;
+}
+
+function detectPromptInjection(text: string): boolean {
+  if (!text || typeof text !== "string") return false;
+  const patterns = [
+    /ignore\s+(all\s+)?previous\s+instructions/i,
+    /you\s+are\s+now\s+/i,
+    /system\s*:\s*/i,
+    /\[INST\]/i,
+    /<<SYS>>/i,
+    /forget\s+(everything|all|your)\s/i,
+    /override\s+(your|the)\s+/i,
+    /act\s+as\s+(if|a|an)\s+/i,
+  ];
+  return patterns.some(p => p.test(text));
+}
+
+function validateInput(body: any): string | null {
+  if (!body || typeof body !== "object") return "Invalid request body";
+  if (!body.paragraph || typeof body.paragraph !== "string") return "Missing paragraph";
+  if (body.paragraph.length > 10000) return "Paragraph too long";
+  if (body.bookTitle && typeof body.bookTitle === "string" && body.bookTitle.length > 500) return "Book title too long";
+  if (body.fullContent && typeof body.fullContent === "string" && body.fullContent.length > 20000) return "Full content too long";
+  // Check for prompt injection in user-editable fields
+  const fieldsToCheck = [body.paragraph, body.bookTitle, body.chapterTitle, body.subsectionTitle, body.subsectionGoal].filter(Boolean);
+  for (const f of fieldsToCheck) {
+    if (typeof f === "string" && detectPromptInjection(f)) return "Input contains prohibited patterns";
+  }
+  if (body.guidedAction && !["continue", "rewrite", "improve", "dialogue"].includes(body.guidedAction)) return "Invalid guided action";
+  return null;
+}
 
 function getGuidedPrompt(action: string, paragraph: string, bookTitle: string, chapterTitle: string, subsectionTitle: string, fullContent?: string, subsectionGoal?: string): string {
   const context = `Book: "${bookTitle}", Chapter: "${chapterTitle}", Section: "${subsectionTitle}"${subsectionGoal ? `, Goal: ${subsectionGoal}` : ""}.`;
@@ -59,12 +99,26 @@ Write 1–2 lines of natural dialogue that advance the scene. Include character 
   }
 }
 
+async function checkRateLimit(userId: string, functionName: string) {
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const { data } = await supabase.rpc("check_rate_limit", { _user_id: userId, _function_name: functionName, _max_per_hour: 60, _max_per_day: 500 });
+  return data as boolean ?? true;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // WAF check
+    const wafResult = wafCheck(req);
+    if (wafResult) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    // Payload size check
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > MAX_PAYLOAD_BYTES) return new Response(JSON.stringify({ error: "Payload too large" }), { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
     const authHeader = req.headers.get("authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -95,14 +149,17 @@ serve(async (req) => {
       });
     }
 
-    const body = await req.json();
-    const { paragraph, bookTitle, chapterTitle, subsectionTitle, guidedAction, fullContent, subsectionGoal } = body;
+    // Rate limit check
+    const allowed = await checkRateLimit(userId, "rewrite-paragraph");
+    if (!allowed) return new Response(JSON.stringify({ error: "Rate limit exceeded." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    if (!paragraph || typeof paragraph !== "string" || paragraph.length > 10000) {
-      return new Response(JSON.stringify({ error: "Invalid paragraph" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const body = await req.json();
+
+    // Input validation
+    const validationError = validateInput(body);
+    if (validationError) return new Response(JSON.stringify({ error: validationError }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    const { paragraph, bookTitle, chapterTitle, subsectionTitle, guidedAction, fullContent, subsectionGoal } = body;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
@@ -131,6 +188,8 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
+      if (response.status === 429) return new Response(JSON.stringify({ error: "Rate limit exceeded." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (response.status === 402) return new Response(JSON.stringify({ error: "Payment required." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       const errText = await response.text();
       console.error("[rewrite-paragraph] AI error:", response.status, errText);
       throw new Error("AI request failed");
@@ -141,7 +200,6 @@ serve(async (req) => {
 
     if (!content) throw new Error("No content returned from AI");
 
-    // For guided actions, return as "rewritten" field for compatibility
     return new Response(JSON.stringify({ content, rewritten: content }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
