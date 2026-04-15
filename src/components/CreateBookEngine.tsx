@@ -170,7 +170,14 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
   const handleSubmit = () => {
     if (!canProceed()) return;
-    onCreate(formData as CreateBookInput);
+    // Sanitize user-entered text fields before submission
+    const sanitized = {
+      ...formData,
+      title: sanitizeText((formData.title || "").trim()).substring(0, 200),
+      theme: sanitizeText((formData.theme || "").trim()).substring(0, 1000),
+      subtitle: formData.subtitle ? sanitizeText(formData.subtitle.trim()).substring(0, 300) : undefined,
+    } as CreateBookInput;
+    onCreate(sanitized);
   };
 
   const stepAnim = {

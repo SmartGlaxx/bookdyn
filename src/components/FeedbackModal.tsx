@@ -68,12 +68,18 @@ export function FeedbackModal({ open, onOpenChange }: FeedbackModalProps) {
     if (!user || rating === 0 || !category || message.length < 20) return;
     setSubmitting(true);
     try {
+      const cleanMessage = sanitizeText(message.trim()).substring(0, 2000);
+      if (cleanMessage.length < 20) {
+        toast.error("Feedback message too short after cleanup");
+        setSubmitting(false);
+        return;
+      }
       const { error } = await supabase.from("user_feedback").insert({
         user_id: user.id,
         email: user.email || "",
         rating,
         category,
-        message,
+        message: cleanMessage,
       });
       if (error) throw error;
       toast.success("Thank you for your feedback! 🙏");
