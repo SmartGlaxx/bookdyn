@@ -1,10 +1,34 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.90.1";
 
+// ── Security Config ──
+const MAX_PAYLOAD_BYTES = 50_000;
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+function wafCheck(req: Request): string | null {
+  const ua = (req.headers.get("user-agent") || "").toLowerCase();
+  const blocked = ["sqlmap", "nikto", "nessus", "masscan", "zgrab"];
+  for (const b of blocked) { if (ua.includes(b)) return `Blocked: ${b}`; }
+  return null;
+}
+
+function detectPromptInjection(text: string): boolean {
+  if (!text || typeof text !== "string") return false;
+  const patterns = [
+    /ignore\s+(all\s+)?previous\s+instructions/i,
+    /you\s+are\s+now\s+/i,
+    /system\s*:\s*/i,
+    /\[INST\]/i,
+    /<<SYS>>/i,
+    /forget\s+(everything|all|your)\s/i,
+    /override\s+(your|the)\s+/i,
+  ];
+  return patterns.some(p => p.test(text));
+}
 
 async function getAuthUser(req: Request) {
   const authHeader = req.headers.get("authorization");
@@ -26,6 +50,14 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // WAF check
+    const wafResult = wafCheck(req);
+    if (wafResult) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    // Payload size check
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > MAX_PAYLOAD_BYTES) return new Response(JSON.stringify({ error: "Payload too large" }), { status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
     const user = await getAuthUser(req);
     if (!user) return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
@@ -37,6 +69,20 @@ serve(async (req) => {
 
     if (!description || typeof description !== "string" || description.length < 5) {
       return new Response(JSON.stringify({ error: "Description must be at least 5 characters" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (description.length > 2000) {
+      return new Response(JSON.stringify({ error: "Description too long" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (bookTitle && typeof bookTitle === "string" && bookTitle.length > 500) {
+      return new Response(JSON.stringify({ error: "Book title too long" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // Prompt injection check on user-controlled fields
+    const fieldsToCheck = [description, bookTitle, theme].filter(Boolean);
+    for (const f of fieldsToCheck) {
+      if (typeof f === "string" && detectPromptInjection(f)) {
+        return new Response(JSON.stringify({ error: "Input contains prohibited patterns" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
 
     const numCovers = Math.min(5, Math.max(1, count || 3));
