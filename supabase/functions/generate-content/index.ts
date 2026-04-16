@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.90.1";
 
 // ── Security Config ──
-const MAX_PAYLOAD_BYTES = 200_000; // 200KB
+const MAX_PAYLOAD_BYTES = 200_000;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -46,7 +46,6 @@ function validateInput(body: any): string | null {
   if (!body.book.theme || typeof body.book.theme !== "string") return "Missing book theme";
   if (body.book.theme.length > 2000) return "Theme too long";
   
-  // Check for prompt injection in user-controlled text fields
   const fieldsToCheck = [body.book.title, body.book.theme, body.book.subtitle].filter(Boolean);
   for (const field of fieldsToCheck) {
     if (detectPromptInjection(field)) return "Input contains prohibited patterns";
@@ -58,10 +57,7 @@ function validateInput(body: any): string | null {
 // ── Auth helper ──
 async function getAuthUser(req: Request) {
   const authHeader = req.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    console.error("[generate-content] No bearer token in authorization header");
-    return null;
-  }
+  if (!authHeader?.startsWith("Bearer ")) return null;
   
   const token = authHeader.replace("Bearer ", "");
   const supabase = createClient(
@@ -73,26 +69,16 @@ async function getAuthUser(req: Request) {
   try {
     const { data, error } = await supabase.auth.getClaims(token);
     if (error || !data?.claims) {
-      console.error("[generate-content] getClaims failed:", error?.message || "no claims");
-      // Fallback to getUser if getClaims fails
       const { data: userData, error: userError } = await supabase.auth.getUser(token);
-      if (userError || !userData?.user) {
-        console.error("[generate-content] getUser fallback also failed:", userError?.message);
-        return null;
-      }
-      const user = { id: userData.user.id, email: userData.user.email || "" };
-      return { user, supabase };
+      if (userError || !userData?.user) return null;
+      return { user: { id: userData.user.id, email: userData.user.email || "" }, supabase };
     }
-    const user = { id: data.claims.sub as string, email: data.claims.email as string };
-    return { user, supabase };
-  } catch (err) {
-    console.error("[generate-content] Auth error:", err);
-    // Fallback to getUser
+    return { user: { id: data.claims.sub as string, email: data.claims.email as string }, supabase };
+  } catch {
     try {
       const { data: userData, error: userError } = await supabase.auth.getUser(token);
       if (userError || !userData?.user) return null;
-      const user = { id: userData.user.id, email: userData.user.email || "" };
-      return { user, supabase };
+      return { user: { id: userData.user.id, email: userData.user.email || "" }, supabase };
     } catch {
       return null;
     }
@@ -101,279 +87,41 @@ async function getAuthUser(req: Request) {
 
 // ── Rate limit helper ──
 async function checkRateLimit(userId: string, functionName: string) {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
-  
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const { data, error } = await supabase.rpc("check_rate_limit", {
-    _user_id: userId,
-    _function_name: functionName,
-    _max_per_hour: 60,
-    _max_per_day: 500,
+    _user_id: userId, _function_name: functionName, _max_per_hour: 60, _max_per_day: 500,
   });
-  
-  if (error) {
-    console.error("Rate limit check failed:", error);
-    return true; // Fail open
-  }
+  if (error) { console.error("Rate limit check failed:", error); return true; }
   return data as boolean;
 }
 
 // ── Audit log helper ──
 async function auditLog(userId: string, action: string, resourceType: string, resourceId?: string, metadata?: Record<string, unknown>) {
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
-  
-  await supabase.from("audit_logs").insert({
-    user_id: userId,
-    action,
-    resource_type: resourceType,
-    resource_id: resourceId,
-    metadata: metadata || {},
-  });
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  await supabase.from("audit_logs").insert({ user_id: userId, action, resource_type: resourceType, resource_id: resourceId, metadata: metadata || {} });
 }
 
-serve(async (req) => {
-  
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+// ── Language guidelines ──
+function getLanguageGuidelines(band: number): string {
+  switch (band) {
+    case 5: return `- Use simple vocabulary and short sentences\n- Basic grammar structures only\n- Maximum sentence length: 10-12 words average`;
+    case 6: return `- Moderately simple vocabulary with some descriptive words\n- Mix of simple and compound sentences\n- Maximum sentence length: 15-18 words average`;
+    case 7: return `- Standard vocabulary appropriate for general readers\n- Varied sentence structures\n- Average sentence length: 18-22 words`;
+    case 8: return `- Wide vocabulary range including some academic/technical terms\n- Complex grammatical structures used naturally\n- Varied sentence lengths for rhythm and effect`;
+    case 9: return `- Extensive and precise vocabulary including specialized terminology\n- Full range of grammatical structures\n- Advanced rhetorical devices and scholarly conventions`;
+    default: return `- Standard vocabulary appropriate for general readers\n- Varied sentence structures`;
   }
+}
 
-  try {
-    // WAF check
-    const wafResult = wafCheck(req);
-    if (wafResult) {
-      console.error("[generate-content] WAF blocked request");
-      return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Payload size check
-    const contentLength = parseInt(req.headers.get("content-length") || "0");
-    console.log(`[generate-content] Request received, content-length: ${contentLength}`);
-    if (contentLength > MAX_PAYLOAD_BYTES) {
-      console.error(`[generate-content] Payload too large: ${contentLength} > ${MAX_PAYLOAD_BYTES}`);
-      return new Response(JSON.stringify({ error: "Payload too large" }), {
-        status: 413,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Auth check
-    const auth = await getAuthUser(req);
-    if (!auth) {
-      console.error("[generate-content] Auth failed — no valid user from token");
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Rate limit check
-    const allowed = await checkRateLimit(auth.user.id, "generate-content");
-    if (!allowed) {
-      return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-        status: 429,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const body = await req.json();
-
-    // Input validation
-    const validationError = validateInput(body);
-    if (validationError) {
-      return new Response(JSON.stringify({ error: validationError }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { book, chapterIndex, subsectionIndex, previousSummary, previousRawContent, tonalAnchors, ieltsBand, targetWordsPerSubsection, teaserStyle, automationLevel: reqAutomationLevel } = body;
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
-
-    // ── Credit & daily word cap enforcement ──
-    const estimatedWords = targetWordsPerSubsection || 600;
-    const adminSupabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-    
-    const { data: creditCheck, error: creditError } = await adminSupabase.rpc(
-      "check_and_deduct_word_credits",
-      { _user_id: auth.user.id, _estimated_words: estimatedWords }
-    );
-
-    if (creditError) {
-      console.error("Credit check failed:", creditError);
-      throw new Error("Credit check failed");
-    }
-
-    const creditResult = creditCheck as { allowed: boolean; reason?: string };
-    if (!creditResult.allowed) {
-      return new Response(
-        JSON.stringify({ error: creditResult.reason || "Credit limit reached" }),
-        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const chapter = book.outline?.chapters[chapterIndex];
-    const subsection = chapter?.subsections[subsectionIndex];
-    
-    if (!chapter || !subsection) {
-      throw new Error("Invalid chapter or subsection index");
-    }
-
-    // Audit log
-    await auditLog(auth.user.id, "generate_content", "book", book.id, {
-      chapterIndex,
-      subsectionIndex,
-      chapterTitle: chapter.title,
-    });
-
-    const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
-    const isNarrative = ["novel", "fiction-serial", "short-story", "children", "comic", "biography", "memoir", "drama"].includes(book.bookType);
-    
-    const band = ieltsBand || 7;
-    const languageGuidelines = getLanguageGuidelines(band);
-    
-    const hookFrequency = book.controls?.hookFrequency ?? 5;
-    const velocity = book.controls?.velocity ?? 5;
-    
-    const hookInterval = Math.max(1, Math.round(9 - (hookFrequency - 1) * (8 / 9)));
-    const sceneChangeWords = Math.max(150, Math.round(600 - ((velocity + hookFrequency) / 2 - 1) * 50));
-
-    const pacingRules = getPacingRules(hookFrequency, velocity, isNarrative, hookInterval, sceneChangeWords);
-    
-    const isScreenplay = book.bookType === "drama";
-
-    const screenplayRules = isScreenplay ? `
-SCREENPLAY FORMAT (MANDATORY — you are writing a screenplay, NOT prose):
-You MUST use standard screenplay/stage-play formatting throughout. Never write in prose paragraph form.
-
-FORMAT RULES:
-- Scene headings: ALL CAPS, e.g. "INT. COFFEE SHOP — MORNING" or "EXT. ROOFTOP — NIGHT"
-- Character names before dialogue: Proper case (e.g., "Durrant", "Maya"), on their own line
-- Dialogue: Under the character name, indented
-- Parentheticals: In parentheses under character name, before dialogue, e.g. (whispering) or (beat)
-- Action/stage directions: Present tense, lean descriptions of what we SEE and HEAR
-- Transitions: FADE IN:, CUT TO:, FADE TO BLACK, SMASH CUT TO:, etc. — used sparingly
-- (CONT'D) when a character's dialogue is interrupted by action then resumes
-- (V.O.) for voiceover, (O.S.) for off-screen
-- Keep action lines SHORT — 1-3 sentences max per block
-- Show, don't tell — no internal thoughts unless delivered as V.O.
-- NO prose paragraphs. NO novelistic descriptions. Every line must serve the camera or the actor.
-
-EXAMPLE FORMAT:
-INT. INTERROGATION ROOM — NIGHT
-
-Fluorescent light flickers. A metal table. Two chairs. DURRANT, 40s, worn suit, sits across from MAYA, 28, sharp eyes.
-
-DURRANT
-You called him at 11:47.
-
-MAYA
-I call a lot of people.
-
-DURRANT
-Not from payphones.
-
-Silence. Maya's jaw tightens — barely.
-
-DURRANT (CONT'D)
-(leaning forward)
-Nobody uses payphones anymore.
-
-He slides a photograph across the table. Face down.
-` : "";
-
-    const systemPrompt = `You are a master writer creating content for a ${book.bookType} book.
-${isScreenplay ? "You are writing in SCREENPLAY FORMAT. Every line of output must follow screenplay conventions." : ""}
-
-BOOK CONTEXT:
-- Title: "${book.title}"
-- Theme: ${book.theme}
-- Audience: ${book.audience}
-- POV: ${book.pov}
-- Tone: ${book.toneProfile.primary} (formality: ${book.toneProfile.formality}/10, emotion: ${book.toneProfile.emotionalIntensity}/10)
-
-LANGUAGE & GRAMMAR LEVEL (IELTS Band ${band}):
-${languageGuidelines}
-
-CURRENT POSITION:
-- Chapter ${chapter.chapterNumber}: "${chapter.title}"
-- Subsection: "${subsection.title}"
-- Goal: ${subsection.goal || "Continue the narrative"}
-
-${screenplayRules}
-
-${pacingRules}
-
-${previousSummary ? `PREVIOUS SECTION SUMMARY:\n${previousSummary}\n` : ""}
-
-${previousRawContent ? `PREVIOUS SECTION ENDING (last ~1000 words — DO NOT repeat any of this content, scenes, dialogue, or descriptions. Move the story FORWARD from where this left off):\n---\n${previousRawContent}\n---\n` : ""}
-
-ANTI-REPETITION RULE (STRICTLY ENFORCED):
-- NEVER rewrite, paraphrase, or revisit scenes, dialogue, descriptions, or events that already appeared in the previous section.
-- If the previous section ended mid-scene, continue from exactly that point — do not restart the scene.
-- Each subsection must introduce NEW events, NEW dialogue, or NEW developments. Zero overlap with previous content.
-
-FORMAT & WORD BAN RULES (STRICTLY ENFORCED):
-- NEVER use markdown formatting such as **, *, ##, or any other markdown syntax in your output. Write in plain prose only.
-- NEVER use the word "magic" or "magical" in any context. Find more specific, vivid alternatives (e.g. "enchantment", "sorcery", "extraordinary", "remarkable", "uncanny").
-- Do not use asterisks for emphasis. Use the words themselves to convey emphasis through sentence structure and word choice.
-
-${tonalAnchors?.length > 0 ? `TONAL ANCHORS (match this style):\n${tonalAnchors.join("\n\n")}\n` : ""}
-
-${isChildrensBook ? `
-CHILDREN'S BOOK REQUIREMENTS:
-- Write 200-400 words maximum
-- Use simple, vivid language children understand
-- Include dialogue and action
-- Create scenes that are easy to illustrate
-- End with a gentle hook or resolution
-- Include sensory details (colors, sounds, textures)
-` : reqAutomationLevel === "guided" ? `
-GUIDED MODE — HARD LIMIT (STRICTLY ENFORCED):
-- Write EXACTLY 2–3 sentences. No more.
-- This is a sentence-level co-writing tool. The user writes, you suggest.
-- Do NOT write paragraphs, sections, or long passages.
-- Each sentence should be meaningful and advance the narrative/content.
-- Match the established tone and style perfectly.
-- Total output must be under 80 words.
-` : `
-Write approximately ${targetWordsPerSubsection || 600} words for this subsection.
-`}
-
-${teaserStyle && teaserStyle !== "none" ? `
-SECTION TEASER (MANDATORY):
-You MUST begin your output with a teaser line wrapped in [TEASER]...[/TEASER] tags, followed by two newlines, then the actual ${isScreenplay ? "screenplay" : "prose"}.
-${teaserStyle === "mood-setter" ? "The teaser should be a date, location, weather note, or atmospheric stamp that frames the section. Example: [TEASER]November 14th. Rain against the windows of a café that should have closed an hour ago.[/TEASER]" : ""}
-${teaserStyle === "cryptic-open-loop" ? "The teaser should be a SINGLE cryptic sentence — intriguing enough to demand resolution, hints at something in the section without revealing what, names no outcomes, only makes full sense in hindsight. Think of it as a riddle the section answers. Example: [TEASER]He shook three hands that morning. One of them would bury him.[/TEASER]" : ""}
-${teaserStyle === "character-voice-drop" ? "The teaser should be a one-line thought or fragment in a character's voice, no context given. Example: [TEASER]I should have turned around when I saw the second lock.[/TEASER]" : ""}
-` : ""}
-
-Write ONLY the content for this subsection. ${isScreenplay ? "Use proper screenplay formatting throughout. No prose paragraphs." : "Do not include titles or headers. Match the established tone and style."} Strictly adhere to the language/grammar level specified above. Create engaging, high-quality ${isScreenplay ? "screenplay scenes" : "prose"}.`;
-
-function getPacingRules(hookFreq: number, vel: number, isNarr: boolean, hookInt: number, sceneWords: number): string {
+// ── Pacing rules ──
+function getPacingRules(hookFreq: number, vel: number, isNarr: boolean, hookInt: number, sceneWords: number, controls: any): string {
   let rules = `WRITING CONTROLS:
 - Velocity: ${vel}/10 (${vel > 6 ? "fast-paced, action-driven" : vel > 3 ? "balanced pacing" : "slow, descriptive"})
-- Creativity: ${book.controls.creativity}/10
-- Scope: ${book.controls.scope}/10
+- Creativity: ${controls.creativity}/10
+- Scope: ${controls.scope}/10
 - Hook Frequency: ${hookFreq}/10 (inject a hook every ~${hookInt} paragraph(s))`;
 
-  if (!isNarr && hookFreq <= 3) {
-    return rules;
-  }
+  if (!isNarr && hookFreq <= 3) return rules;
 
   rules += `
 
@@ -392,34 +140,259 @@ PACING & MOMENTUM RULES (STRICTLY ENFORCED):
   return rules;
 }
 
-function getLanguageGuidelines(band: number): string {
-  switch (band) {
-    case 5: return `- Use simple vocabulary and short sentences\n- Basic grammar structures only\n- Maximum sentence length: 10-12 words average`;
-    case 6: return `- Moderately simple vocabulary with some descriptive words\n- Mix of simple and compound sentences\n- Maximum sentence length: 15-18 words average`;
-    case 7: return `- Standard vocabulary appropriate for general readers\n- Varied sentence structures\n- Average sentence length: 18-22 words`;
-    case 8: return `- Wide vocabulary range including some academic/technical terms\n- Complex grammatical structures used naturally\n- Varied sentence lengths for rhythm and effect`;
-    case 9: return `- Extensive and precise vocabulary including specialized terminology\n- Full range of grammatical structures\n- Advanced rhetorical devices and scholarly conventions`;
-    default: return `- Standard vocabulary appropriate for general readers\n- Varied sentence structures`;
-  }
+// ── Build system prompt (STATIC portion for cache optimization) ──
+function buildStaticSystemPrompt(book: any, band: number, isScreenplay: boolean, isChildrensBook: boolean, isNarrative: boolean, controls: any): string {
+  const languageGuidelines = getLanguageGuidelines(band);
+  const hookFrequency = controls?.hookFrequency ?? 5;
+  const velocity = controls?.velocity ?? 5;
+  const hookInterval = Math.max(1, Math.round(9 - (hookFrequency - 1) * (8 / 9)));
+  const sceneChangeWords = Math.max(150, Math.round(600 - ((velocity + hookFrequency) / 2 - 1) * 50));
+  const pacingRules = getPacingRules(hookFrequency, velocity, isNarrative, hookInterval, sceneChangeWords, controls);
+
+  const screenplayRules = isScreenplay ? `
+SCREENPLAY FORMAT (MANDATORY — you are writing a screenplay, NOT prose):
+You MUST use standard screenplay/stage-play formatting throughout. Never write in prose paragraph form.
+
+FORMAT RULES:
+- Scene headings: ALL CAPS, e.g. "INT. COFFEE SHOP — MORNING" or "EXT. ROOFTOP — NIGHT"
+- Character names before dialogue: Proper case, on their own line
+- Dialogue: Under the character name, indented
+- Parentheticals: In parentheses under character name, before dialogue
+- Action/stage directions: Present tense, lean descriptions
+- Transitions: FADE IN:, CUT TO:, FADE TO BLACK, SMASH CUT TO: — used sparingly
+- Keep action lines SHORT — 1-3 sentences max per block
+- Show, don't tell — no internal thoughts unless delivered as V.O.
+- NO prose paragraphs. Every line must serve the camera or the actor.
+` : "";
+
+  return `You are a master writer creating content for a ${book.bookType} book.
+${isScreenplay ? "You are writing in SCREENPLAY FORMAT. Every line of output must follow screenplay conventions." : ""}
+
+BOOK CONTEXT:
+- Title: "${book.title}"
+- Theme: ${book.theme}
+- Audience: ${book.audience}
+- POV: ${book.pov}
+- Tone: ${book.toneProfile.primary} (formality: ${book.toneProfile.formality}/10, emotion: ${book.toneProfile.emotionalIntensity}/10)
+
+LANGUAGE & GRAMMAR LEVEL (IELTS Band ${band}):
+${languageGuidelines}
+
+${screenplayRules}
+
+${pacingRules}
+
+ANTI-REPETITION RULE (STRICTLY ENFORCED):
+- NEVER rewrite, paraphrase, or revisit scenes, dialogue, descriptions, or events that already appeared in the previous section.
+- If the previous section ended mid-scene, continue from exactly that point — do not restart the scene.
+- Each subsection must introduce NEW events, NEW dialogue, or NEW developments. Zero overlap with previous content.
+
+FORMAT & WORD BAN RULES (STRICTLY ENFORCED):
+- NEVER use markdown formatting such as **, *, ##, or any other markdown syntax in your output. Write in plain prose only.
+- NEVER use the word "magic" or "magical" in any context. Find more specific, vivid alternatives.
+- Do not use asterisks for emphasis.`;
 }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: isScreenplay 
-            ? `Write the screenplay content for subsection "${subsection.title}" in chapter "${chapter.title}". Use proper screenplay format.`
-            : `Write the content for subsection "${subsection.title}" in chapter "${chapter.title}". Create immersive, engaging prose.` },
-        ],
-        stream: true,
-      }),
-    });
+// ── Build variable user prompt (changes per subsection) ──
+function buildVariablePrompt(
+  book: any, chapter: any, subsection: any,
+  previousSummary: string | undefined, previousRawContent: string | undefined,
+  tonalAnchors: string[] | undefined, teaserStyle: string | undefined,
+  isScreenplay: boolean, isChildrensBook: boolean,
+  targetWordsPerSubsection: number | undefined,
+  reqAutomationLevel: string | undefined
+): string {
+  let prompt = `CURRENT POSITION:
+- Chapter ${chapter.chapterNumber}: "${chapter.title}"
+- Subsection: "${subsection.title}"
+- Goal: ${subsection.goal || "Continue the narrative"}
+
+`;
+
+  if (previousSummary) prompt += `PREVIOUS SECTION SUMMARY:\n${previousSummary}\n\n`;
+
+  if (previousRawContent) {
+    prompt += `PREVIOUS SECTION ENDING (last ~1000 words — DO NOT repeat any of this content):\n---\n${previousRawContent}\n---\n\n`;
+  }
+
+  if (tonalAnchors?.length > 0) {
+    prompt += `TONAL ANCHORS (match this style):\n${tonalAnchors.join("\n\n")}\n\n`;
+  }
+
+  if (isChildrensBook) {
+    prompt += `CHILDREN'S BOOK REQUIREMENTS:
+- Write 200-400 words maximum
+- Use simple, vivid language children understand
+- Include dialogue and action
+- Create scenes that are easy to illustrate
+- End with a gentle hook or resolution
+- Include sensory details (colors, sounds, textures)\n\n`;
+  } else if (reqAutomationLevel === "guided") {
+    prompt += `GUIDED MODE — HARD LIMIT (STRICTLY ENFORCED):
+- Write EXACTLY 2–3 sentences. No more.
+- Total output must be under 80 words.\n\n`;
+  } else {
+    prompt += `Write approximately ${targetWordsPerSubsection || 600} words for this subsection.\n\n`;
+  }
+
+  if (teaserStyle && teaserStyle !== "none") {
+    prompt += `SECTION TEASER (MANDATORY):
+You MUST begin your output with a teaser line wrapped in [TEASER]...[/TEASER] tags, followed by two newlines, then the actual ${isScreenplay ? "screenplay" : "prose"}.
+${teaserStyle === "mood-setter" ? "The teaser should be a date, location, weather note, or atmospheric stamp." : ""}
+${teaserStyle === "cryptic-open-loop" ? "The teaser should be a SINGLE cryptic sentence — intriguing enough to demand resolution." : ""}
+${teaserStyle === "character-voice-drop" ? "The teaser should be a one-line thought or fragment in a character's voice." : ""}\n\n`;
+  }
+
+  prompt += `Write ONLY the content for this subsection. ${isScreenplay ? "Use proper screenplay formatting throughout." : "Do not include titles or headers. Match the established tone and style."} Create engaging, high-quality ${isScreenplay ? "screenplay scenes" : "prose"}.`;
+
+  return prompt;
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    // WAF check
+    const wafResult = wafCheck(req);
+    if (wafResult) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Payload size check
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > MAX_PAYLOAD_BYTES) {
+      return new Response(JSON.stringify({ error: "Payload too large" }), {
+        status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Auth check
+    const auth = await getAuthUser(req);
+    if (!auth) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Rate limit
+    const allowed = await checkRateLimit(auth.user.id, "generate-content");
+    if (!allowed) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
+        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const body = await req.json();
+    const validationError = validateInput(body);
+    if (validationError) {
+      return new Response(JSON.stringify({ error: validationError }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { book, chapterIndex, subsectionIndex, previousSummary, previousRawContent, tonalAnchors, ieltsBand, targetWordsPerSubsection, teaserStyle, automationLevel: reqAutomationLevel } = body;
+
+    // ── Credit & daily word cap enforcement ──
+    const estimatedWords = targetWordsPerSubsection || 600;
+    const adminSupabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    
+    const { data: creditCheck, error: creditError } = await adminSupabase.rpc(
+      "check_and_deduct_word_credits",
+      { _user_id: auth.user.id, _estimated_words: estimatedWords }
+    );
+
+    if (creditError) { console.error("Credit check failed:", creditError); throw new Error("Credit check failed"); }
+
+    const creditResult = creditCheck as { allowed: boolean; reason?: string };
+    if (!creditResult.allowed) {
+      return new Response(
+        JSON.stringify({ error: creditResult.reason || "Credit limit reached" }),
+        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const chapter = book.outline?.chapters[chapterIndex];
+    const subsection = chapter?.subsections[subsectionIndex];
+    if (!chapter || !subsection) throw new Error("Invalid chapter or subsection index");
+
+    // Audit log
+    await auditLog(auth.user.id, "generate_content", "book", book.id, { chapterIndex, subsectionIndex, chapterTitle: chapter.title });
+
+    const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
+    const isNarrative = ["novel", "fiction-serial", "short-story", "children", "comic", "biography", "memoir", "drama"].includes(book.bookType);
+    const isScreenplay = book.bookType === "drama";
+    const band = ieltsBand || 7;
+
+    // ── Build prompts with cache-optimized structure ──
+    // Static system prompt = CACHE ANCHOR (identical across subsections of same book)
+    const systemPrompt = buildStaticSystemPrompt(book, band, isScreenplay, isChildrensBook, isNarrative, book.controls);
+    
+    // Variable user prompt = changes per subsection (not cached)
+    const userPrompt = buildVariablePrompt(
+      book, chapter, subsection,
+      previousSummary, previousRawContent, tonalAnchors, teaserStyle,
+      isScreenplay, isChildrensBook, targetWordsPerSubsection, reqAutomationLevel
+    );
+
+    // ── Choose AI provider: DeepSeek (preferred for novels) vs Lovable AI (fallback) ──
+    const DEEPSEEK_API_KEY = Deno.env.get("DEEPSEEK_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    
+    const useDeepSeek = !!DEEPSEEK_API_KEY;
+    
+    if (!useDeepSeek && !LOVABLE_API_KEY) {
+      throw new Error("No AI API key configured");
+    }
+
+    let response: Response;
+
+    if (useDeepSeek) {
+      // ── DeepSeek with automatic prefix caching ──
+      // DeepSeek caches the PREFIX of the prompt automatically.
+      // By putting the static system prompt first, all subsections of the same book
+      // share the cached prefix → 90% cheaper input tokens on cache hits.
+      // Cache hit tokens: $0.03/M, Cache miss: $0.30/M, Output: $0.50/M
+      console.log("[generate-content] Using DeepSeek with prefix caching");
+      
+      response = await fetch("https://api.deepseek.com/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "deepseek-reasoner",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          stream: true,
+        }),
+      });
+    } else {
+      // ── Lovable AI Gateway fallback ──
+      console.log("[generate-content] Using Lovable AI Gateway");
+      
+      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          stream: true,
+        }),
+      });
+    }
 
     if (!response.ok) {
       if (response.status === 429) {
@@ -433,10 +406,69 @@ function getLanguageGuidelines(band: number): string {
         });
       }
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
+      console.error(`AI error (${useDeepSeek ? "DeepSeek" : "Lovable"}):`, response.status, errorText);
+      throw new Error(`AI error: ${response.status}`);
     }
 
+    // ── For DeepSeek reasoner, we need to filter out reasoning_content from SSE ──
+    if (useDeepSeek) {
+      // DeepSeek reasoner streams with reasoning_content + content fields.
+      // We only want the final content, not the thinking tokens.
+      const reader = response.body!.getReader();
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+
+      const stream = new ReadableStream({
+        async pull(controller) {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              controller.close();
+              return;
+            }
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split("\n");
+            
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+              const jsonStr = line.slice(6).trim();
+              if (jsonStr === "[DONE]") {
+                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                continue;
+              }
+              try {
+                const parsed = JSON.parse(jsonStr);
+                const delta = parsed.choices?.[0]?.delta;
+                // Only forward content tokens, skip reasoning_content
+                if (delta?.content) {
+                  const forwarded = {
+                    ...parsed,
+                    choices: [{
+                      ...parsed.choices[0],
+                      delta: { content: delta.content }
+                    }]
+                  };
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify(forwarded)}\n\n`));
+                }
+                // Log cache stats from usage if present (final chunk)
+                if (parsed.usage) {
+                  const u = parsed.usage;
+                  console.log(`[DeepSeek Cache] hit: ${u.prompt_cache_hit_tokens || 0}, miss: ${u.prompt_cache_miss_tokens || 0}, total: ${u.prompt_tokens || 0}`);
+                }
+              } catch {
+                // Pass through unparseable lines
+              }
+            }
+          }
+        }
+      });
+
+      return new Response(stream, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      });
+    }
+
+    // Lovable AI — pass through directly
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
