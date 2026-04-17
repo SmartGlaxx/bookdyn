@@ -187,6 +187,20 @@ ANTI-REPETITION RULE (STRICTLY ENFORCED):
 - If the previous section ended mid-scene, continue from exactly that point — do not restart the scene.
 - Each subsection must introduce NEW events, NEW dialogue, or NEW developments. Zero overlap with previous content.
 
+${isNarrative ? `LYRICAL FLOW & ZERO-REPEAT EXPRESSION RULES (MANDATORY for every narrative chapter):
+- Write with poetic, flowing prose. Avoid choppy sentences. Vary sentence length deliberately — short, medium, long, occasional fragment — to create internal rhythm and natural cadence.
+- Lean into sensory detail (sight, sound, smell, touch, taste, temperature, weight) and use unexpected but fitting verbs and adjectives. Avoid generic word choices.
+- Show over tell, but never sacrifice momentum.
+- VARY DIALOGUE TAGS: do not lean on "said" or any single tag. Mix in action beats, silences, gestures, and only occasional descriptive tags. Never repeat the same tag within ten exchanges.
+- ZERO REPEATED EXPRESSIONS — across this section, this chapter, and every earlier chapter:
+  • No identical phrase of 4 or more consecutive words.
+  • No metaphor, simile, or signature image reused (e.g., "the light leaked through the blinds" can appear ONCE in the entire book).
+  • No adverb+verb pair reused (e.g., "walked slowly", "smiled wearily").
+  • No rare or signature adjective reused.
+  • No repeated descriptive sentence structure.
+- Before drafting, silently scan the previous-section excerpt provided and mentally list expressions you will avoid. Then write fresh.
+- Recurring images must evolve, not recur verbatim. Find a new angle, a new sense, a new word.` : ""}
+
 ${isNarrative ? `CHARACTER DESCRIPTION (MANDATORY for every narrative book — novel, serial, short story, biography, memoir, drama, children, comic):
 - When a character first appears in a scene, render them in the tradition of James Hadley Chase: lean, sensory, and instantly cinematic.
 - Show physical specifics that imply personality — the cut of the jaw, the set of the mouth, the weight behind the eyes, the fall of the hair, the way the suit hangs on the shoulders, the shoes, the hands, the smell of cologne or sweat or rain.
