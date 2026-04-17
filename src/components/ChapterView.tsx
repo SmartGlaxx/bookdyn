@@ -686,6 +686,14 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
                 >
+                  {selectedChapter === 0 && book.outline?.intro && (
+                    <div className="mb-8 pb-6 border-b border-dashed border-border/60">
+                      <div className="text-[11px] uppercase tracking-widest text-muted-foreground mb-2">Cliffhanger Intro</div>
+                      <div className="font-serif italic text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                        {book.outline.intro}
+                      </div>
+                    </div>
+                  )}
                   {currentChapter.subsections.map((sub, subIdx) => renderSubsectionContent(sub, subIdx, selectedChapter))}
                 </motion.div>
               </AnimatePresence>
