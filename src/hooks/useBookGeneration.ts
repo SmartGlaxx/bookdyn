@@ -942,15 +942,33 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
 
     // Chapter complete
     if (!abortRef.current) {
-      const chapterSummary = await summarizeContent(chapterContent, "chapter");
+      const isNarrativeBook = ["novel", "fiction-serial", "short-story", "children", "comic", "biography", "memoir", "drama"].includes(book.bookType);
+      let finalSubsections = updatedSubsections;
+      let finalChapterContent = chapterContent.trim();
+      if (isNarrativeBook && finalChapterContent.length > 800) {
+        setState(s => ({ ...s, phase: "summarizing" }));
+        const prevChapterTexts = outline.chapters.slice(Math.max(0, chapterIndex - 2), chapterIndex).map(c =>
+          c.subsections.map(ss => ss.content || "").join("\n\n").trim(),
+        ).filter(Boolean);
+        const audit = await auditAndRewriteChapter(finalChapterContent, prevChapterTexts);
+        if (audit?.cleaned && audit.cleaned !== finalChapterContent) {
+          finalSubsections = redistributeChapterIntoSubsections(audit.cleaned, finalSubsections);
+          finalChapterContent = audit.cleaned;
+        }
+        if (audit?.needsManualReview && audit.repeats.length > 0) {
+          toast.warning(`Chapter "${chapter.title}" has ${audit.repeats.length} repetition(s) flagged for review.`);
+        }
+      }
+
+      const chapterSummary = await summarizeContent(finalChapterContent, "chapter");
       const updatedChapters = [...outline.chapters];
-      updatedChapters[chapterIndex] = { ...updatedChapters[chapterIndex], summary: chapterSummary, status: "completed" };
+      updatedChapters[chapterIndex] = { ...updatedChapters[chapterIndex], subsections: finalSubsections, summary: chapterSummary, status: "completed" };
       outline = { ...outline, chapters: updatedChapters };
       onUpdateBook(book.id, { outline, status: book.status });
       setState(s => ({ ...s, phase: "idle" }));
       toast.success(`Chapter "${chapter.title}" completed!`);
     }
-  }, [book, automationLevel, streamContent, generateImage, summarizeContent, onUpdateBook, waitForApproval, onActivityRecorded]);
+  }, [book, automationLevel, streamContent, generateImage, summarizeContent, onUpdateBook, waitForApproval, onActivityRecorded, auditAndRewriteChapter, redistributeChapterIntoSubsections]);
 
   return {
     state,
