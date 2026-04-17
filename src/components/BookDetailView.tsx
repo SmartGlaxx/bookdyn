@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Pencil, Check, X, RefreshCw, FileText, Zap, ChevronDown, Search, Pen, Replace, BookOpen } from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Pencil, Check, X, RefreshCw, FileText, Zap, ChevronDown, Search, Pen, Replace, BookOpen, Sparkles, Loader2 } from "lucide-react";
 import { AutomationLevel } from "@/types/book";
 import { Input } from "@/components/ui/input";
 import BookSettings from "@/components/BookSettings";
@@ -43,6 +43,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchNavigateChapter, setSearchNavigateChapter] = useState<number | null>(null);
+  const [generatingIntro, setGeneratingIntro] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const subtitleInputRef = useRef<HTMLInputElement>(null);
   const firstChapterTrackedRef = useRef(false);
@@ -181,6 +182,35 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
     }
     startGeneration();
   };
+
+  const handleGenerateIntro = async () => {
+    if (generatingIntro) return;
+    setGeneratingIntro(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke("generate-intro", {
+        body: { book },
+        headers: session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : undefined,
+      });
+      if (error) throw error;
+      const intro = (data as { intro?: string })?.intro;
+      if (!intro) throw new Error("No intro returned");
+      const updatedOutline = { ...(book.outline || { chapters: [], openPromises: [], resolvedPromises: [] }), intro };
+      updateBook(book.id, { outline: updatedOutline });
+      toast.success("Cliffhanger intro added to the front of your book");
+    } catch (err) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : "Failed to generate intro");
+    } finally {
+      setGeneratingIntro(false);
+    }
+  };
+
+  const introEnabled = !!book.controls?.includeIntro;
+  const hasIntro = !!book.outline?.intro;
+  const canGenerateIntro = isComplete && introEnabled && !hasIntro;
 
   if (showSettings) {
     return <BookSettings book={book} onBack={() => setShowSettings(false)} />;
@@ -355,6 +385,30 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                 )}
                 {isComplete && (
                   <div className="px-2 py-1 space-y-0.5">
+                    {canGenerateIntro && (
+                      <button
+                        onClick={handleGenerateIntro}
+                        disabled={generatingIntro}
+                        className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left disabled:opacity-60"
+                      >
+                        {generatingIntro ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-4 h-4 text-amber-glow" />
+                        )}
+                        {generatingIntro ? "Writing intro…" : "Generate Cliffhanger Intro"}
+                      </button>
+                    )}
+                    {hasIntro && (
+                      <button
+                        onClick={handleGenerateIntro}
+                        disabled={generatingIntro}
+                        className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left disabled:opacity-60 text-muted-foreground"
+                      >
+                        {generatingIntro ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                        Regenerate Intro
+                      </button>
+                    )}
                     <button
                       onClick={handleExportPdf}
                       className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"

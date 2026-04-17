@@ -66,6 +66,26 @@ export async function exportBookToPdf(book: Book) {
     doc.text(subLines, pageWidth / 2, y + 6, { align: "center" });
   }
 
+  // ---- Cliffhanger Intro (if present) ----
+  if (book.outline?.intro) {
+    doc.addPage();
+    y = margin + 20;
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(11);
+    const introParas = book.outline.intro.split(/\n\n|\n/);
+    for (const para of introParas) {
+      const trimmed = para.trim();
+      if (!trimmed) continue;
+      const lines = doc.splitTextToSize(trimmed, contentWidth);
+      for (const line of lines) {
+        ensureSpace(7);
+        doc.text(line, margin, y);
+        y += 5.5;
+      }
+      y += 3;
+    }
+  }
+
   // ---- Chapters ----
   const chapters = book.outline?.chapters || [];
 

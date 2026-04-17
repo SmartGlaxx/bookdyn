@@ -187,6 +187,15 @@ ANTI-REPETITION RULE (STRICTLY ENFORCED):
 - If the previous section ended mid-scene, continue from exactly that point — do not restart the scene.
 - Each subsection must introduce NEW events, NEW dialogue, or NEW developments. Zero overlap with previous content.
 
+${isNarrative ? `CHARACTER DESCRIPTION (MANDATORY for every narrative book — novel, serial, short story, biography, memoir, drama, children, comic):
+- When a character first appears in a scene, render them in the tradition of James Hadley Chase: lean, sensory, and instantly cinematic.
+- Show physical specifics that imply personality — the cut of the jaw, the set of the mouth, the weight behind the eyes, the fall of the hair, the way the suit hangs on the shoulders, the shoes, the hands, the smell of cologne or sweat or rain.
+- Layer in posture, gait, micro-expressions, and the small habits that betray inner life (a thumb worried over a ring, a glance held a beat too long, a smile that does not reach the eyes).
+- Anchor the description in the viewpoint character's reaction — what attracts, repels, threatens, or unsettles them about this person.
+- Do NOT dump a paragraph of static description. Weave the details into action, dialogue, and movement so the reader sees the character without ever feeling told.
+- Recurring characters must keep their established physical signature — never contradict earlier descriptions; deepen them with new angles instead.
+- Aim for descriptions that are vivid enough that a reader could close their eyes and recognise the character on a crowded street.` : ""}
+
 FORMAT & WORD BAN RULES (STRICTLY ENFORCED):
 - NEVER use markdown formatting such as **, *, ##, or any other markdown syntax in your output. Write in plain prose only.
 - NEVER use the word "magic" or "magical" in any context. Find more specific, vivid alternatives.
