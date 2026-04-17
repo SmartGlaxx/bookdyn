@@ -756,7 +756,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
       onUpdateBook(book.id, { status: "completed" });
       toast.success("Book generation completed!");
     }
-  }, [book, automationLevel, generateOutline, generateCharacters, streamContent, generateImage, summarizeContent, onUpdateBook, waitForApproval, onActivityRecorded]);
+  }, [book, automationLevel, generateOutline, generateCharacters, streamContent, generateImage, summarizeContent, onUpdateBook, waitForApproval, onActivityRecorded, auditAndRewriteChapter, redistributeChapterIntoSubsections]);
 
   const pauseGeneration = useCallback(() => {
     pauseRef.current = true;
