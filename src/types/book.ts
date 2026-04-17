@@ -247,6 +247,9 @@ export interface BookControls {
 
   // Template for visual book types
   selectedTemplateId?: string;
+
+  // Optional cliffhanger intro snippet generated after the book is completed
+  includeIntro?: boolean;
 }
 
 export interface Subsection {
@@ -386,6 +389,8 @@ export interface BookOutline {
   resolvedPromises: string[];
   characters?: CharacterReference[];
   visualStyleGuide?: string;
+  /** Optional cliffhanger snippet shown before chapter 1 — generated after the book is complete */
+  intro?: string;
 }
 
 export interface Book {
