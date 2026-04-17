@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Pencil, Check, X, RefreshCw, FileText, Zap, ChevronDown, Search, Pen, Replace, BookOpen } from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Pencil, Check, X, RefreshCw, FileText, Zap, ChevronDown, Search, Pen, Replace, BookOpen, Sparkles, Loader2 } from "lucide-react";
 import { AutomationLevel } from "@/types/book";
 import { Input } from "@/components/ui/input";
 import BookSettings from "@/components/BookSettings";
