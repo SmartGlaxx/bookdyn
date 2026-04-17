@@ -43,6 +43,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchNavigateChapter, setSearchNavigateChapter] = useState<number | null>(null);
+  const [generatingIntro, setGeneratingIntro] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const subtitleInputRef = useRef<HTMLInputElement>(null);
   const firstChapterTrackedRef = useRef(false);
@@ -181,6 +182,35 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
     }
     startGeneration();
   };
+
+  const handleGenerateIntro = async () => {
+    if (generatingIntro) return;
+    setGeneratingIntro(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke("generate-intro", {
+        body: { book },
+        headers: session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : undefined,
+      });
+      if (error) throw error;
+      const intro = (data as { intro?: string })?.intro;
+      if (!intro) throw new Error("No intro returned");
+      const updatedOutline = { ...(book.outline || { chapters: [], openPromises: [], resolvedPromises: [] }), intro };
+      updateBook(book.id, { outline: updatedOutline });
+      toast.success("Cliffhanger intro added to the front of your book");
+    } catch (err) {
+      console.error(err);
+      toast.error(err instanceof Error ? err.message : "Failed to generate intro");
+    } finally {
+      setGeneratingIntro(false);
+    }
+  };
+
+  const introEnabled = !!book.controls?.includeIntro;
+  const hasIntro = !!book.outline?.intro;
+  const canGenerateIntro = isComplete && introEnabled && !hasIntro;
 
   if (showSettings) {
     return <BookSettings book={book} onBack={() => setShowSettings(false)} />;
