@@ -92,6 +92,23 @@ ${book.subtitle ? `<h2>${escapeXml(book.subtitle)}</h2>` : ""}
   manifest.push(`<item id="title" href="title.xhtml" media-type="application/xhtml+xml"/>`);
   spine.push(`<itemref idref="title"/>`);
 
+  // Cliffhanger intro page (optional)
+  if (book.outline?.intro) {
+    const introHtml = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><title>Intro</title></head>
+<body>
+<div style="font-style:italic;margin:2em 1em;">
+${contentToXhtml(book.outline.intro)}
+</div>
+</body>
+</html>`;
+    zip.file("OEBPS/intro.xhtml", introHtml);
+    manifest.push(`<item id="intro" href="intro.xhtml" media-type="application/xhtml+xml"/>`);
+    spine.push(`<itemref idref="intro"/>`);
+  }
+
   // Chapter files
   for (let i = 0; i < chapters.length; i++) {
     const ch = chapters[i];
