@@ -706,11 +706,31 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
 
       // Chapter completed
       if (!abortRef.current) {
-        const chapterSummary = await summarizeContent(chapterContent, "chapter");
-        
+        // ── Silent post-chapter repetition audit + rewrite (narrative books only) ──
+        const isNarrativeBook = ["novel", "fiction-serial", "short-story", "children", "comic", "biography", "memoir", "drama"].includes(book.bookType);
+        let finalSubsections = updatedSubsections;
+        let finalChapterContent = chapterContent.trim();
+        if (isNarrativeBook && finalChapterContent.length > 800) {
+          setState(s => ({ ...s, phase: "summarizing" }));
+          const prevChapterTexts = outline.chapters.slice(Math.max(0, chIdx - 2), chIdx).map(c =>
+            c.subsections.map(ss => ss.content || "").join("\n\n").trim(),
+          ).filter(Boolean);
+          const audit = await auditAndRewriteChapter(finalChapterContent, prevChapterTexts);
+          if (audit?.cleaned && audit.cleaned !== finalChapterContent) {
+            finalSubsections = redistributeChapterIntoSubsections(audit.cleaned, finalSubsections);
+            finalChapterContent = audit.cleaned;
+          }
+          if (audit?.needsManualReview && audit.repeats.length > 0) {
+            toast.warning(`Chapter "${chapter.title}" has ${audit.repeats.length} repetition(s) flagged for review.`);
+          }
+        }
+
+        const chapterSummary = await summarizeContent(finalChapterContent, "chapter");
+
         const updatedChapters = [...outline.chapters];
         updatedChapters[chIdx] = {
           ...updatedChapters[chIdx],
+          subsections: finalSubsections,
           summary: chapterSummary,
           status: "completed",
         };
