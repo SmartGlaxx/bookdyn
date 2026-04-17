@@ -397,6 +397,89 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
     }
   }, []);
 
+  // Post-chapter silent repetition audit + rewrite (narrative books only).
+  const auditAndRewriteChapter = useCallback(async (
+    chapterText: string,
+    previousChaptersText: string[],
+  ): Promise<{ cleaned: string; needsManualReview: boolean; repeats: string[] } | null> => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) return null;
+
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/audit-rewrite-chapter`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${accessToken}`,
+          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({
+          chapterText,
+          previousChapters: previousChaptersText.slice(-2),
+          bookTitle: book.title,
+          isScreenplay: book.bookType === "drama",
+        }),
+      });
+      if (!resp.ok) {
+        console.warn("[BookGen] audit-rewrite-chapter failed", resp.status);
+        return null;
+      }
+      const data = await resp.json();
+      return {
+        cleaned: data?.rewrittenChapter || chapterText,
+        needsManualReview: !!data?.needsManualReview,
+        repeats: Array.isArray(data?.repeats) ? data.repeats : [],
+      };
+    } catch (err) {
+      console.warn("[BookGen] audit-rewrite-chapter error", err);
+      return null;
+    }
+  }, [book.title, book.bookType]);
+
+  // Re-distribute a cleaned chapter back into existing subsections,
+  // preserving original subsection lengths proportionally.
+  const redistributeChapterIntoSubsections = useCallback((
+    cleanedChapter: string,
+    subsections: Subsection[],
+  ): Subsection[] => {
+    const completed = subsections.filter(s => s.status === "completed" && s.content);
+    if (completed.length === 0) return subsections;
+    if (completed.length === 1) {
+      return subsections.map(s =>
+        s.status === "completed" && s.content ? { ...s, content: cleanedChapter.trim() } : s,
+      );
+    }
+    const totalOriginal = completed.reduce((sum, s) => sum + (s.content?.length || 0), 0);
+    if (totalOriginal === 0) return subsections;
+    const cleanedLen = cleanedChapter.length;
+    let cursor = 0;
+    const sliced: string[] = [];
+    completed.forEach((s, idx) => {
+      if (idx === completed.length - 1) {
+        sliced.push(cleanedChapter.slice(cursor).trim());
+      } else {
+        const share = Math.round((s.content!.length / totalOriginal) * cleanedLen);
+        let end = cursor + share;
+        const winStart = Math.max(cursor, end - 400);
+        const winEnd = Math.min(cleanedLen, end + 400);
+        const window = cleanedChapter.slice(winStart, winEnd);
+        const localBreak = window.lastIndexOf("\n\n");
+        if (localBreak > 0) end = winStart + localBreak;
+        sliced.push(cleanedChapter.slice(cursor, end).trim());
+        cursor = end;
+      }
+    });
+    let sliceIdx = 0;
+    return subsections.map(s => {
+      if (s.status === "completed" && s.content) {
+        const next = sliced[sliceIdx++] ?? s.content;
+        return { ...s, content: next };
+      }
+      return s;
+    });
+  }, []);
+
   const startGeneration = useCallback(async () => {
     abortRef.current = false;
     pauseRef.current = false;
