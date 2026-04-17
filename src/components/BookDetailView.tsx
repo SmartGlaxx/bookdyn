@@ -385,6 +385,30 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
                 )}
                 {isComplete && (
                   <div className="px-2 py-1 space-y-0.5">
+                    {canGenerateIntro && (
+                      <button
+                        onClick={handleGenerateIntro}
+                        disabled={generatingIntro}
+                        className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left disabled:opacity-60"
+                      >
+                        {generatingIntro ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-4 h-4 text-amber-glow" />
+                        )}
+                        {generatingIntro ? "Writing intro…" : "Generate Cliffhanger Intro"}
+                      </button>
+                    )}
+                    {hasIntro && (
+                      <button
+                        onClick={handleGenerateIntro}
+                        disabled={generatingIntro}
+                        className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left disabled:opacity-60 text-muted-foreground"
+                      >
+                        {generatingIntro ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                        Regenerate Intro
+                      </button>
+                    )}
                     <button
                       onClick={handleExportPdf}
                       className="w-full flex items-center gap-2 px-2 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
