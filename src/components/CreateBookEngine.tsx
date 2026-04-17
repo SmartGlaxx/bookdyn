@@ -732,6 +732,14 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                       checked={formData.controls?.autoResume}
                       onChange={(v) => updateControls("autoResume", v)}
                     />
+                    {["novel", "fiction-serial", "short-story", "biography", "memoir", "drama"].includes(formData.bookType || "") && (
+                      <ToggleRow
+                        label="Cliffhanger Intro"
+                        tooltip="After the book is finished, generate a short cliffhanger snippet — drawn from a key scene — that opens the book and compels readers to keep reading."
+                        checked={!!formData.controls?.includeIntro}
+                        onChange={(v) => updateControls("includeIntro", v)}
+                      />
+                    )}
                   </Section>
                 </motion.div>
               )}
