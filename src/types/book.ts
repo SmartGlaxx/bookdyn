@@ -250,6 +250,9 @@ export interface BookControls {
 
   // Optional cliffhanger intro snippet generated after the book is completed
   includeIntro?: boolean;
+
+  // Comma- or newline-separated list of words/phrases the AI must NOT use anywhere in the book.
+  omittedWords?: string;
 }
 
 export interface Subsection {
@@ -618,9 +621,9 @@ export const WORD_COUNT_PRESETS = [
 
 export const GENRE_PRESETS: Record<BookCategory, string[]> = {
   fiction: [
-    "Fantasy", "Science Fiction", "Romance", "Mystery", "Thriller", 
-    "Literary Fiction", "Historical Fiction", "Adventure", 
-    "Dystopian", "Urban Fantasy", "Contemporary"
+    "Science Fiction", "Romance", "Mystery", "Thriller",
+    "Literary Fiction", "Historical Fiction", "Adventure",
+    "Contemporary", "Crime / Detective"
   ],
   "non-fiction": [
     "Self-Improvement", "Leadership", "Productivity", "Relationships",

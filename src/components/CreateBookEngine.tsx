@@ -706,6 +706,24 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                         </Tooltip>
                       ))}
                     </div>
+
+                    <div className="mt-4 space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">
+                        Words to omit
+                        <span className="ml-1.5 font-normal opacity-70">
+                          (comma-separated — these will not appear in your book)
+                        </span>
+                      </Label>
+                      <Textarea
+                        placeholder="e.g. magic, sorcery, dragon, whisper"
+                        value={formData.controls?.omittedWords || ""}
+                        onChange={(e) =>
+                          updateControls("omittedWords", e.target.value.slice(0, 1000))
+                        }
+                        rows={2}
+                        className="text-xs resize-none"
+                      />
+                    </div>
                   </Section>
 
                   {/* Generation Options */}
