@@ -58,6 +58,16 @@ function getGenerationChapterSlice(bookData: Book, chapterIndex: number) {
   }];
 }
 
+/** Strip stray AI meta-labels like "Hook:", "Scene:", "Beat:" from the start of paragraphs. */
+function stripMetaLabels(text: string): string {
+  if (!text) return text;
+  return text
+    // Leading meta label on the very first line
+    .replace(/^\s*(?:Hook|Scene|Beat|Opening|Setup|Note)\s*:\s*/i, "")
+    // Same labels at the start of any paragraph
+    .replace(/(\n\s*)(?:Hook|Scene|Beat|Opening|Setup|Note)\s*:\s*/gi, "$1");
+}
+
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   retries: number = MAX_RETRIES,
