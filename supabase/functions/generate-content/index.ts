@@ -300,6 +300,7 @@ FORMAT & WORD BAN RULES (STRICTLY ENFORCED):
 function buildVariablePrompt(
   book: any, chapter: any, subsection: any,
   previousSummary: string | undefined, previousRawContent: string | undefined,
+  fullNovelText: string | undefined,
   tonalAnchors: string[] | undefined, teaserStyle: string | undefined,
   isScreenplay: boolean, isChildrensBook: boolean,
   targetWordsPerSubsection: number | undefined,
@@ -312,11 +313,19 @@ function buildVariablePrompt(
 
 `;
 
-  if (previousSummary) prompt += `PREVIOUS SECTION SUMMARY:\n${previousSummary}\n\n`;
+  // Prefer full-novel text (cache-stable, complete memory) when available; fall back to previousRawContent.
+  if (fullNovelText && fullNovelText.length > 0) {
+    prompt += `[PREVIOUS_NOVEL_TEXT] (everything written so far in this novel — do NOT repeat any phrasing, imagery, or sentence structure found below):
+---
+${fullNovelText}
+---
 
-  if (previousRawContent) {
+`;
+  } else if (previousRawContent) {
     prompt += `PREVIOUS SECTION ENDING (last ~1000 words — DO NOT repeat any of this content):\n---\n${previousRawContent}\n---\n\n`;
   }
+
+  if (previousSummary) prompt += `PREVIOUS SECTION SUMMARY:\n${previousSummary}\n\n`;
 
   if (tonalAnchors?.length > 0) {
     prompt += `TONAL ANCHORS (match this style):\n${tonalAnchors.join("\n\n")}\n\n`;
@@ -346,7 +355,7 @@ ${teaserStyle === "cryptic-open-loop" ? "The teaser should be a SINGLE cryptic s
 ${teaserStyle === "character-voice-drop" ? "The teaser should be a one-line thought or fragment in a character's voice." : ""}\n\n`;
   }
 
-  prompt += `Write ONLY the content for this subsection. ${isScreenplay ? "Use proper screenplay formatting throughout." : "Do not include titles or headers. Match the established tone and style."} Create engaging, high-quality ${isScreenplay ? "screenplay scenes" : "prose"}.`;
+  prompt += `Write ONLY the content for this subsection. ${isScreenplay ? "Use proper screenplay formatting throughout." : "Do not include titles, headers, or labels like 'Hook:'. Match the established tone and style."} Begin writing immediately. Create engaging, high-quality ${isScreenplay ? "screenplay scenes" : "prose"}.`;
 
   return prompt;
 }
