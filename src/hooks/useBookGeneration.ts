@@ -577,6 +577,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
             teaser = teaserMatch[1].trim();
             cleanContent = content.replace(/\[TEASER\][\s\S]*?\[\/TEASER\]\s*/, "").trim();
           }
+          cleanContent = stripMetaLabels(cleanContent);
 
           // Update subsection
           updatedSubsections[subIdx] = {
@@ -825,6 +826,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
           teaser = teaserMatch[1].trim();
           cleanContent = content.replace(/\[TEASER\][\s\S]*?\[\/TEASER\]\s*/, "").trim();
         }
+        cleanContent = stripMetaLabels(cleanContent);
 
         updatedSubsections[subIdx] = {
           ...subsection,
