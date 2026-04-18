@@ -304,7 +304,8 @@ function buildVariablePrompt(
   tonalAnchors: string[] | undefined, teaserStyle: string | undefined,
   isScreenplay: boolean, isChildrensBook: boolean,
   targetWordsPerSubsection: number | undefined,
-  reqAutomationLevel: string | undefined
+  reqAutomationLevel: string | undefined,
+  band: number
 ): string {
   let prompt = `CURRENT POSITION:
 - Chapter ${chapter.chapterNumber}: "${chapter.title}"
@@ -331,14 +332,64 @@ ${fullNovelText}
     prompt += `TONAL ANCHORS (match this style):\n${tonalAnchors.join("\n\n")}\n\n`;
   }
 
-  if (isChildrensBook) {
-    prompt += `CHILDREN'S BOOK REQUIREMENTS:
-- Write 200-400 words maximum
-- Use simple, vivid language children understand
-- Include dialogue and action
-- Create scenes that are easy to illustrate
-- End with a gentle hook or resolution
-- Include sensory details (colors, sounds, textures)\n\n`;
+  const isComic = book.bookType === "comic";
+  const isChildren = book.bookType === "children";
+
+  if (isComic) {
+    prompt += `COMIC / GRAPHIC NOVEL REQUIREMENTS (PANEL-BASED, VISUAL-FIRST):
+You are writing a comic scene as a sequence of panels. Story is told through panels, dialogue, and visual action — text must be minimal and visuals carry the narrative.
+
+PANEL FORMAT — write 4–8 panels for this section. Each panel must follow this exact prose template (one block per panel, separated by a blank line):
+
+Panel 1 — [Camera angle: close-up | wide shot | over-the-shoulder | medium shot]
+Visual: <one or two sentences describing what is happening visually, who is present, the environment, the lighting, the mood>
+${book.pov === "second-person" ? "" : ""}Dialogue:
+  CHARACTER NAME: "<short, punchy line — natural speech, no long paragraphs>"
+  (Optional second character line if needed)
+Emotion: <one word — tense, hopeful, defiant, etc.>
+
+PACING & PROGRESSION:
+- 4–8 panels per scene. Each panel must move the story forward — never stall.
+- End the scene on tension, a beat change, or a transition.
+- Strong visual identity for every recurring character — keep their look consistent with prior panels.
+- Show > tell. Panels > paragraphs.
+- Genre tone: ${book.genre || "match the established tone"}.\n\n`;
+  } else if (isChildren) {
+    // Age tier inferred from IELTS band: band 5 ≈ ages 3–5, band 6 ≈ ages 6–8, band 7+ ≈ ages 9–12
+    const ageTier = band <= 5 ? "3-5" : band <= 6 ? "6-8" : "9-12";
+    const sentenceRule =
+      ageTier === "3-5" ? "1 sentence per paragraph. Very simple words. Repetition is allowed and welcome." :
+      ageTier === "6-8" ? "2–3 sentences per paragraph. Slight variation in vocabulary." :
+                          "3–5 sentences per paragraph. Basic descriptive language.";
+    prompt += `CHILDREN'S BOOK REQUIREMENTS (AGE-AWARE, SIMPLE, VISUAL-FIRST):
+TARGET AGE GROUP: ${ageTier} years old.
+
+LANGUAGE CONTROL (STRICT):
+- ${sentenceRule}
+- Short sentences. Simple vocabulary. Clear emotional cues.
+- Maintain linear storytelling. Prioritize visual imagination over complexity.
+
+STRUCTURE:
+- This section must follow Beginning (setup) → Middle (problem) → Resolution (clear ending).
+- 2–5 short paragraphs total for this section.
+- 200–400 words maximum.
+
+CHARACTERS:
+- 1–3 main characters only. Clear traits: kind, curious, brave, shy. No complex motivations.
+
+STORY RULES:
+- One main problem only. No subplots. Clear cause → effect.
+
+TONE: Warm. Positive. Encouraging. No dark or complex themes.
+
+VISUAL CUES (MANDATORY — for the illustrator):
+- After each scene paragraph, include a SCENE description on its own line, written in italics-friendly plain prose, that an illustrator can use directly. Example format:
+  Scene: Lily stands on the bright green hill, holding a red kite. Her dog Pip jumps beside her. The sky is blue with three soft clouds.
+- Match the text exactly. Vivid and simple.
+
+INTERACTION (OPTIONAL): Repetition (\"And then…\") and questions (\"What do you think happened next?\") are welcome.
+
+Clarity > creativity. Simplicity > complexity.\n\n`;
   } else if (reqAutomationLevel === "guided") {
     prompt += `GUIDED MODE — HARD LIMIT (STRICTLY ENFORCED):
 - Write EXACTLY 2–3 sentences. No more.
@@ -350,12 +401,13 @@ ${fullNovelText}
   if (teaserStyle && teaserStyle !== "none") {
     prompt += `SECTION TEASER (MANDATORY):
 You MUST begin your output with a teaser line wrapped in [TEASER]...[/TEASER] tags, followed by two newlines, then the actual ${isScreenplay ? "screenplay" : "prose"}.
+Do NOT write the literal word "Teaser" anywhere. Do NOT use the format "Teaser:" — only the [TEASER]...[/TEASER] wrapper is allowed.
 ${teaserStyle === "mood-setter" ? "The teaser should be a date, location, weather note, or atmospheric stamp." : ""}
 ${teaserStyle === "cryptic-open-loop" ? "The teaser should be a SINGLE cryptic sentence — intriguing enough to demand resolution." : ""}
 ${teaserStyle === "character-voice-drop" ? "The teaser should be a one-line thought or fragment in a character's voice." : ""}\n\n`;
   }
 
-  prompt += `Write ONLY the content for this subsection. ${isScreenplay ? "Use proper screenplay formatting throughout." : "Do not include titles, headers, or labels like 'Hook:'. Match the established tone and style."} Begin writing immediately. Create engaging, high-quality ${isScreenplay ? "screenplay scenes" : "prose"}.`;
+  prompt += `Write ONLY the content for this subsection. ${isScreenplay ? "Use proper screenplay formatting throughout." : "Do not include titles, headers, or labels like 'Hook:' or 'Teaser:'. Match the established tone and style."} Begin writing immediately. Create engaging, high-quality ${isScreenplay ? "screenplay scenes" : isComic ? "comic panels" : "prose"}.`;
 
   return prompt;
 }
@@ -452,7 +504,7 @@ serve(async (req) => {
     const userPrompt = buildVariablePrompt(
       book, chapter, subsection,
       previousSummary, previousRawContent, fullNovelText, tonalAnchors, teaserStyle,
-      isScreenplay, isChildrensBook, targetWordsPerSubsection, reqAutomationLevel
+      isScreenplay, isChildrensBook, targetWordsPerSubsection, reqAutomationLevel, band
     );
 
     // ── Choose AI provider: DeepSeek (preferred for novels) vs Lovable AI (fallback) ──

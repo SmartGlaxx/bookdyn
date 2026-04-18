@@ -643,6 +643,69 @@ export const GENRE_PRESETS: Record<BookCategory, string[]> = {
   ],
 };
 
+/**
+ * Per–book-type genre options. An empty array means this book type does not use a genre dropdown.
+ * The dropdown is hidden in the UI when the list is empty.
+ */
+export const BOOK_TYPE_GENRES: Record<BookType, string[]> = {
+  // Fiction — full literary genre menu
+  novel: ["Science Fiction", "Romance", "Mystery", "Thriller", "Literary Fiction", "Historical Fiction", "Adventure", "Contemporary", "Crime / Detective"],
+  "fiction-serial": ["Science Fiction", "Romance", "Mystery", "Thriller", "Adventure", "Contemporary", "Crime / Detective"],
+  "short-story": ["Science Fiction", "Romance", "Mystery", "Thriller", "Literary Fiction", "Historical Fiction", "Adventure", "Contemporary", "Crime / Detective"],
+  // Children — story flavors
+  children: ["Adventure", "Friendship", "Animal Story", "Bedtime Story", "Learning / Educational", "Family", "Funny", "Mystery"],
+  // Comic — visual narrative genres
+  comic: ["Action", "Adventure", "Superhero", "Comedy", "Romance", "Mystery", "Sci-Fi", "Slice of Life"],
+
+  // Non-Fiction
+  biography: ["Historical Figure", "Political", "Sports", "Artist / Musician", "Scientist", "Business Leader"],
+  memoir: ["Personal Journey", "Travel", "Career", "Recovery", "Family"],
+  "self-help": ["Self-Improvement", "Productivity", "Relationships", "Mindfulness", "Habits", "Confidence"],
+  business: ["Leadership", "Strategy", "Entrepreneurship", "Management", "Marketing", "Case Studies"],
+  finance: ["Personal Finance", "Investing", "Real Estate", "Crypto", "Retirement", "Economics"],
+
+  // Educational — typically no fiction-style genre
+  technology: [],
+  programming: [],
+  "ai-ml": [],
+  "science-popular": ["Physics", "Biology", "Astronomy", "Earth Science", "Medicine", "Mathematics"],
+  cookbook: ["Quick Meals", "Baking", "Vegan", "Vegetarian", "International", "Desserts", "Healthy Eating"],
+
+  // Creative — form rather than genre
+  poetry: ["Lyric Poetry", "Epic Poetry", "Haiku", "Free Verse", "Sonnet"],
+  drama: ["Stage Play", "Screenplay", "Musical", "One-Act"],
+
+  // Specialized
+  magazine: ["Lifestyle", "Tech", "Travel", "Fashion", "Food", "Business", "Special Interest"],
+  reference: [],
+  custom: [],
+};
+
+// Default image frequency per book type (1 = sparse, 10 = frequent).
+// Visual book types lean high; prose types lean low.
+const DEFAULT_IMAGE_FREQUENCY: Record<BookType, number> = {
+  novel: 2,
+  "fiction-serial": 2,
+  "short-story": 2,
+  children: 9,        // an illustration per scene
+  comic: 10,          // every panel is an image
+  biography: 3,
+  memoir: 2,
+  "self-help": 4,
+  business: 4,
+  finance: 4,
+  technology: 5,
+  programming: 4,
+  "ai-ml": 4,
+  "science-popular": 7,
+  cookbook: 8,        // a photo per recipe step
+  poetry: 3,
+  drama: 2,
+  magazine: 7,
+  reference: 3,
+  custom: 5,
+};
+
 // Helper to get default controls based on book type
 export const getDefaultControls = (bookType: BookType): BookControls => {
   const category = BOOK_TYPE_INFO[bookType].category;
@@ -671,6 +734,7 @@ export const getDefaultControls = (bookType: BookType): BookControls => {
     automationLevel: "guided",
     depthLevel: "intermediate",
     imageGeneration: isVisual,
+    imageFrequency: DEFAULT_IMAGE_FREQUENCY[bookType] ?? 5,
     autoResume: true,
     divergenceAllowed: false,
     teaserStyle: "none",
