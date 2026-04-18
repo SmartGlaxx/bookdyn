@@ -451,7 +451,7 @@ serve(async (req) => {
     // Variable user prompt = changes per subsection (not cached)
     const userPrompt = buildVariablePrompt(
       book, chapter, subsection,
-      previousSummary, previousRawContent, tonalAnchors, teaserStyle,
+      previousSummary, previousRawContent, fullNovelText, tonalAnchors, teaserStyle,
       isScreenplay, isChildrensBook, targetWordsPerSubsection, reqAutomationLevel
     );
 
