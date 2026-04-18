@@ -58,14 +58,29 @@ function getGenerationChapterSlice(bookData: Book, chapterIndex: number) {
   }];
 }
 
-/** Strip stray AI meta-labels like "Hook:", "Scene:", "Beat:" from the start of paragraphs. */
+/** Strip stray AI meta-labels like "Hook:", "Scene:", "Beat:", "Teaser:" from the start of paragraphs. */
 function stripMetaLabels(text: string): string {
   if (!text) return text;
   return text
+    // Strip any literal bracketed teaser labels the AI may leave behind, e.g. "[Teaser]" / "[TEASER]" / "[/teaser]"
+    .replace(/\[\/?\s*teaser\s*\]\s*:?\s*/gi, "")
     // Leading meta label on the very first line
-    .replace(/^\s*(?:Hook|Scene|Beat|Opening|Setup|Note)\s*:\s*/i, "")
+    .replace(/^\s*(?:Hook|Scene|Beat|Opening|Setup|Note|Teaser)\s*:\s*/i, "")
     // Same labels at the start of any paragraph
-    .replace(/(\n\s*)(?:Hook|Scene|Beat|Opening|Setup|Note)\s*:\s*/gi, "$1");
+    .replace(/(\n\s*)(?:Hook|Scene|Beat|Opening|Setup|Note|Teaser)\s*:\s*/gi, "$1");
+}
+
+/** Extract a teaser from content even if the AI used a loose label like "Teaser: ..." instead of [TEASER]...[/TEASER]. */
+function extractFallbackTeaser(content: string): { teaser?: string; rest: string } {
+  if (!content) return { rest: content };
+  const m = content.match(/^\s*(?:\[?\s*teaser\s*\]?\s*:?)\s*(.+?)(?:\n\s*\n|\n)/i);
+  if (m && m[1]) {
+    const teaser = m[1].trim().replace(/^["'\u201C\u2018]+|["'\u201D\u2019]+$/g, "");
+    if (teaser.length > 0 && teaser.length <= 300) {
+      return { teaser, rest: content.slice(m[0].length).trimStart() };
+    }
+  }
+  return { rest: content };
 }
 
 async function retryWithBackoff<T>(
@@ -572,10 +587,13 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
           // Parse teaser
           let teaser: string | undefined;
           let cleanContent = content;
-          const teaserMatch = content.match(/\[TEASER\]([\s\S]*?)\[\/TEASER\]/);
+          const teaserMatch = content.match(/\[TEASER\]([\s\S]*?)\[\/TEASER\]/i);
           if (teaserMatch) {
             teaser = teaserMatch[1].trim();
-            cleanContent = content.replace(/\[TEASER\][\s\S]*?\[\/TEASER\]\s*/, "").trim();
+            cleanContent = content.replace(/\[TEASER\][\s\S]*?\[\/TEASER\]\s*/i, "").trim();
+          } else {
+            const fallback = extractFallbackTeaser(cleanContent);
+            if (fallback.teaser) { teaser = fallback.teaser; cleanContent = fallback.rest; }
           }
           cleanContent = stripMetaLabels(cleanContent);
 
@@ -821,10 +839,13 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
 
         let teaser: string | undefined;
         let cleanContent = content;
-        const teaserMatch = content.match(/\[TEASER\]([\s\S]*?)\[\/TEASER\]/);
+        const teaserMatch = content.match(/\[TEASER\]([\s\S]*?)\[\/TEASER\]/i);
         if (teaserMatch) {
           teaser = teaserMatch[1].trim();
-          cleanContent = content.replace(/\[TEASER\][\s\S]*?\[\/TEASER\]\s*/, "").trim();
+          cleanContent = content.replace(/\[TEASER\][\s\S]*?\[\/TEASER\]\s*/i, "").trim();
+        } else {
+          const fallback = extractFallbackTeaser(cleanContent);
+          if (fallback.teaser) { teaser = fallback.teaser; cleanContent = fallback.rest; }
         }
         cleanContent = stripMetaLabels(cleanContent);
 
