@@ -374,9 +374,9 @@ serve(async (req) => {
       });
     }
 
-    // Payload size check
+    // Payload size check — bumped to allow up to ~250KB to fit full-novel context window.
     const contentLength = parseInt(req.headers.get("content-length") || "0");
-    if (contentLength > MAX_PAYLOAD_BYTES) {
+    if (contentLength > 250_000) {
       return new Response(JSON.stringify({ error: "Payload too large" }), {
         status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -406,7 +406,12 @@ serve(async (req) => {
       });
     }
 
-    const { book, chapterIndex, subsectionIndex, previousSummary, previousRawContent, tonalAnchors, ieltsBand, targetWordsPerSubsection, teaserStyle, automationLevel: reqAutomationLevel } = body;
+    const { book, chapterIndex, subsectionIndex, previousSummary, previousRawContent, fullNovelText, tonalAnchors, ieltsBand, targetWordsPerSubsection, teaserStyle, automationLevel: reqAutomationLevel, omittedWords } = body;
+
+    // Pass user-supplied omitted-words into controls so the static prompt can include them.
+    if (omittedWords && book?.controls) {
+      book.controls = { ...book.controls, omittedWords };
+    }
 
     // ── Credit & daily word cap enforcement ──
     const estimatedWords = targetWordsPerSubsection || 600;
