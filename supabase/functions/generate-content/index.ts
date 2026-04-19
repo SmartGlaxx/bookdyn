@@ -240,6 +240,7 @@ FORMAT & WORD BAN RULES (STRICTLY ENFORCED):
 // ── Build variable user prompt (changes per subsection) ──
 function buildVariablePrompt(
   book: any, chapter: any, subsection: any,
+  previousNovelText: string | undefined,
   previousSummary: string | undefined, previousRawContent: string | undefined,
   tonalAnchors: string[] | undefined, teaserStyle: string | undefined,
   isScreenplay: boolean, isChildrensBook: boolean,
@@ -253,10 +254,18 @@ function buildVariablePrompt(
 
 `;
 
-  if (previousSummary) prompt += `PREVIOUS SECTION SUMMARY:\n${previousSummary}\n\n`;
+  if (previousNovelText && previousNovelText.length > 0) {
+    prompt += `[PREVIOUS_NOVEL_TEXT] (the entire prior novel text, verbatim — DO NOT repeat any of this content; continue seamlessly from where it ends):
+---
+${previousNovelText}
+---
 
-  if (previousRawContent) {
-    prompt += `PREVIOUS SECTION ENDING (last ~1000 words — DO NOT repeat any of this content):\n---\n${previousRawContent}\n---\n\n`;
+`;
+  } else {
+    if (previousSummary) prompt += `PREVIOUS SECTION SUMMARY:\n${previousSummary}\n\n`;
+    if (previousRawContent) {
+      prompt += `PREVIOUS SECTION ENDING (last ~1000 words — DO NOT repeat any of this content):\n---\n${previousRawContent}\n---\n\n`;
+    }
   }
 
   if (tonalAnchors?.length > 0) {
@@ -280,14 +289,14 @@ function buildVariablePrompt(
   }
 
   if (teaserStyle && teaserStyle !== "none") {
-    prompt += `SECTION TEASER (MANDATORY):
-You MUST begin your output with a teaser line wrapped in [TEASER]...[/TEASER] tags, followed by two newlines, then the actual ${isScreenplay ? "screenplay" : "prose"}.
-${teaserStyle === "mood-setter" ? "The teaser should be a date, location, weather note, or atmospheric stamp." : ""}
-${teaserStyle === "cryptic-open-loop" ? "The teaser should be a SINGLE cryptic sentence — intriguing enough to demand resolution." : ""}
-${teaserStyle === "character-voice-drop" ? "The teaser should be a one-line thought or fragment in a character's voice." : ""}\n\n`;
+    prompt += `SECTION OPENING STYLE:
+Open this section with a single line in the "${teaserStyle}" style — but write it as plain prose. Do NOT label it. Do NOT wrap it in any tags or brackets. Do NOT prefix it with words like "Hook:", "Teaser:", or similar. The opening line must read as natural narrative that the reader experiences without any meta-commentary.
+${teaserStyle === "mood-setter" ? "It should evoke a date, location, weather, or atmospheric stamp." : ""}
+${teaserStyle === "cryptic-open-loop" ? "It should be a single cryptic, intriguing sentence." : ""}
+${teaserStyle === "character-voice-drop" ? "It should be a one-line thought or fragment in a character's voice." : ""}\n\n`;
   }
 
-  prompt += `Write ONLY the content for this subsection. ${isScreenplay ? "Use proper screenplay formatting throughout." : "Do not include titles or headers. Match the established tone and style."} Create engaging, high-quality ${isScreenplay ? "screenplay scenes" : "prose"}.`;
+  prompt += `Write ONLY the content for this subsection. ${isScreenplay ? "Use proper screenplay formatting throughout." : "Do not include titles or headers. Do not include any meta-labels like \"Hook:\" or \"Teaser:\". Match the established tone and style."} Create engaging, high-quality ${isScreenplay ? "screenplay scenes" : "prose"}.`;
 
   return prompt;
 }
