@@ -140,79 +140,6 @@ PACING & MOMENTUM RULES (STRICTLY ENFORCED):
   return rules;
 }
 
-// ── Genre style profiles (novels & narrative fiction) ──
-const GENRE_STYLE_PROFILES: Record<string, string> = {
-  "science fiction": `STYLE PROFILE — SCIENCE FICTION
-- Tone: Logical, idea-driven, intellectual.
-- Focus: Technology, ethics, systems, future societies.
-- Narration: Objective, minimal emotion.
-- Sentences: Clear, medium length, precise.
-- Dialogue: Functional, often explanatory.
-- Rule: Prioritize concepts and problem-solving over melodrama.`,
-  "romance": `STYLE PROFILE — ROMANCE
-- Tone: Refined, emotionally restrained, observational.
-- Focus: Social dynamics, relationships, manners.
-- Narration: Slightly ironic, close.
-- Sentences: Longer, elegant, structured.
-- Dialogue: Witty, indirect, layered.
-- Rule: Emotions are implied through behavior, not stated directly.`,
-  "mystery": `STYLE PROFILE — MYSTERY
-- Tone: Calm, observant, controlled.
-- Focus: Clues, inconsistencies, behavior.
-- Narration: Detail-oriented.
-- Sentences: Clear, balanced, never rushed.
-- Dialogue: Subtle, often misleading or incomplete.
-- Rule: Hide key information in plain sight.`,
-  "thriller": `STYLE PROFILE — THRILLER
-- Tone: Realistic, tense, grounded.
-- Focus: Conflict, stakes, consequences.
-- Narration: Close POV.
-- Sentences: Medium to short, efficient.
-- Dialogue: Strong, direct, purposeful.
-- Rule: Maintain tension through decisions and consequences, not gimmicks.`,
-  "literary fiction": `STYLE PROFILE — LITERARY FICTION
-- Tone: Reflective, introspective, fluid.
-- Focus: Inner thought, time, perception.
-- Narration: Deep POV, occasional stream-of-consciousness.
-- Sentences: Long, flowing, rhythmic.
-- Dialogue: Minimal, secondary to thought.
-- Rule: Emphasize internal experience over external action.`,
-  "historical fiction": `STYLE PROFILE — HISTORICAL FICTION
-- Tone: Controlled, intelligent, immersive.
-- Focus: Power, politics, motive in a period setting.
-- Narration: Close.
-- Sentences: Precise, layered with subtext.
-- Dialogue: Sharp, strategic.
-- Rule: Show power dynamics through subtle interaction.`,
-  "adventure": `STYLE PROFILE — ADVENTURE
-- Tone: Energetic, bold, exploratory.
-- Focus: Journey, danger, discovery.
-- Narration: Action-driven.
-- Sentences: Clear, moderately descriptive.
-- Dialogue: Direct and purposeful.
-- Rule: Keep momentum high; events drive the story.`,
-  "contemporary": `STYLE PROFILE — CONTEMPORARY
-- Tone: Minimalist, realistic, emotionally understated.
-- Focus: Relationships, communication, personal tension.
-- Narration: Close.
-- Sentences: Simple, clean, unembellished.
-- Dialogue: Natural, often unresolved.
-- Rule: Convey emotion through subtext and silence.`,
-  "crime / detective": `STYLE PROFILE — CRIME / DETECTIVE
-- Tone: Gritty, cynical, sharp.
-- Focus: Crime, deception, survival.
-- Narration: Tense.
-- Sentences: Short to medium, punchy.
-- Dialogue: Hard, direct, often confrontational.
-- Rule: Maintain moral tension; protagonist is flawed.`,
-};
-
-function getGenreStyleProfile(genre?: string): string {
-  if (!genre) return "";
-  const key = genre.trim().toLowerCase();
-  return GENRE_STYLE_PROFILES[key] || GENRE_STYLE_PROFILES[key.replace(/[-_]/g, " ")] || "";
-}
-
 // ── Build system prompt (STATIC portion for cache optimization) ──
 function buildStaticSystemPrompt(book: any, band: number, isScreenplay: boolean, isChildrensBook: boolean, isNarrative: boolean, controls: any): string {
   const languageGuidelines = getLanguageGuidelines(band);
@@ -238,12 +165,6 @@ FORMAT RULES:
 - NO prose paragraphs. Every line must serve the camera or the actor.
 ` : "";
 
-  const styleProfile = isNarrative ? getGenreStyleProfile(book.genre) : "";
-  const omittedWordsRaw: string = (controls?.omittedWords || "").trim();
-  const omittedList = omittedWordsRaw
-    ? omittedWordsRaw.split(/[,\n]+/).map((w: string) => w.trim()).filter(Boolean).slice(0, 50)
-    : [];
-
   return `You are a master writer creating content for a ${book.bookType} book.
 ${isScreenplay ? "You are writing in SCREENPLAY FORMAT. Every line of output must follow screenplay conventions." : ""}
 
@@ -251,16 +172,13 @@ BOOK CONTEXT:
 - Title: "${book.title}"
 - Theme: ${book.theme}
 - Audience: ${book.audience}
-- POV: ${book.pov} (do NOT default — follow this exactly)
+- POV: ${book.pov}
 - Tone: ${book.toneProfile.primary} (formality: ${book.toneProfile.formality}/10, emotion: ${book.toneProfile.emotionalIntensity}/10)
-${book.genre ? `- Genre: ${book.genre}` : ""}
 
 LANGUAGE & GRAMMAR LEVEL (IELTS Band ${band}):
 ${languageGuidelines}
 
 ${screenplayRules}
-
-${styleProfile ? styleProfile + "\n\nFollow this style profile strictly. Do not mix it with other genre styles unless explicitly instructed." : ""}
 
 ${pacingRules}
 
@@ -268,16 +186,6 @@ ANTI-REPETITION RULE (STRICTLY ENFORCED):
 - NEVER rewrite, paraphrase, or revisit scenes, dialogue, descriptions, or events that already appeared in the previous section.
 - If the previous section ended mid-scene, continue from exactly that point — do not restart the scene.
 - Each subsection must introduce NEW events, NEW dialogue, or NEW developments. Zero overlap with previous content.
-- Before writing, mentally note any distinctive phrases, similes, metaphors, or unusual adjectives in the prior text and AVOID reusing any of them.
-
-${isNarrative ? `SENSORY & DESCRIPTION RULES (MANDATORY for narrative work):
-- Engage all five senses in every major scene: light, texture, temperature, sound, smell, taste.
-- Ground every scene in 2-3 specific sensory details before dialogue or internal monologue.
-- Be detailed in physical surroundings; describe environments with sensory precision.
-- Show character through gesture, habit, contradiction, and physical specificity — never list features like a police report.
-- Break action into beats. Show cause and effect. Anchor action in geography the reader can mentally map.
-- Vary dialogue tags; avoid "said" repeatedly.
-- Never reuse a metaphor or unique descriptor across the entire novel.` : ""}
 
 ${isNarrative ? `CHARACTER DESCRIPTION (MANDATORY for every narrative book — novel, serial, short story, biography, memoir, drama, children, comic):
 - When a character first appears in a scene, render them in the tradition of James Hadley Chase: lean, sensory, and instantly cinematic.
@@ -290,22 +198,18 @@ ${isNarrative ? `CHARACTER DESCRIPTION (MANDATORY for every narrative book — n
 
 FORMAT & WORD BAN RULES (STRICTLY ENFORCED):
 - NEVER use markdown formatting such as **, *, ##, or any other markdown syntax in your output. Write in plain prose only.
-- NEVER use the word "magic" or "magical" in any context. No supernatural elements unless explicitly requested by the genre.
-- Do not use asterisks for emphasis.
-- NEVER prefix sentences, paragraphs, or sections with labels such as "Hook:", "Scene:", "Beat:", "Opening:", "Note:", "Setup:", or any similar meta-label. Just write the prose. The hook IS the sentence — never announce it.${omittedList.length > 0 ? `
-- BANNED VOCABULARY (the user has asked these words/phrases NEVER appear in the book — find vivid alternatives every time): ${omittedList.map(w => `"${w}"`).join(", ")}.` : ""}`;
+- NEVER use the word "magic" or "magical" in any context. Find more specific, vivid alternatives.
+- Do not use asterisks for emphasis.`;
 }
 
 // ── Build variable user prompt (changes per subsection) ──
 function buildVariablePrompt(
   book: any, chapter: any, subsection: any,
   previousSummary: string | undefined, previousRawContent: string | undefined,
-  fullNovelText: string | undefined,
   tonalAnchors: string[] | undefined, teaserStyle: string | undefined,
   isScreenplay: boolean, isChildrensBook: boolean,
   targetWordsPerSubsection: number | undefined,
-  reqAutomationLevel: string | undefined,
-  band: number
+  reqAutomationLevel: string | undefined
 ): string {
   let prompt = `CURRENT POSITION:
 - Chapter ${chapter.chapterNumber}: "${chapter.title}"
@@ -314,82 +218,24 @@ function buildVariablePrompt(
 
 `;
 
-  // Prefer full-novel text (cache-stable, complete memory) when available; fall back to previousRawContent.
-  if (fullNovelText && fullNovelText.length > 0) {
-    prompt += `[PREVIOUS_NOVEL_TEXT] (everything written so far in this novel — do NOT repeat any phrasing, imagery, or sentence structure found below):
----
-${fullNovelText}
----
+  if (previousSummary) prompt += `PREVIOUS SECTION SUMMARY:\n${previousSummary}\n\n`;
 
-`;
-  } else if (previousRawContent) {
+  if (previousRawContent) {
     prompt += `PREVIOUS SECTION ENDING (last ~1000 words — DO NOT repeat any of this content):\n---\n${previousRawContent}\n---\n\n`;
   }
-
-  if (previousSummary) prompt += `PREVIOUS SECTION SUMMARY:\n${previousSummary}\n\n`;
 
   if (tonalAnchors?.length > 0) {
     prompt += `TONAL ANCHORS (match this style):\n${tonalAnchors.join("\n\n")}\n\n`;
   }
 
-  const isComic = book.bookType === "comic";
-  const isChildren = book.bookType === "children";
-
-  if (isComic) {
-    prompt += `COMIC / GRAPHIC NOVEL REQUIREMENTS (PANEL-BASED, VISUAL-FIRST):
-You are writing a comic scene as a sequence of panels. Story is told through panels, dialogue, and visual action — text must be minimal and visuals carry the narrative.
-
-PANEL FORMAT — write 4–8 panels for this section. Each panel must follow this exact prose template (one block per panel, separated by a blank line):
-
-Panel 1 — [Camera angle: close-up | wide shot | over-the-shoulder | medium shot]
-Visual: <one or two sentences describing what is happening visually, who is present, the environment, the lighting, the mood>
-${book.pov === "second-person" ? "" : ""}Dialogue:
-  CHARACTER NAME: "<short, punchy line — natural speech, no long paragraphs>"
-  (Optional second character line if needed)
-Emotion: <one word — tense, hopeful, defiant, etc.>
-
-PACING & PROGRESSION:
-- 4–8 panels per scene. Each panel must move the story forward — never stall.
-- End the scene on tension, a beat change, or a transition.
-- Strong visual identity for every recurring character — keep their look consistent with prior panels.
-- Show > tell. Panels > paragraphs.
-- Genre tone: ${book.genre || "match the established tone"}.\n\n`;
-  } else if (isChildren) {
-    // Age tier inferred from IELTS band: band 5 ≈ ages 3–5, band 6 ≈ ages 6–8, band 7+ ≈ ages 9–12
-    const ageTier = band <= 5 ? "3-5" : band <= 6 ? "6-8" : "9-12";
-    const sentenceRule =
-      ageTier === "3-5" ? "1 sentence per paragraph. Very simple words. Repetition is allowed and welcome." :
-      ageTier === "6-8" ? "2–3 sentences per paragraph. Slight variation in vocabulary." :
-                          "3–5 sentences per paragraph. Basic descriptive language.";
-    prompt += `CHILDREN'S BOOK REQUIREMENTS (AGE-AWARE, SIMPLE, VISUAL-FIRST):
-TARGET AGE GROUP: ${ageTier} years old.
-
-LANGUAGE CONTROL (STRICT):
-- ${sentenceRule}
-- Short sentences. Simple vocabulary. Clear emotional cues.
-- Maintain linear storytelling. Prioritize visual imagination over complexity.
-
-STRUCTURE:
-- This section must follow Beginning (setup) → Middle (problem) → Resolution (clear ending).
-- 2–5 short paragraphs total for this section.
-- 200–400 words maximum.
-
-CHARACTERS:
-- 1–3 main characters only. Clear traits: kind, curious, brave, shy. No complex motivations.
-
-STORY RULES:
-- One main problem only. No subplots. Clear cause → effect.
-
-TONE: Warm. Positive. Encouraging. No dark or complex themes.
-
-VISUAL CUES (MANDATORY — for the illustrator):
-- After each scene paragraph, include a SCENE description on its own line, written in italics-friendly plain prose, that an illustrator can use directly. Example format:
-  Scene: Lily stands on the bright green hill, holding a red kite. Her dog Pip jumps beside her. The sky is blue with three soft clouds.
-- Match the text exactly. Vivid and simple.
-
-INTERACTION (OPTIONAL): Repetition (\"And then…\") and questions (\"What do you think happened next?\") are welcome.
-
-Clarity > creativity. Simplicity > complexity.\n\n`;
+  if (isChildrensBook) {
+    prompt += `CHILDREN'S BOOK REQUIREMENTS:
+- Write 200-400 words maximum
+- Use simple, vivid language children understand
+- Include dialogue and action
+- Create scenes that are easy to illustrate
+- End with a gentle hook or resolution
+- Include sensory details (colors, sounds, textures)\n\n`;
   } else if (reqAutomationLevel === "guided") {
     prompt += `GUIDED MODE — HARD LIMIT (STRICTLY ENFORCED):
 - Write EXACTLY 2–3 sentences. No more.
@@ -401,13 +247,12 @@ Clarity > creativity. Simplicity > complexity.\n\n`;
   if (teaserStyle && teaserStyle !== "none") {
     prompt += `SECTION TEASER (MANDATORY):
 You MUST begin your output with a teaser line wrapped in [TEASER]...[/TEASER] tags, followed by two newlines, then the actual ${isScreenplay ? "screenplay" : "prose"}.
-Do NOT write the literal word "Teaser" anywhere. Do NOT use the format "Teaser:" — only the [TEASER]...[/TEASER] wrapper is allowed.
 ${teaserStyle === "mood-setter" ? "The teaser should be a date, location, weather note, or atmospheric stamp." : ""}
 ${teaserStyle === "cryptic-open-loop" ? "The teaser should be a SINGLE cryptic sentence — intriguing enough to demand resolution." : ""}
 ${teaserStyle === "character-voice-drop" ? "The teaser should be a one-line thought or fragment in a character's voice." : ""}\n\n`;
   }
 
-  prompt += `Write ONLY the content for this subsection. ${isScreenplay ? "Use proper screenplay formatting throughout." : "Do not include titles, headers, or labels like 'Hook:' or 'Teaser:'. Match the established tone and style."} Begin writing immediately. Create engaging, high-quality ${isScreenplay ? "screenplay scenes" : isComic ? "comic panels" : "prose"}.`;
+  prompt += `Write ONLY the content for this subsection. ${isScreenplay ? "Use proper screenplay formatting throughout." : "Do not include titles or headers. Match the established tone and style."} Create engaging, high-quality ${isScreenplay ? "screenplay scenes" : "prose"}.`;
 
   return prompt;
 }
@@ -426,9 +271,9 @@ serve(async (req) => {
       });
     }
 
-    // Payload size check — bumped to allow up to ~250KB to fit full-novel context window.
+    // Payload size check
     const contentLength = parseInt(req.headers.get("content-length") || "0");
-    if (contentLength > 250_000) {
+    if (contentLength > MAX_PAYLOAD_BYTES) {
       return new Response(JSON.stringify({ error: "Payload too large" }), {
         status: 413, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -458,12 +303,7 @@ serve(async (req) => {
       });
     }
 
-    const { book, chapterIndex, subsectionIndex, previousSummary, previousRawContent, fullNovelText, tonalAnchors, ieltsBand, targetWordsPerSubsection, teaserStyle, automationLevel: reqAutomationLevel, omittedWords } = body;
-
-    // Pass user-supplied omitted-words into controls so the static prompt can include them.
-    if (omittedWords && book?.controls) {
-      book.controls = { ...book.controls, omittedWords };
-    }
+    const { book, chapterIndex, subsectionIndex, previousSummary, previousRawContent, tonalAnchors, ieltsBand, targetWordsPerSubsection, teaserStyle, automationLevel: reqAutomationLevel } = body;
 
     // ── Credit & daily word cap enforcement ──
     const estimatedWords = targetWordsPerSubsection || 600;
@@ -503,8 +343,8 @@ serve(async (req) => {
     // Variable user prompt = changes per subsection (not cached)
     const userPrompt = buildVariablePrompt(
       book, chapter, subsection,
-      previousSummary, previousRawContent, fullNovelText, tonalAnchors, teaserStyle,
-      isScreenplay, isChildrensBook, targetWordsPerSubsection, reqAutomationLevel, band
+      previousSummary, previousRawContent, tonalAnchors, teaserStyle,
+      isScreenplay, isChildrensBook, targetWordsPerSubsection, reqAutomationLevel
     );
 
     // ── Choose AI provider: DeepSeek (preferred for novels) vs Lovable AI (fallback) ──

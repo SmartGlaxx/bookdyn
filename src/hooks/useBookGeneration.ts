@@ -9,36 +9,10 @@ const RETRY_BASE_DELAY = 2000;
 const MAX_CONTEXT_CHARS = 2500;
 const MAX_SUMMARY_CHARS = 1200;
 const MAX_ANCHOR_CHARS = 600;
-// Full-novel cache window — DeepSeek prefix-cache friendly. ~100k chars ≈ 25k tokens.
-const MAX_FULL_NOVEL_CHARS = 100_000;
 
 function trimContext(text?: string, maxChars: number = MAX_CONTEXT_CHARS): string | undefined {
   if (!text) return undefined;
   return text.length <= maxChars ? text : text.slice(-maxChars);
-}
-
-/** Trim a long novel-text blob to the last `maxChars` characters at a sentence boundary. */
-function trimNovelToSentenceBoundary(text: string, maxChars: number = MAX_FULL_NOVEL_CHARS): string {
-  if (!text) return "";
-  if (text.length <= maxChars) return text;
-  const slice = text.slice(-maxChars);
-  // Find first sentence break inside the slice; start just after it so we don't open mid-sentence.
-  const match = slice.match(/[.!?]["')\]]?\s+[A-Z"'(\[]/);
-  return match ? slice.slice(slice.indexOf(match[0]) + 1).trim() : slice;
-}
-
-/** Concatenate every completed subsection in order to reconstruct the running novel text. */
-function buildFullNovelText(book: Book): string {
-  const chapters = book.outline?.chapters || [];
-  const parts: string[] = [];
-  for (const ch of chapters) {
-    for (const sub of ch.subsections || []) {
-      if (sub.status === "completed" && sub.content) {
-        parts.push(sub.content.trim());
-      }
-    }
-  }
-  return parts.join("\n\n");
 }
 
 function getGenerationChapterSlice(bookData: Book, chapterIndex: number) {
@@ -56,31 +30,6 @@ function getGenerationChapterSlice(bookData: Book, chapterIndex: number) {
       status: subsection.status,
     })),
   }];
-}
-
-/** Strip stray AI meta-labels like "Hook:", "Scene:", "Beat:", "Teaser:" from the start of paragraphs. */
-function stripMetaLabels(text: string): string {
-  if (!text) return text;
-  return text
-    // Strip any literal bracketed teaser labels the AI may leave behind, e.g. "[Teaser]" / "[TEASER]" / "[/teaser]"
-    .replace(/\[\/?\s*teaser\s*\]\s*:?\s*/gi, "")
-    // Leading meta label on the very first line
-    .replace(/^\s*(?:Hook|Scene|Beat|Opening|Setup|Note|Teaser)\s*:\s*/i, "")
-    // Same labels at the start of any paragraph
-    .replace(/(\n\s*)(?:Hook|Scene|Beat|Opening|Setup|Note|Teaser)\s*:\s*/gi, "$1");
-}
-
-/** Extract a teaser from content even if the AI used a loose label like "Teaser: ..." instead of [TEASER]...[/TEASER]. */
-function extractFallbackTeaser(content: string): { teaser?: string; rest: string } {
-  if (!content) return { rest: content };
-  const m = content.match(/^\s*(?:\[?\s*teaser\s*\]?\s*:?)\s*(.+?)(?:\n\s*\n|\n)/i);
-  if (m && m[1]) {
-    const teaser = m[1].trim().replace(/^["'\u201C\u2018]+|["'\u201D\u2019]+$/g, "");
-    if (teaser.length > 0 && teaser.length <= 300) {
-      return { teaser, rest: content.slice(m[0].length).trimStart() };
-    }
-  }
-  return { rest: content };
 }
 
 async function retryWithBackoff<T>(
@@ -311,23 +260,17 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
       },
     };
 
-    // Build the rolling full-novel text (cache-stable prefix for DeepSeek)
-    const fullNovelRaw = buildFullNovelText(bookData);
-    const fullNovelText = trimNovelToSentenceBoundary(fullNovelRaw, MAX_FULL_NOVEL_CHARS);
-
-    const payload: any = {
+    const payload = {
       book: strippedBook,
       chapterIndex: 0,
       subsectionIndex,
       previousSummary: trimContext(previousSummary, MAX_SUMMARY_CHARS),
       previousRawContent: trimContext(previousRawContent),
-      fullNovelText,
       tonalAnchors: (bookData.tonalAnchors || []).slice(-2).map((anchor) => trimContext(anchor, MAX_ANCHOR_CHARS) || "").filter(Boolean),
       ieltsBand,
       targetWordsPerSubsection: effectiveWordsPerSubsection,
       teaserStyle: bookData.controls?.teaserStyle || "none",
       automationLevel,
-      omittedWords: (bookData.controls?.omittedWords || "").slice(0, 1000),
     };
 
     const payloadJson = JSON.stringify(payload);
@@ -336,10 +279,8 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
 
     if (payloadSize > 180_000) {
       console.warn(`[BookGen] Payload dangerously large, stripping further...`);
-      // Drop the full-novel context first (biggest single field), then trim others.
-      payload.fullNovelText = payload.fullNovelText?.slice(-40_000);
       payload.previousRawContent = payload.previousRawContent?.slice(-500);
-      payload.tonalAnchors = payload.tonalAnchors?.slice(-1).map((a: string) => a?.slice(0, 200) || "");
+      payload.tonalAnchors = payload.tonalAnchors?.slice(-1).map(a => a?.slice(0, 200) || "");
     }
 
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-content`, {
@@ -587,15 +528,11 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
           // Parse teaser
           let teaser: string | undefined;
           let cleanContent = content;
-          const teaserMatch = content.match(/\[TEASER\]([\s\S]*?)\[\/TEASER\]/i);
+          const teaserMatch = content.match(/\[TEASER\]([\s\S]*?)\[\/TEASER\]/);
           if (teaserMatch) {
             teaser = teaserMatch[1].trim();
-            cleanContent = content.replace(/\[TEASER\][\s\S]*?\[\/TEASER\]\s*/i, "").trim();
-          } else {
-            const fallback = extractFallbackTeaser(cleanContent);
-            if (fallback.teaser) { teaser = fallback.teaser; cleanContent = fallback.rest; }
+            cleanContent = content.replace(/\[TEASER\][\s\S]*?\[\/TEASER\]\s*/, "").trim();
           }
-          cleanContent = stripMetaLabels(cleanContent);
 
           // Update subsection
           updatedSubsections[subIdx] = {
@@ -839,15 +776,11 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
 
         let teaser: string | undefined;
         let cleanContent = content;
-        const teaserMatch = content.match(/\[TEASER\]([\s\S]*?)\[\/TEASER\]/i);
+        const teaserMatch = content.match(/\[TEASER\]([\s\S]*?)\[\/TEASER\]/);
         if (teaserMatch) {
           teaser = teaserMatch[1].trim();
-          cleanContent = content.replace(/\[TEASER\][\s\S]*?\[\/TEASER\]\s*/i, "").trim();
-        } else {
-          const fallback = extractFallbackTeaser(cleanContent);
-          if (fallback.teaser) { teaser = fallback.teaser; cleanContent = fallback.rest; }
+          cleanContent = content.replace(/\[TEASER\][\s\S]*?\[\/TEASER\]\s*/, "").trim();
         }
-        cleanContent = stripMetaLabels(cleanContent);
 
         updatedSubsections[subIdx] = {
           ...subsection,

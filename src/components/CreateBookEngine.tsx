@@ -39,7 +39,6 @@ import {
   AUDIENCE_OPTIONS,
   BOOK_TYPE_AUDIENCES,
   GENRE_PRESETS,
-  BOOK_TYPE_GENRES,
   WORD_COUNT_PRESETS,
   TEASER_STYLE_OPTIONS,
   getDefaultControls,
@@ -355,42 +354,34 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                     />
                   </FieldGroup>
 
-                  {(() => {
-                    const genreOptions = formData.bookType ? (BOOK_TYPE_GENRES[formData.bookType] ?? GENRE_PRESETS[currentCategory]) : GENRE_PRESETS[currentCategory];
-                    const showGenre = genreOptions && genreOptions.length > 0;
-                    return (
-                      <div className={`grid gap-3 ${showGenre ? "grid-cols-2" : "grid-cols-1"}`}>
-                        {showGenre && (
-                          <FieldGroup label="Genre">
-                            <Select value={formData.genre || ""} onValueChange={(v) => updateForm("genre", v)}>
-                              <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-                              <SelectContent className="bg-popover z-50">
-                                {genreOptions.map((genre) => (
-                                  <SelectItem key={genre} value={genre}>{genre}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FieldGroup>
-                        )}
+                  <div className="grid grid-cols-2 gap-3">
+                    <FieldGroup label="Genre">
+                      <Select value={formData.genre || ""} onValueChange={(v) => updateForm("genre", v)}>
+                        <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent className="bg-popover z-50">
+                          {GENRE_PRESETS[currentCategory].map((genre) => (
+                            <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FieldGroup>
 
-                        <FieldGroup label="Audience *">
-                          <Select value={formData.audience || ""} onValueChange={(v) => updateForm("audience", v)}>
-                            <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
-                            <SelectContent className="bg-popover z-50">
-                              {AUDIENCE_OPTIONS
-                                .filter((option) => {
-                                  const allowedAudiences = formData.bookType ? BOOK_TYPE_AUDIENCES[formData.bookType] : null;
-                                  return !allowedAudiences || allowedAudiences.includes(option.value);
-                                })
-                                .map((option) => (
-                                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-                        </FieldGroup>
-                      </div>
-                    );
-                  })()}
+                    <FieldGroup label="Audience *">
+                      <Select value={formData.audience || ""} onValueChange={(v) => updateForm("audience", v)}>
+                        <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent className="bg-popover z-50">
+                          {AUDIENCE_OPTIONS
+                            .filter((option) => {
+                              const allowedAudiences = formData.bookType ? BOOK_TYPE_AUDIENCES[formData.bookType] : null;
+                              return !allowedAudiences || allowedAudiences.includes(option.value);
+                            })
+                            .map((option) => (
+                              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </FieldGroup>
+                  </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <FieldGroup label="Depth" tooltip="Controls how detailed the content will be">
@@ -714,24 +705,6 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                           <TooltipContent>{preset.description}</TooltipContent>
                         </Tooltip>
                       ))}
-                    </div>
-
-                    <div className="mt-4 space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">
-                        Words to omit
-                        <span className="ml-1.5 font-normal opacity-70">
-                          (comma-separated — these will not appear in your book)
-                        </span>
-                      </Label>
-                      <Textarea
-                        placeholder="e.g. magic, sorcery, dragon, whisper"
-                        value={formData.controls?.omittedWords || ""}
-                        onChange={(e) =>
-                          updateControls("omittedWords", e.target.value.slice(0, 1000))
-                        }
-                        rows={2}
-                        className="text-xs resize-none"
-                      />
                     </div>
                   </Section>
 
