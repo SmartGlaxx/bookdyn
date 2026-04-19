@@ -4,6 +4,34 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.90.1";
 // ── Security Config ──
 const MAX_PAYLOAD_BYTES = 200_000;
 
+// ── In-memory novel-text cache (per Deno isolate) ──
+// Key: novel_full_v1_{novel_id}_{total_char_count}
+// Value: { text, expires }
+const NOVEL_TEXT_CACHE = new Map<string, { text: string; expires: number }>();
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const MAX_CONTEXT_CHARS = 100_000;
+
+function getCachedNovelText(key: string): string | null {
+  const entry = NOVEL_TEXT_CACHE.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expires) { NOVEL_TEXT_CACHE.delete(key); return null; }
+  return entry.text;
+}
+function setCachedNovelText(key: string, text: string) {
+  NOVEL_TEXT_CACHE.set(key, { text, expires: Date.now() + CACHE_TTL_MS });
+  // Light eviction: cap to 200 entries
+  if (NOVEL_TEXT_CACHE.size > 200) {
+    const oldest = NOVEL_TEXT_CACHE.keys().next().value;
+    if (oldest) NOVEL_TEXT_CACHE.delete(oldest);
+  }
+}
+function trimToSentenceBoundary(textChunk: string): string {
+  const matches = [...textChunk.matchAll(/[.!?]\s+[A-Z]/g)];
+  if (matches.length === 0) return textChunk;
+  const last = matches[matches.length - 1];
+  return textChunk.slice((last.index || 0) + 1);
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
