@@ -37,7 +37,7 @@ export function useTurbo() {
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("streak_days, total_words_written, turbo_unlocked, turbo_words_remaining, turbo_words_capacity, turbo_cycles_completed, last_activity_date, plan")
+      .select("streak_days, turbo_unlocked, turbo_words_remaining, turbo_words_capacity, turbo_cycles_completed, last_activity_date, plan")
       .eq("id", user.id)
       .single();
 
@@ -46,9 +46,25 @@ export function useTurbo() {
       return;
     }
 
+    // Sum words written across the past 30 days from turbo_progress
+    const since = new Date();
+    since.setDate(since.getDate() - 30);
+    const sinceISO = since.toISOString().slice(0, 10);
+
+    const { data: progressRows } = await supabase
+      .from("turbo_progress")
+      .select("words_written, activity_date")
+      .eq("user_id", user.id)
+      .gte("activity_date", sinceISO);
+
+    const wordsLast30 = (progressRows || []).reduce(
+      (sum: number, row: any) => sum + (row.words_written || 0),
+      0
+    );
+
     setStatus({
       streakDays: (data as any).streak_days || 0,
-      totalWordsWritten: (data as any).total_words_written || 0,
+      totalWordsWritten: wordsLast30,
       turboUnlocked: (data as any).turbo_unlocked || false,
       turboWordsRemaining: (data as any).turbo_words_remaining || 0,
       turboWordsCapacity: (data as any).turbo_words_capacity || 50000,
@@ -102,7 +118,7 @@ export function useTurbo() {
       setStatus(s => ({
         ...s,
         streakDays: result.streak_days,
-        totalWordsWritten: result.total_words_written,
+        totalWordsWritten: s.totalWordsWritten + (words || 0),
         turboUnlocked: result.turbo_unlocked,
         turboWordsRemaining: result.turbo_words_remaining,
         turboWordsCapacity: result.turbo_words_capacity,
