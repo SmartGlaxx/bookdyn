@@ -574,7 +574,7 @@ export const BOOK_TYPE_AUDIENCES: Record<BookType, string[]> = {
   novel: ["16-plus", "general-readers", "academics-undergraduate"],
   "fiction-serial": ["16-plus", "general-readers"],
   "short-story": ["16-plus", "general-readers", "academics-undergraduate"],
-  children: ["children-1-9", "older-children-10-15"],
+  children: ["children-1-9"],
   comic: ["children-1-9", "older-children-10-15", "16-plus", "general-readers"],
 
   // Non-Fiction
