@@ -497,6 +497,37 @@ serve(async (req) => {
       throw new Error(`AI error: ${response.status}`);
     }
 
+    // ── Helper: append generated text to book.full_text and invalidate cache ──
+    const finalizeFullText = async (newContent: string) => {
+      if (!isNarrative || isChildrensBook || !book.id) return;
+      try {
+        const { data: row } = await adminSupabase
+          .from("books")
+          .select("full_text, total_char_count, user_id")
+          .eq("id", book.id)
+          .maybeSingle();
+        if (!row || row.user_id !== auth.user.id) return;
+        const oldCharCount = row.total_char_count || 0;
+        const updated = ((row.full_text || "") + (row.full_text ? "\n\n" : "") + newContent).slice(-500_000); // safety cap 500k
+        const newCharCount = updated.length;
+        await adminSupabase
+          .from("books")
+          .update({ full_text: updated, total_char_count: newCharCount })
+          .eq("id", book.id);
+        // Invalidate any cached entry for the prior char count
+        NOVEL_TEXT_CACHE.delete(`novel_full_v1_${book.id}_${oldCharCount}`);
+        console.log(`[novel-cache] invalidated old key, new chars=${newCharCount}`);
+      } catch (e) {
+        console.warn("[novel-cache] full_text update failed:", e);
+      }
+    };
+
+    // ── Strip leftover meta-labels the model may emit ──
+    const stripMetaLabels = (s: string) =>
+      s
+        .replace(/^\s*(?:Hook|Teaser|Scene|Beat|Note)\s*:\s*/gim, "")
+        .replace(/\[\/?(?:HOOK|TEASER|SCENE|BEAT|NOTE)\]/gi, "");
+
     // ── For DeepSeek reasoner, we need to filter out reasoning_content from SSE ──
     if (useDeepSeek) {
       // DeepSeek reasoner streams with reasoning_content + content fields.
@@ -504,6 +535,7 @@ serve(async (req) => {
       const reader = response.body!.getReader();
       const encoder = new TextEncoder();
       const decoder = new TextDecoder();
+      let collected = "";
 
       const stream = new ReadableStream({
         async pull(controller) {
@@ -511,6 +543,9 @@ serve(async (req) => {
             const { done, value } = await reader.read();
             if (done) {
               controller.close();
+              // Persist the cleaned full content
+              const cleaned = stripMetaLabels(collected).trim();
+              if (cleaned) finalizeFullText(cleaned);
               return;
             }
             const chunk = decoder.decode(value, { stream: true });
@@ -528,6 +563,7 @@ serve(async (req) => {
                 const delta = parsed.choices?.[0]?.delta;
                 // Only forward content tokens, skip reasoning_content
                 if (delta?.content) {
+                  collected += delta.content;
                   const forwarded = {
                     ...parsed,
                     choices: [{
@@ -555,10 +591,45 @@ serve(async (req) => {
       });
     }
 
-    // Lovable AI — pass through directly
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-    });
+    // Lovable AI — wrap stream to also collect content for full_text persistence
+    {
+      const reader = response.body!.getReader();
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+      let collected = "";
+
+      const stream = new ReadableStream({
+        async pull(controller) {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              controller.close();
+              const cleaned = stripMetaLabels(collected).trim();
+              if (cleaned) finalizeFullText(cleaned);
+              return;
+            }
+            const chunk = decoder.decode(value, { stream: true });
+            // Forward as-is to client
+            controller.enqueue(value);
+            // Best-effort parse to collect text
+            for (const line of chunk.split("\n")) {
+              if (!line.startsWith("data: ")) continue;
+              const jsonStr = line.slice(6).trim();
+              if (!jsonStr || jsonStr === "[DONE]") continue;
+              try {
+                const parsed = JSON.parse(jsonStr);
+                const c = parsed.choices?.[0]?.delta?.content;
+                if (c) collected += c;
+              } catch { /* ignore */ }
+            }
+          }
+        }
+      });
+
+      return new Response(stream, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      });
+    }
   } catch (error) {
     console.error("generate-content error:", error);
     return new Response(
