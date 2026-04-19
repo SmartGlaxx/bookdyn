@@ -323,7 +323,7 @@ function buildVariablePrompt(
   previousNovelText: string | undefined,
   previousSummary: string | undefined, previousRawContent: string | undefined,
   tonalAnchors: string[] | undefined, teaserStyle: string | undefined,
-  isScreenplay: boolean, isChildrensBook: boolean,
+  isScreenplay: boolean, isChildren: boolean, isComic: boolean,
   targetWordsPerSubsection: number | undefined,
   reqAutomationLevel: string | undefined
 ): string {
@@ -352,14 +352,22 @@ ${previousNovelText}
     prompt += `TONAL ANCHORS (match this style):\n${tonalAnchors.join("\n\n")}\n\n`;
   }
 
-  if (isChildrensBook) {
-    prompt += `CHILDREN'S BOOK REQUIREMENTS:
-- Write 200-400 words maximum
-- Use simple, vivid language children understand
-- Include dialogue and action
-- Create scenes that are easy to illustrate
-- End with a gentle hook or resolution
-- Include sensory details (colors, sounds, textures)\n\n`;
+  if (isChildren) {
+    prompt += `CHILDREN'S BOOK SECTION REQUIREMENTS:
+- Write 100-250 words maximum for this section.
+- 2–5 short paragraphs. Each paragraph 1–3 sentences (target 2–3).
+- Use simple, vivid words a 1–9 year-old child can follow.
+- Include warm dialogue and clear action.
+- Show one clear emotion arc: setup → small problem → reassurance.
+- Add sensory cues a young child notices (colors, sounds, textures, tastes).
+- End the section with a soft hook OR a gentle resolution beat.\n\n`;
+  } else if (isComic) {
+    prompt += `COMIC SECTION REQUIREMENTS:
+- Output this subsection as 4–8 PANELS using the panel format defined in the system rules.
+- Every panel: PANEL N header line, then "Description:", "Camera:", "Emotion:", optional dialogue lines, optional caption/SFX in parentheses.
+- Keep dialogue short and punchy. No prose paragraphs anywhere in the output.
+- Maintain consistent visual identity for any character that appeared in earlier panels.
+- End the scene with tension or a clean transition into the next scene.\n\n`;
   } else if (reqAutomationLevel === "guided") {
     prompt += `GUIDED MODE — HARD LIMIT (STRICTLY ENFORCED):
 - Write EXACTLY 2–3 sentences. No more.
@@ -368,7 +376,7 @@ ${previousNovelText}
     prompt += `Write approximately ${targetWordsPerSubsection || 600} words for this subsection.\n\n`;
   }
 
-  if (teaserStyle && teaserStyle !== "none") {
+  if (teaserStyle && teaserStyle !== "none" && !isComic && !isChildren) {
     prompt += `SECTION OPENING STYLE:
 Open this section with a single line in the "${teaserStyle}" style — but write it as plain prose. Do NOT label it. Do NOT wrap it in any tags or brackets. Do NOT prefix it with words like "Hook:", "Teaser:", or similar. The opening line must read as natural narrative that the reader experiences without any meta-commentary.
 ${teaserStyle === "mood-setter" ? "It should evoke a date, location, weather, or atmospheric stamp." : ""}
@@ -376,7 +384,13 @@ ${teaserStyle === "cryptic-open-loop" ? "It should be a single cryptic, intrigui
 ${teaserStyle === "character-voice-drop" ? "It should be a one-line thought or fragment in a character's voice." : ""}\n\n`;
   }
 
-  prompt += `Write ONLY the content for this subsection. ${isScreenplay ? "Use proper screenplay formatting throughout." : "Do not include titles or headers. Do not include any meta-labels like \"Hook:\" or \"Teaser:\". Match the established tone and style."} Create engaging, high-quality ${isScreenplay ? "screenplay scenes" : "prose"}.`;
+  if (isComic) {
+    prompt += `Write ONLY the panels for this subsection, in the panel format. Do not include titles, headers, or any meta-labels.`;
+  } else if (isChildren) {
+    prompt += `Write ONLY the prose for this section. No titles, no headers, no meta-labels. Keep it warm, simple, and child-safe.`;
+  } else {
+    prompt += `Write ONLY the content for this subsection. ${isScreenplay ? "Use proper screenplay formatting throughout." : "Do not include titles or headers. Do not include any meta-labels like \"Hook:\" or \"Teaser:\". Match the established tone and style."} Create engaging, high-quality ${isScreenplay ? "screenplay scenes" : "prose"}.`;
+  }
 
   return prompt;
 }
