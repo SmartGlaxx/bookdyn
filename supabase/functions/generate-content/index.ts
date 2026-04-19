@@ -469,7 +469,9 @@ serve(async (req) => {
     // Audit log
     await auditLog(auth.user.id, "generate_content", "book", book.id, { chapterIndex, subsectionIndex, chapterTitle: chapter.title });
 
-    const isChildrensBook = book.bookType === "children" || book.bookType === "comic";
+    const isChildren = book.bookType === "children";
+    const isComic = book.bookType === "comic";
+    const isChildrensBook = isChildren || isComic; // legacy: skip full-text caching for these
     const isNarrative = ["novel", "fiction-serial", "short-story", "children", "comic", "biography", "memoir", "drama"].includes(book.bookType);
     const isScreenplay = book.bookType === "drama";
     const band = ieltsBand || 7;
@@ -509,14 +511,14 @@ serve(async (req) => {
 
     // ── Build prompts with cache-optimized structure ──
     // Static system prompt = CACHE ANCHOR (identical across subsections of same book)
-    const systemPrompt = buildStaticSystemPrompt(book, band, isScreenplay, isChildrensBook, isNarrative, book.controls);
+    const systemPrompt = buildStaticSystemPrompt(book, band, isScreenplay, isChildren, isComic, isNarrative, book.controls);
     
     // Variable user prompt = changes per subsection (not cached)
     const userPrompt = buildVariablePrompt(
       book, chapter, subsection,
       previousNovelText,
       previousSummary, previousRawContent, tonalAnchors, teaserStyle,
-      isScreenplay, isChildrensBook, targetWordsPerSubsection, reqAutomationLevel
+      isScreenplay, isChildren, isComic, targetWordsPerSubsection, reqAutomationLevel
     );
 
     // ── Choose AI provider: DeepSeek (preferred for novels) vs Lovable AI (fallback) ──
