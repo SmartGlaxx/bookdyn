@@ -380,6 +380,39 @@ serve(async (req) => {
     const isScreenplay = book.bookType === "drama";
     const band = ieltsBand || 7;
 
+    // ── Fetch full prior novel text (with in-memory cache) for narrative books ──
+    let previousNovelText: string | undefined;
+    if (isNarrative && book.id && !isChildrensBook) {
+      try {
+        // Lookup current char count to build cache key (changes invalidate cache)
+        const { data: bookRow } = await adminSupabase
+          .from("books")
+          .select("full_text, total_char_count, user_id")
+          .eq("id", book.id)
+          .maybeSingle();
+
+        if (bookRow && bookRow.user_id === auth.user.id) {
+          const charCount = bookRow.total_char_count || 0;
+          const cacheKey = `novel_full_v1_${book.id}_${charCount}`;
+          let cached = getCachedNovelText(cacheKey);
+          if (!cached) {
+            let fullText = bookRow.full_text || "";
+            if (fullText.length > MAX_CONTEXT_CHARS) {
+              fullText = trimToSentenceBoundary(fullText.slice(-MAX_CONTEXT_CHARS));
+            }
+            setCachedNovelText(cacheKey, fullText);
+            cached = fullText;
+            console.log(`[novel-cache] MISS key=${cacheKey} chars=${fullText.length}`);
+          } else {
+            console.log(`[novel-cache] HIT key=${cacheKey} chars=${cached.length}`);
+          }
+          previousNovelText = cached;
+        }
+      } catch (e) {
+        console.warn("[novel-cache] full_text fetch failed:", e);
+      }
+    }
+
     // ── Build prompts with cache-optimized structure ──
     // Static system prompt = CACHE ANCHOR (identical across subsections of same book)
     const systemPrompt = buildStaticSystemPrompt(book, band, isScreenplay, isChildrensBook, isNarrative, book.controls);
@@ -387,6 +420,7 @@ serve(async (req) => {
     // Variable user prompt = changes per subsection (not cached)
     const userPrompt = buildVariablePrompt(
       book, chapter, subsection,
+      previousNovelText,
       previousSummary, previousRawContent, tonalAnchors, teaserStyle,
       isScreenplay, isChildrensBook, targetWordsPerSubsection, reqAutomationLevel
     );
