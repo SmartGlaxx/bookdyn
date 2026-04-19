@@ -169,7 +169,7 @@ PACING & MOMENTUM RULES (STRICTLY ENFORCED):
 }
 
 // ── Build system prompt (STATIC portion for cache optimization) ──
-function buildStaticSystemPrompt(book: any, band: number, isScreenplay: boolean, isChildrensBook: boolean, isNarrative: boolean, controls: any): string {
+function buildStaticSystemPrompt(book: any, band: number, isScreenplay: boolean, isChildren: boolean, isComic: boolean, isNarrative: boolean, controls: any): string {
   const languageGuidelines = getLanguageGuidelines(band);
   const hookFrequency = controls?.hookFrequency ?? 5;
   const velocity = controls?.velocity ?? 5;
@@ -193,6 +193,82 @@ FORMAT RULES:
 - NO prose paragraphs. Every line must serve the camera or the actor.
 ` : "";
 
+  const childrensEngineRules = isChildren ? `
+CHILDREN'S BOOK ENGINE (AGE-AWARE, SIMPLE, VISUAL-FIRST) — STRICTLY ENFORCED:
+You are a structured children's book creation engine for ages 1–9. Generate simple, engaging, age-appropriate stories with strong visuals and emotional clarity.
+
+CORE PRINCIPLES:
+- Use simple vocabulary a young child can follow.
+- Use short sentences. 2–3 sentences per paragraph (1–3 absolute max).
+- Use clear emotional cues (happy, scared, brave, surprised, kind).
+- Maintain linear storytelling — beginning (setup), middle (problem), resolution (clear ending).
+- Each section: 2–5 paragraphs maximum.
+
+CHARACTER DESIGN:
+- Only 1–3 main characters total across the book.
+- Each character has one or two clear traits: kind, curious, brave, shy, playful.
+- No complex motivations, no moral grey areas.
+
+STORY RULES:
+- One main problem only. No subplots.
+- Clear cause → effect chain. Every event leads naturally to the next.
+
+TONE RULES:
+- Warm, positive, encouraging.
+- No dark themes, no fear without resolution, no violence, no death, no scary imagery.
+
+INTERACTION ELEMENTS (use sparingly, where natural):
+- Gentle repetition for rhythm ("And then…", "Again and again…").
+- Soft questions to the reader ("What do you think happened next?") only if the section calls for it.
+
+COMPLETION RULE:
+- The book is complete when the problem is resolved clearly, an emotional lesson is delivered, and the ending is satisfying and simple.
+
+META RULE: Clarity > creativity. Simplicity > complexity.
+` : "";
+
+  const comicEngineRules = isComic ? `
+COMIC / GRAPHIC NOVEL ENGINE (PANEL-BASED, VISUAL-FIRST STORYTELLING) — STRICTLY ENFORCED:
+You are a structured comic creation engine. Story is told through panels, dialogue, and visual action. Text must be minimal. Visuals carry the narrative.
+
+OUTPUT FORMAT (MANDATORY):
+Each subsection is a SCENE made of 4–8 PANELS. Output panels as plain prose blocks in this exact pattern, one panel after another, with a blank line between panels:
+
+PANEL 1
+Description: [what is happening visually — characters, setting, action, lighting, mood]
+Camera: [close-up | medium | wide | over-the-shoulder | bird's-eye | low-angle]
+Emotion: [the dominant feeling of the panel]
+[CHARACTER NAME]: "Short, punchy line of dialogue."
+[CHARACTER NAME]: "Another short line."
+(Caption or SFX in parentheses if needed: BOOM, WHOOSH, "Later that night…")
+
+PANEL 2
+…and so on.
+
+PANEL RULES:
+- 4–8 panels per scene. Never fewer than 4, never more than 8.
+- Every panel must include a Description and a Camera angle. Emotion is required when characters are present.
+- Dialogue is optional per panel — silent visual panels are encouraged for pacing.
+- Dialogue lines must be SHORT and punchy. No long paragraphs. Natural speech only.
+- Captions (narration) are allowed sparingly — wrap them in parentheses, e.g. (Three days later.).
+- SFX are allowed in parentheses, e.g. (CRASH!), (whisper).
+
+VISUAL DIRECTION:
+- Each panel's Description must specify: character appearance and pose, environment, lighting, and mood.
+- Recurring characters keep a consistent visual identity (clothing, hair, distinguishing features) across all panels.
+- Show, don't tell. Action and expression carry meaning — never narrate inner monologue.
+
+PACING:
+- Each scene must move the story forward — introduce or escalate conflict.
+- End every scene with tension, a beat of emotion, or a clean transition into the next scene.
+- Never stall. No filler panels.
+
+COMPLETION:
+- The story ends when the main conflict is resolved and a final emotional payoff is delivered.
+
+META RULE: Show > tell. Panels > paragraphs.
+` : "";
+
   const userBannedWords: string[] = Array.isArray(controls?.bannedWords) ? controls.bannedWords : [];
   const bannedWordsBlock = userBannedWords.length > 0
     ? `\n- The following words and their close variants MUST NEVER appear in the output: ${userBannedWords.join(", ")}.`
@@ -200,6 +276,8 @@ FORMAT RULES:
 
   return `You are a master writer creating content for a ${book.bookType} book.
 ${isScreenplay ? "You are writing in SCREENPLAY FORMAT. Every line of output must follow screenplay conventions." : ""}
+${isChildren ? "You are writing a CHILDREN'S BOOK for ages 1–9. Every line must obey the Children's Book Engine rules below." : ""}
+${isComic ? "You are writing a COMIC / GRAPHIC NOVEL. Every subsection must be delivered as panel-based output following the Comic Engine rules below." : ""}
 
 BOOK CONTEXT:
 - Title: "${book.title}"
@@ -212,6 +290,8 @@ LANGUAGE & GRAMMAR LEVEL (IELTS Band ${band}):
 ${languageGuidelines}
 
 ${screenplayRules}
+${childrensEngineRules}
+${comicEngineRules}
 
 ${pacingRules}
 
@@ -220,7 +300,7 @@ ANTI-REPETITION RULE (STRICTLY ENFORCED):
 - If the previous section ended mid-scene, continue from exactly that point — do not restart the scene.
 - Each subsection must introduce NEW events, NEW dialogue, or NEW developments. Zero overlap with previous content.
 
-${isNarrative ? `CHARACTER DESCRIPTION (MANDATORY for every narrative book — novel, serial, short story, biography, memoir, drama, children, comic):
+${isNarrative && !isChildren ? `CHARACTER DESCRIPTION (MANDATORY for every narrative book — novel, serial, short story, biography, memoir, drama, comic):
 - When a character first appears in a scene, render them in the tradition of James Hadley Chase: lean, sensory, and instantly cinematic.
 - Show physical specifics that imply personality — the cut of the jaw, the set of the mouth, the weight behind the eyes, the fall of the hair, the way the suit hangs on the shoulders, the shoes, the hands, the smell of cologne or sweat or rain.
 - Layer in posture, gait, micro-expressions, and the small habits that betray inner life (a thumb worried over a ring, a glance held a beat too long, a smile that does not reach the eyes).
