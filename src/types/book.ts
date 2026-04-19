@@ -250,6 +250,9 @@ export interface BookControls {
 
   // Optional cliffhanger intro snippet generated after the book is completed
   includeIntro?: boolean;
+
+  // Words the user does not want to appear in the generated text
+  bannedWords?: string[];
 }
 
 export interface Subsection {
@@ -618,9 +621,9 @@ export const WORD_COUNT_PRESETS = [
 
 export const GENRE_PRESETS: Record<BookCategory, string[]> = {
   fiction: [
-    "Fantasy", "Science Fiction", "Romance", "Mystery", "Thriller", 
-    "Literary Fiction", "Historical Fiction", "Adventure", 
-    "Dystopian", "Urban Fantasy", "Contemporary"
+    "Science Fiction", "Romance", "Mystery", "Thriller",
+    "Literary Fiction", "Historical Fiction", "Adventure",
+    "Contemporary"
   ],
   "non-fiction": [
     "Self-Improvement", "Leadership", "Productivity", "Relationships",
