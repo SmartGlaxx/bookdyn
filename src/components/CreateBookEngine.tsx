@@ -706,6 +706,27 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                         </Tooltip>
                       ))}
                     </div>
+
+                    {/* Banned words */}
+                    <div className="mt-4">
+                      <Label className="text-xs">Words to Exclude <span className="text-muted-foreground">(optional)</span></Label>
+                      <Input
+                        placeholder="e.g. suddenly, very, literally — comma separated"
+                        className="mt-1.5 text-xs"
+                        value={(formData.controls?.bannedWords || []).join(", ")}
+                        onChange={(e) => {
+                          const list = e.target.value
+                            .split(/[,\n]/)
+                            .map((w) => sanitizeText(w.trim()))
+                            .filter((w) => w.length > 0 && w.length <= 50)
+                            .slice(0, 50);
+                          updateControls("bannedWords", list);
+                        }}
+                      />
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        These words will be avoided in the generated text. Separate with commas.
+                      </p>
+                    </div>
                   </Section>
 
                   {/* Generation Options */}

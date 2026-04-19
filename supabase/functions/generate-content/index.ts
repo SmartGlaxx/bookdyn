@@ -4,6 +4,34 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.90.1";
 // ── Security Config ──
 const MAX_PAYLOAD_BYTES = 200_000;
 
+// ── In-memory novel-text cache (per Deno isolate) ──
+// Key: novel_full_v1_{novel_id}_{total_char_count}
+// Value: { text, expires }
+const NOVEL_TEXT_CACHE = new Map<string, { text: string; expires: number }>();
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const MAX_CONTEXT_CHARS = 100_000;
+
+function getCachedNovelText(key: string): string | null {
+  const entry = NOVEL_TEXT_CACHE.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expires) { NOVEL_TEXT_CACHE.delete(key); return null; }
+  return entry.text;
+}
+function setCachedNovelText(key: string, text: string) {
+  NOVEL_TEXT_CACHE.set(key, { text, expires: Date.now() + CACHE_TTL_MS });
+  // Light eviction: cap to 200 entries
+  if (NOVEL_TEXT_CACHE.size > 200) {
+    const oldest = NOVEL_TEXT_CACHE.keys().next().value;
+    if (oldest) NOVEL_TEXT_CACHE.delete(oldest);
+  }
+}
+function trimToSentenceBoundary(textChunk: string): string {
+  const matches = [...textChunk.matchAll(/[.!?]\s+[A-Z]/g)];
+  if (matches.length === 0) return textChunk;
+  const last = matches[matches.length - 1];
+  return textChunk.slice((last.index || 0) + 1);
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
@@ -165,6 +193,11 @@ FORMAT RULES:
 - NO prose paragraphs. Every line must serve the camera or the actor.
 ` : "";
 
+  const userBannedWords: string[] = Array.isArray(controls?.bannedWords) ? controls.bannedWords : [];
+  const bannedWordsBlock = userBannedWords.length > 0
+    ? `\n- The following words and their close variants MUST NEVER appear in the output: ${userBannedWords.join(", ")}.`
+    : "";
+
   return `You are a master writer creating content for a ${book.bookType} book.
 ${isScreenplay ? "You are writing in SCREENPLAY FORMAT. Every line of output must follow screenplay conventions." : ""}
 
@@ -199,12 +232,15 @@ ${isNarrative ? `CHARACTER DESCRIPTION (MANDATORY for every narrative book — n
 FORMAT & WORD BAN RULES (STRICTLY ENFORCED):
 - NEVER use markdown formatting such as **, *, ##, or any other markdown syntax in your output. Write in plain prose only.
 - NEVER use the word "magic" or "magical" in any context. Find more specific, vivid alternatives.
-- Do not use asterisks for emphasis.`;
+- Do not use asterisks for emphasis.
+- NEVER prefix any line with literal labels like "Hook:", "Teaser:", "Scene:", "Beat:", "Note:", "[HOOK]", "[TEASER]", or any meta-tag. Hooks and teasers must read as natural narrative — the reader must never be told they are reading a hook or a teaser.
+- If a teaser or hook is required, write it as ordinary prose that opens the section organically. No tags, no brackets, no labels of any kind.${bannedWordsBlock}`;
 }
 
 // ── Build variable user prompt (changes per subsection) ──
 function buildVariablePrompt(
   book: any, chapter: any, subsection: any,
+  previousNovelText: string | undefined,
   previousSummary: string | undefined, previousRawContent: string | undefined,
   tonalAnchors: string[] | undefined, teaserStyle: string | undefined,
   isScreenplay: boolean, isChildrensBook: boolean,
@@ -218,10 +254,18 @@ function buildVariablePrompt(
 
 `;
 
-  if (previousSummary) prompt += `PREVIOUS SECTION SUMMARY:\n${previousSummary}\n\n`;
+  if (previousNovelText && previousNovelText.length > 0) {
+    prompt += `[PREVIOUS_NOVEL_TEXT] (the entire prior novel text, verbatim — DO NOT repeat any of this content; continue seamlessly from where it ends):
+---
+${previousNovelText}
+---
 
-  if (previousRawContent) {
-    prompt += `PREVIOUS SECTION ENDING (last ~1000 words — DO NOT repeat any of this content):\n---\n${previousRawContent}\n---\n\n`;
+`;
+  } else {
+    if (previousSummary) prompt += `PREVIOUS SECTION SUMMARY:\n${previousSummary}\n\n`;
+    if (previousRawContent) {
+      prompt += `PREVIOUS SECTION ENDING (last ~1000 words — DO NOT repeat any of this content):\n---\n${previousRawContent}\n---\n\n`;
+    }
   }
 
   if (tonalAnchors?.length > 0) {
@@ -245,14 +289,14 @@ function buildVariablePrompt(
   }
 
   if (teaserStyle && teaserStyle !== "none") {
-    prompt += `SECTION TEASER (MANDATORY):
-You MUST begin your output with a teaser line wrapped in [TEASER]...[/TEASER] tags, followed by two newlines, then the actual ${isScreenplay ? "screenplay" : "prose"}.
-${teaserStyle === "mood-setter" ? "The teaser should be a date, location, weather note, or atmospheric stamp." : ""}
-${teaserStyle === "cryptic-open-loop" ? "The teaser should be a SINGLE cryptic sentence — intriguing enough to demand resolution." : ""}
-${teaserStyle === "character-voice-drop" ? "The teaser should be a one-line thought or fragment in a character's voice." : ""}\n\n`;
+    prompt += `SECTION OPENING STYLE:
+Open this section with a single line in the "${teaserStyle}" style — but write it as plain prose. Do NOT label it. Do NOT wrap it in any tags or brackets. Do NOT prefix it with words like "Hook:", "Teaser:", or similar. The opening line must read as natural narrative that the reader experiences without any meta-commentary.
+${teaserStyle === "mood-setter" ? "It should evoke a date, location, weather, or atmospheric stamp." : ""}
+${teaserStyle === "cryptic-open-loop" ? "It should be a single cryptic, intriguing sentence." : ""}
+${teaserStyle === "character-voice-drop" ? "It should be a one-line thought or fragment in a character's voice." : ""}\n\n`;
   }
 
-  prompt += `Write ONLY the content for this subsection. ${isScreenplay ? "Use proper screenplay formatting throughout." : "Do not include titles or headers. Match the established tone and style."} Create engaging, high-quality ${isScreenplay ? "screenplay scenes" : "prose"}.`;
+  prompt += `Write ONLY the content for this subsection. ${isScreenplay ? "Use proper screenplay formatting throughout." : "Do not include titles or headers. Do not include any meta-labels like \"Hook:\" or \"Teaser:\". Match the established tone and style."} Create engaging, high-quality ${isScreenplay ? "screenplay scenes" : "prose"}.`;
 
   return prompt;
 }
@@ -336,6 +380,39 @@ serve(async (req) => {
     const isScreenplay = book.bookType === "drama";
     const band = ieltsBand || 7;
 
+    // ── Fetch full prior novel text (with in-memory cache) for narrative books ──
+    let previousNovelText: string | undefined;
+    if (isNarrative && book.id && !isChildrensBook) {
+      try {
+        // Lookup current char count to build cache key (changes invalidate cache)
+        const { data: bookRow } = await adminSupabase
+          .from("books")
+          .select("full_text, total_char_count, user_id")
+          .eq("id", book.id)
+          .maybeSingle();
+
+        if (bookRow && bookRow.user_id === auth.user.id) {
+          const charCount = bookRow.total_char_count || 0;
+          const cacheKey = `novel_full_v1_${book.id}_${charCount}`;
+          let cached = getCachedNovelText(cacheKey);
+          if (!cached) {
+            let fullText = bookRow.full_text || "";
+            if (fullText.length > MAX_CONTEXT_CHARS) {
+              fullText = trimToSentenceBoundary(fullText.slice(-MAX_CONTEXT_CHARS));
+            }
+            setCachedNovelText(cacheKey, fullText);
+            cached = fullText;
+            console.log(`[novel-cache] MISS key=${cacheKey} chars=${fullText.length}`);
+          } else {
+            console.log(`[novel-cache] HIT key=${cacheKey} chars=${cached.length}`);
+          }
+          previousNovelText = cached;
+        }
+      } catch (e) {
+        console.warn("[novel-cache] full_text fetch failed:", e);
+      }
+    }
+
     // ── Build prompts with cache-optimized structure ──
     // Static system prompt = CACHE ANCHOR (identical across subsections of same book)
     const systemPrompt = buildStaticSystemPrompt(book, band, isScreenplay, isChildrensBook, isNarrative, book.controls);
@@ -343,6 +420,7 @@ serve(async (req) => {
     // Variable user prompt = changes per subsection (not cached)
     const userPrompt = buildVariablePrompt(
       book, chapter, subsection,
+      previousNovelText,
       previousSummary, previousRawContent, tonalAnchors, teaserStyle,
       isScreenplay, isChildrensBook, targetWordsPerSubsection, reqAutomationLevel
     );
@@ -419,6 +497,37 @@ serve(async (req) => {
       throw new Error(`AI error: ${response.status}`);
     }
 
+    // ── Helper: append generated text to book.full_text and invalidate cache ──
+    const finalizeFullText = async (newContent: string) => {
+      if (!isNarrative || isChildrensBook || !book.id) return;
+      try {
+        const { data: row } = await adminSupabase
+          .from("books")
+          .select("full_text, total_char_count, user_id")
+          .eq("id", book.id)
+          .maybeSingle();
+        if (!row || row.user_id !== auth.user.id) return;
+        const oldCharCount = row.total_char_count || 0;
+        const updated = ((row.full_text || "") + (row.full_text ? "\n\n" : "") + newContent).slice(-500_000); // safety cap 500k
+        const newCharCount = updated.length;
+        await adminSupabase
+          .from("books")
+          .update({ full_text: updated, total_char_count: newCharCount })
+          .eq("id", book.id);
+        // Invalidate any cached entry for the prior char count
+        NOVEL_TEXT_CACHE.delete(`novel_full_v1_${book.id}_${oldCharCount}`);
+        console.log(`[novel-cache] invalidated old key, new chars=${newCharCount}`);
+      } catch (e) {
+        console.warn("[novel-cache] full_text update failed:", e);
+      }
+    };
+
+    // ── Strip leftover meta-labels the model may emit ──
+    const stripMetaLabels = (s: string) =>
+      s
+        .replace(/^\s*(?:Hook|Teaser|Scene|Beat|Note)\s*:\s*/gim, "")
+        .replace(/\[\/?(?:HOOK|TEASER|SCENE|BEAT|NOTE)\]/gi, "");
+
     // ── For DeepSeek reasoner, we need to filter out reasoning_content from SSE ──
     if (useDeepSeek) {
       // DeepSeek reasoner streams with reasoning_content + content fields.
@@ -426,6 +535,7 @@ serve(async (req) => {
       const reader = response.body!.getReader();
       const encoder = new TextEncoder();
       const decoder = new TextDecoder();
+      let collected = "";
 
       const stream = new ReadableStream({
         async pull(controller) {
@@ -433,6 +543,9 @@ serve(async (req) => {
             const { done, value } = await reader.read();
             if (done) {
               controller.close();
+              // Persist the cleaned full content
+              const cleaned = stripMetaLabels(collected).trim();
+              if (cleaned) finalizeFullText(cleaned);
               return;
             }
             const chunk = decoder.decode(value, { stream: true });
@@ -450,6 +563,7 @@ serve(async (req) => {
                 const delta = parsed.choices?.[0]?.delta;
                 // Only forward content tokens, skip reasoning_content
                 if (delta?.content) {
+                  collected += delta.content;
                   const forwarded = {
                     ...parsed,
                     choices: [{
@@ -477,10 +591,45 @@ serve(async (req) => {
       });
     }
 
-    // Lovable AI — pass through directly
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-    });
+    // Lovable AI — wrap stream to also collect content for full_text persistence
+    {
+      const reader = response.body!.getReader();
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+      let collected = "";
+
+      const stream = new ReadableStream({
+        async pull(controller) {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              controller.close();
+              const cleaned = stripMetaLabels(collected).trim();
+              if (cleaned) finalizeFullText(cleaned);
+              return;
+            }
+            const chunk = decoder.decode(value, { stream: true });
+            // Forward as-is to client
+            controller.enqueue(value);
+            // Best-effort parse to collect text
+            for (const line of chunk.split("\n")) {
+              if (!line.startsWith("data: ")) continue;
+              const jsonStr = line.slice(6).trim();
+              if (!jsonStr || jsonStr === "[DONE]") continue;
+              try {
+                const parsed = JSON.parse(jsonStr);
+                const c = parsed.choices?.[0]?.delta?.content;
+                if (c) collected += c;
+              } catch { /* ignore */ }
+            }
+          }
+        }
+      });
+
+      return new Response(stream, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      });
+    }
   } catch (error) {
     console.error("generate-content error:", error);
     return new Response(
