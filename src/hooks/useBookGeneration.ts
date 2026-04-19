@@ -771,19 +771,16 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
           }
         }
 
-        let teaser: string | undefined;
-        let cleanContent = content;
-        const teaserMatch = content.match(/\[TEASER\]([\s\S]*?)\[\/TEASER\]/);
-        if (teaserMatch) {
-          teaser = teaserMatch[1].trim();
-          cleanContent = content.replace(/\[TEASER\][\s\S]*?\[\/TEASER\]\s*/, "").trim();
-        }
+        const cleanContent = content
+          .replace(/\[\/?(?:TEASER|HOOK|SCENE|BEAT|NOTE)\]/gi, "")
+          .replace(/^\s*(?:Hook|Teaser|Scene|Beat|Note)\s*:\s*/gim, "")
+          .trim();
 
         updatedSubsections[subIdx] = {
           ...subsection,
           content: cleanContent,
           summary,
-          teaser,
+          teaser: undefined,
           imageUrl: imageUrl || undefined,
           status: "completed",
         };
