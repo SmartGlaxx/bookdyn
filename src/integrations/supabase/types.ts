@@ -55,6 +55,7 @@ export type Database = {
           current_chapter_index: number
           current_subsection_index: number
           entities: string[] | null
+          full_text: string
           genre: string | null
           id: string
           outline: Json | null
@@ -65,6 +66,7 @@ export type Database = {
           title: string
           tonal_anchors: string[] | null
           tone_profile: Json
+          total_char_count: number
           updated_at: string
           user_id: string
           word_count: number
@@ -79,6 +81,7 @@ export type Database = {
           current_chapter_index?: number
           current_subsection_index?: number
           entities?: string[] | null
+          full_text?: string
           genre?: string | null
           id?: string
           outline?: Json | null
@@ -89,6 +92,7 @@ export type Database = {
           title: string
           tonal_anchors?: string[] | null
           tone_profile: Json
+          total_char_count?: number
           updated_at?: string
           user_id: string
           word_count?: number
@@ -103,6 +107,7 @@ export type Database = {
           current_chapter_index?: number
           current_subsection_index?: number
           entities?: string[] | null
+          full_text?: string
           genre?: string | null
           id?: string
           outline?: Json | null
@@ -113,6 +118,7 @@ export type Database = {
           title?: string
           tonal_anchors?: string[] | null
           tone_profile?: Json
+          total_char_count?: number
           updated_at?: string
           user_id?: string
           word_count?: number
