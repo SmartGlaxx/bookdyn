@@ -193,6 +193,11 @@ FORMAT RULES:
 - NO prose paragraphs. Every line must serve the camera or the actor.
 ` : "";
 
+  const userBannedWords: string[] = Array.isArray(controls?.bannedWords) ? controls.bannedWords : [];
+  const bannedWordsBlock = userBannedWords.length > 0
+    ? `\n- The following words and their close variants MUST NEVER appear in the output: ${userBannedWords.join(", ")}.`
+    : "";
+
   return `You are a master writer creating content for a ${book.bookType} book.
 ${isScreenplay ? "You are writing in SCREENPLAY FORMAT. Every line of output must follow screenplay conventions." : ""}
 
@@ -227,7 +232,9 @@ ${isNarrative ? `CHARACTER DESCRIPTION (MANDATORY for every narrative book — n
 FORMAT & WORD BAN RULES (STRICTLY ENFORCED):
 - NEVER use markdown formatting such as **, *, ##, or any other markdown syntax in your output. Write in plain prose only.
 - NEVER use the word "magic" or "magical" in any context. Find more specific, vivid alternatives.
-- Do not use asterisks for emphasis.`;
+- Do not use asterisks for emphasis.
+- NEVER prefix any line with literal labels like "Hook:", "Teaser:", "Scene:", "Beat:", "Note:", "[HOOK]", "[TEASER]", or any meta-tag. Hooks and teasers must read as natural narrative — the reader must never be told they are reading a hook or a teaser.
+- If a teaser or hook is required, write it as ordinary prose that opens the section organically. No tags, no brackets, no labels of any kind.${bannedWordsBlock}`;
 }
 
 // ── Build variable user prompt (changes per subsection) ──
