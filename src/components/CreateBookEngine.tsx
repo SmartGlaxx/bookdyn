@@ -132,7 +132,8 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
   const handleBookTypeChange = (type: BookType) => {
     updateForm("bookType", type);
-    updateForm("controls", { ...getDefaultControls(type), automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel, temporalContext: { era: "" as TemporalEra, timelineStructure: "" as TimelineStructure }, structureControls: { ...getDefaultControls(type).structureControls, chapterCount: "" as any, sectionsPerChapterMode: "" as any } });
+    // Image Generation is temporarily disabled across the app for the test launch.
+    updateForm("controls", { ...getDefaultControls(type), imageGeneration: false, automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel, temporalContext: { era: "" as TemporalEra, timelineStructure: "" as TimelineStructure }, structureControls: { ...getDefaultControls(type).structureControls, chapterCount: "" as any, sectionsPerChapterMode: "" as any } });
     const allowed = BOOK_TYPE_AUDIENCES[type];
     if (formData.audience && allowed && !allowed.includes(formData.audience)) {
       updateForm("audience", "");
