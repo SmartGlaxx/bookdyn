@@ -38,3 +38,15 @@ verify_jwt = false
 
 [functions.waitlist]
 verify_jwt = false
+
+[functions.log-error]
+verify_jwt = false
+
+[functions.admin-errors]
+verify_jwt = false
+
+[functions.admin-users]
+verify_jwt = false
+
+[functions.admin-feedback]
+verify_jwt = false

@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_override_log: {
+        Row: {
+          admin_email: string
+          admin_user_id: string
+          created_at: string
+          id: string
+          reason: string | null
+          target_email: string
+          target_user_id: string
+        }
+        Insert: {
+          admin_email: string
+          admin_user_id: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          target_email: string
+          target_user_id: string
+        }
+        Update: {
+          admin_email?: string
+          admin_user_id?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          target_email?: string
+          target_user_id?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -122,6 +152,45 @@ export type Database = {
           updated_at?: string
           user_id?: string
           word_count?: number
+        }
+        Relationships: []
+      }
+      error_logs: {
+        Row: {
+          context: Json | null
+          created_at: string
+          function_name: string | null
+          id: string
+          message: string
+          source: string
+          stack: string | null
+          url: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string
+          function_name?: string | null
+          id?: string
+          message: string
+          source: string
+          stack?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string
+          function_name?: string | null
+          id?: string
+          message?: string
+          source?: string
+          stack?: string | null
+          url?: string | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

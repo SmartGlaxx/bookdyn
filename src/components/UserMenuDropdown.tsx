@@ -139,10 +139,20 @@ export function UserMenuDropdown({ className }: UserMenuDropdownProps) {
         </DropdownMenuItem>
 
         {user?.email === "mailsmartcodes@gmail.com" && (
-          <DropdownMenuItem onClick={() => navigate("/admin/feedback")}>
-            <MessageSquare className="w-4 h-4 mr-2" />
-            Feedback Dashboard
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem onClick={() => navigate("/admin/feedback")}>
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Feedback Dashboard
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/admin/errors")}>
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Error Logs
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/admin/users")}>
+              <User className="w-4 h-4 mr-2" />
+              User Admin
+            </DropdownMenuItem>
+          </>
         )}
 
         <DropdownMenuSeparator />
