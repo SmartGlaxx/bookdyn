@@ -180,14 +180,32 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
                 Give Feedback
               </button>
               {user?.email === "mailsmartcodes@gmail.com" && (
-                <button
-                  onClick={() => { navigate("/admin/feedback"); setOpen(false); }}
-                  className="w-full flex items-center gap-3 text-left text-sm text-foreground font-medium transition-colors"
-                  style={{ padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  Feedback Dashboard
-                </button>
+                <>
+                  <button
+                    onClick={() => { navigate("/admin/feedback"); setOpen(false); }}
+                    className="w-full flex items-center gap-3 text-left text-sm text-foreground font-medium transition-colors"
+                    style={{ padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Feedback Dashboard
+                  </button>
+                  <button
+                    onClick={() => { navigate("/admin/errors"); setOpen(false); }}
+                    className="w-full flex items-center gap-3 text-left text-sm text-foreground font-medium transition-colors"
+                    style={{ padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    Error Logs
+                  </button>
+                  <button
+                    onClick={() => { navigate("/admin/users"); setOpen(false); }}
+                    className="w-full flex items-center gap-3 text-left text-sm text-foreground font-medium transition-colors"
+                    style={{ padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
+                  >
+                    <User className="w-4 h-4" />
+                    User Admin
+                  </button>
+                </>
               )}
               <button
                 onClick={handleSignOut}

@@ -13,11 +13,14 @@ import ResetPassword from "./pages/ResetPassword";
 import ManageSubscription from "./pages/ManageSubscription";
 import DevDocs from "./pages/DevDocs";
 import AdminFeedback from "./pages/AdminFeedback";
+import AdminErrors from "./pages/AdminErrors";
+import AdminUsers from "./pages/AdminUsers";
 import NotFound from "./pages/NotFound";
 import CheckEmail from "./pages/CheckEmail";
 import Waitlist from "./pages/Waitlist";
 import Onboarding from "./pages/Onboarding";
 import BookDetail from "./pages/BookDetail";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { BookOpen } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -100,57 +103,51 @@ const RootRedirect = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<RootRedirect />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/check-email" element={<CheckEmail />} />
-          <Route path="/waitlist" element={<Waitlist />} />
-          <Route path="/onboarding" element={<OnboardingRoute />} />
-          <Route path="/plans" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Index />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/:bookId"
-            element={
-              <ProtectedRoute>
-                <BookDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/manage-subscription"
-            element={
-              <ProtectedRoute>
-                <ManageSubscription />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/dev-docs" element={<DevDocs />} />
-          <Route
-            path="/admin/feedback"
-            element={
-              <ProtectedRoute>
-                <AdminFeedback />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<RootRedirect />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/check-email" element={<CheckEmail />} />
+            <Route path="/waitlist" element={<Waitlist />} />
+            <Route path="/onboarding" element={<OnboardingRoute />} />
+            <Route path="/plans" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route
+              path="/dashboard"
+              element={<ProtectedRoute><Index /></ProtectedRoute>}
+            />
+            <Route
+              path="/dashboard/:bookId"
+              element={<ProtectedRoute><BookDetail /></ProtectedRoute>}
+            />
+            <Route
+              path="/manage-subscription"
+              element={<ProtectedRoute><ManageSubscription /></ProtectedRoute>}
+            />
+            <Route path="/dev-docs" element={<DevDocs />} />
+            <Route
+              path="/admin/feedback"
+              element={<ProtectedRoute><AdminFeedback /></ProtectedRoute>}
+            />
+            <Route
+              path="/admin/errors"
+              element={<ProtectedRoute><AdminErrors /></ProtectedRoute>}
+            />
+            <Route
+              path="/admin/users"
+              element={<ProtectedRoute><AdminUsers /></ProtectedRoute>}
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
