@@ -647,7 +647,6 @@ export const GENRE_PRESETS: Record<BookCategory, string[]> = {
 export const BOOK_TYPE_GENRES: Partial<Record<BookType, string[]>> = {
   "self-help": [
     "Personal Growth",
-    "Mindfulness & Meditation",
     "Habits & Productivity",
     "Relationships & Communication",
     "Confidence & Mindset",
