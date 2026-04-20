@@ -39,6 +39,8 @@ import {
   AUDIENCE_OPTIONS,
   BOOK_TYPE_AUDIENCES,
   GENRE_PRESETS,
+  BOOK_TYPE_GENRES,
+  ENABLED_BOOK_TYPES,
   WORD_COUNT_PRESETS,
   TEASER_STYLE_OPTIONS,
   getDefaultControls,
@@ -130,7 +132,8 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
   const handleBookTypeChange = (type: BookType) => {
     updateForm("bookType", type);
-    updateForm("controls", { ...getDefaultControls(type), automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel, temporalContext: { era: "" as TemporalEra, timelineStructure: "" as TimelineStructure }, structureControls: { ...getDefaultControls(type).structureControls, chapterCount: "" as any, sectionsPerChapterMode: "" as any } });
+    // Image Generation is temporarily disabled across the app for the test launch.
+    updateForm("controls", { ...getDefaultControls(type), imageGeneration: false, automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel, temporalContext: { era: "" as TemporalEra, timelineStructure: "" as TimelineStructure }, structureControls: { ...getDefaultControls(type).structureControls, chapterCount: "" as any, sectionsPerChapterMode: "" as any } });
     const allowed = BOOK_TYPE_AUDIENCES[type];
     if (formData.audience && allowed && !allowed.includes(formData.audience)) {
       updateForm("audience", "");
@@ -288,19 +291,32 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                   >
                     {filteredBookTypes.map(([type, info]) => {
                       const isSelected = formData.bookType === type;
+                      const isDisabled = !ENABLED_BOOK_TYPES.includes(type);
                       return (
                         <button
                           key={type}
-                          onClick={() => handleBookTypeChange(type)}
+                          onClick={() => !isDisabled && handleBookTypeChange(type)}
+                          disabled={isDisabled}
+                          aria-disabled={isDisabled}
+                          title={isDisabled ? "Coming soon" : undefined}
                           className={`group relative rounded-xl p-3 text-left transition-all border ${
                             isSelected
                               ? "border-primary bg-primary/5 ring-1 ring-primary/30"
-                              : "border-border hover:border-primary/40 hover:bg-muted/50"
+                              : isDisabled
+                                ? "border-border/50 bg-muted/30 opacity-50 cursor-not-allowed"
+                                : "border-border hover:border-primary/40 hover:bg-muted/50"
                           }`}
                         >
                           {isSelected && (
                             <div className="absolute top-2 right-2">
                               <Check className="w-3.5 h-3.5 text-primary" />
+                            </div>
+                          )}
+                          {isDisabled && (
+                            <div className="absolute top-1.5 right-1.5">
+                              <span className="text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border">
+                                Soon
+                              </span>
                             </div>
                           )}
                           <span className="text-lg block mb-1">{info.icon}</span>
@@ -359,7 +375,10 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                       <Select value={formData.genre || ""} onValueChange={(v) => updateForm("genre", v)}>
                         <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
                         <SelectContent className="bg-popover z-50">
-                          {GENRE_PRESETS[currentCategory].map((genre) => (
+                          {(formData.bookType && BOOK_TYPE_GENRES[formData.bookType]
+                            ? BOOK_TYPE_GENRES[formData.bookType]!
+                            : GENRE_PRESETS[currentCategory]
+                          ).map((genre) => (
                             <SelectItem key={genre} value={genre}>{genre}</SelectItem>
                           ))}
                         </SelectContent>
@@ -731,22 +750,8 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
 
                   {/* Generation Options */}
                   <Section emoji="⚡" title="Generation Options">
-                    <ToggleRow
-                      label="Image Generation"
-                      tooltip="Automatically generate illustrations and visual aids"
-                      checked={formData.controls?.imageGeneration}
-                      onChange={(v) => updateControls("imageGeneration", v)}
-                    />
-                    {formData.controls?.imageGeneration && (
-                      <CompactSlider
-                        label="Image Frequency"
-                        tooltip="How often images appear — lower means fewer images, higher means more"
-                        value={formData.controls?.imageFrequency || 5}
-                        onChange={(v) => updateControls("imageFrequency", v)}
-                        left="Sparse"
-                        right="Frequent"
-                      />
-                    )}
+                    {/* Image Generation temporarily disabled for the test launch.
+                        Re-enable by restoring the ToggleRow + Image Frequency slider here. */}
                     <ToggleRow
                       label="Auto-Resume"
                       tooltip="Continue generation after interruptions"

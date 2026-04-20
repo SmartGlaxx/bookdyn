@@ -643,6 +643,28 @@ export const GENRE_PRESETS: Record<BookCategory, string[]> = {
   ],
 };
 
+// Per-book-type genres (overrides category presets when present)
+export const BOOK_TYPE_GENRES: Partial<Record<BookType, string[]>> = {
+  "self-help": [
+    "Personal Growth",
+    "Mindfulness & Meditation",
+    "Habits & Productivity",
+    "Relationships & Communication",
+    "Confidence & Mindset",
+  ],
+  business: [
+    "Leadership & Management",
+    "Entrepreneurship & Startups",
+    "Marketing & Branding",
+    "Strategy & Innovation",
+    "Career & Professional Growth",
+  ],
+};
+
+// Book types that are enabled in the Creation Engine right now.
+// Other types are visible but disabled (coming soon) for the test launch.
+export const ENABLED_BOOK_TYPES: BookType[] = ["novel", "self-help", "business"];
+
 // Helper to get default controls based on book type
 export const getDefaultControls = (bookType: BookType): BookControls => {
   const category = BOOK_TYPE_INFO[bookType].category;

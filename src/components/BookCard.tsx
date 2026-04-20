@@ -49,15 +49,17 @@ const BookCard = ({ book, onSelect, onDelete, onUpdateCover, index }: BookCardPr
 
   const chapterCount = book.outline?.chapters.length || 0;
 
+  // Cover image generation is temporarily disabled for the test launch.
+  // To re-enable, restore the menu item below.
   const menuContent = (
     <DropdownMenuContent align="end">
       <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onSelect(book); }}>
         <Play className="w-4 h-4 mr-2" />
         Open
       </DropdownMenuItem>
-      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setCoverModalOpen(true); }}>
+      <DropdownMenuItem disabled className="opacity-60">
         {hasCover ? <Image className="w-4 h-4 mr-2" /> : <ImagePlus className="w-4 h-4 mr-2" />}
-        {hasCover ? "Change Book Cover" : "Add Book Cover"}
+        {hasCover ? "Change Book Cover" : "Add Book Cover"} (coming soon)
       </DropdownMenuItem>
       <DropdownMenuItem
         onClick={(e) => { e.stopPropagation(); onDelete(book.id); }}
