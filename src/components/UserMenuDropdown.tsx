@@ -106,6 +106,10 @@ export function UserMenuDropdown({ className }: UserMenuDropdownProps) {
         {/* Streak & Words progress */}
         {!turbo.isLoading && (
           <div className="px-2 py-2 space-y-2">
+            <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+              Unlock Turbo
+            </div>
+            <div className="pl-3 border-l border-border space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="flex items-center gap-1">
                 <Flame className="w-3.5 h-3.5 text-orange-500" />
@@ -123,6 +127,7 @@ export function UserMenuDropdown({ className }: UserMenuDropdownProps) {
               <span className="font-semibold">{(turbo.totalWordsWritten / 1000).toFixed(1)}K / {(turbo.WORDS_GOAL / 1000).toFixed(0)}K</span>
             </div>
             <Progress value={turbo.wordsProgress} className="h-1.5" />
+            </div>
           </div>
         )}
 
