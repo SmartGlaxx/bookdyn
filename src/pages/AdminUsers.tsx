@@ -85,7 +85,7 @@ export default function AdminUsers() {
           action: "override_link",
           email: target.email,
           reason: reason || null,
-          redirectTo: `${window.location.origin}/dashboard`,
+          redirectTo: `${window.location.origin}/admin/override-callback`,
         },
       });
       if (error) throw error;
