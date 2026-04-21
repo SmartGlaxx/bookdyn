@@ -29,6 +29,7 @@ const Index = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [wipVisible, setWipVisible] = useState(BOOKS_PER_PAGE);
   const [completedVisible, setCompletedVisible] = useState(BOOKS_PER_PAGE);
+  const [activeTab, setActiveTab] = useState<"library" | "shelves">("library");
   const observerRef = useRef<IntersectionObserver | null>(null);
   const sentinelWipRef = useRef<HTMLDivElement | null>(null);
   const sentinelCompletedRef = useRef<HTMLDivElement | null>(null);
@@ -253,7 +254,9 @@ const Index = () => {
   const toolbar = (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-2xl font-serif font-bold">Your Library</h3>
+        <h3 className="text-2xl font-serif font-bold">
+          {activeTab === "shelves" ? "Your Shelves" : "Your Library"}
+        </h3>
         <div className="flex items-center gap-2">
           <Button
             variant={showFilters ? "secondary" : "outline"}
@@ -373,7 +376,8 @@ const Index = () => {
                 </p>
               </div>
               <motion.div
-                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5 md:gap-6"
+                className="grid gap-4 sm:gap-5 md:gap-6"
+                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
@@ -497,7 +501,11 @@ const Index = () => {
           <div className="container max-w-6xl mx-auto px-4 py-8">
             {toolbar}
 
-            <Tabs defaultValue="library" className="mt-4">
+            <Tabs
+              value={activeTab}
+              onValueChange={(v) => setActiveTab(v as "library" | "shelves")}
+              className="mt-4"
+            >
               <TabsList>
                 <TabsTrigger value="library">Library</TabsTrigger>
                 <TabsTrigger value="shelves">Shelves</TabsTrigger>
