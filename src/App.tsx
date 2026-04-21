@@ -15,6 +15,7 @@ import DevDocs from "./pages/DevDocs";
 import AdminFeedback from "./pages/AdminFeedback";
 import AdminErrors from "./pages/AdminErrors";
 import AdminUsers from "./pages/AdminUsers";
+import AdminOverrideCallback from "./pages/AdminOverrideCallback";
 import NotFound from "./pages/NotFound";
 import CheckEmail from "./pages/CheckEmail";
 import Waitlist from "./pages/Waitlist";
@@ -141,6 +142,10 @@ const App = () => (
             <Route
               path="/admin/users"
               element={<ProtectedRoute><AdminUsers /></ProtectedRoute>}
+            />
+            <Route
+              path="/admin/override-callback"
+              element={<AdminOverrideCallback />}
             />
             <Route path="*" element={<NotFound />} />
           </Routes>
