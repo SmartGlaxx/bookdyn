@@ -4,13 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { BookOpen, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-/**
- * Landing page for admin override links.
- * The override link from admin-users redirects here with a session token
- * in the URL hash (#access_token=...&refresh_token=...). This page waits for
- * supabase-js to consume the hash and establish a session, then forwards
- * the user to /dashboard.
- */
 export default function AdminOverrideCallback() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
@@ -18,43 +11,50 @@ export default function AdminOverrideCallback() {
 
   useEffect(() => {
     let cancelled = false;
-    let timeoutId: number | undefined;
 
-    const finish = (path = "/dashboard") => {
+    const fail = (msg: string) => {
       if (cancelled) return;
-      // Strip the hash before navigating so tokens don't linger in history.
-      window.history.replaceState(null, "", window.location.pathname);
-      navigate(path, { replace: true });
+      setStatus("Sign-in failed");
+      setError(msg);
     };
 
-    // 1) Listen for SIGNED_IN — fires once supabase-js parses the URL hash.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (event === "SIGNED_IN" && session) finish();
-      },
-    );
-
-    // 2) Also poll getSession in case the event already fired before mount.
-    (async () => {
-      // Give supabase-js a moment to process the URL hash automatically.
-      await new Promise((r) => setTimeout(r, 250));
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) finish();
-    })();
-
-    // 3) Hard timeout — if nothing happens, show an error.
-    timeoutId = window.setTimeout(() => {
+    const finish = () => {
       if (cancelled) return;
-      setError(
-        "Could not establish a session from this link. It may have expired or already been used. Generate a new override link.",
-      );
-      setStatus("Sign-in failed");
-    }, 6000);
+      window.history.replaceState(null, "", window.location.pathname);
+      navigate("/dashboard", { replace: true });
+    };
+
+    (async () => {
+      // Parse tokens from the URL hash (#access_token=...&refresh_token=...&type=magiclink).
+      const hash = window.location.hash.startsWith("#")
+        ? window.location.hash.slice(1)
+        : window.location.hash;
+      const params = new URLSearchParams(hash);
+      const access_token = params.get("access_token");
+      const refresh_token = params.get("refresh_token");
+      const errorDescription = params.get("error_description");
+
+      if (errorDescription) {
+        return fail(decodeURIComponent(errorDescription));
+      }
+      if (!access_token || !refresh_token) {
+        return fail(
+          "No session tokens found in the URL. The link may have already been used, or the redirect URL is not allow-listed in Auth settings.",
+        );
+      }
+
+      setStatus("Setting session…");
+      const { error: setErr } = await supabase.auth.setSession({
+        access_token,
+        refresh_token,
+      });
+      if (setErr) return fail(setErr.message);
+
+      finish();
+    })();
 
     return () => {
       cancelled = true;
-      subscription.unsubscribe();
-      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [navigate]);
 
