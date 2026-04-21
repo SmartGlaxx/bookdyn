@@ -113,6 +113,10 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
             {/* Streak & Words progress */}
             {!turbo.isLoading && (
               <div className="px-6 py-3 space-y-2">
+                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">
+                  Unlock Turbo
+                </div>
+                <div className="pl-3 border-l border-border space-y-2">
                 <div className="flex items-center justify-between text-sm md:text-xs">
                   <TooltipProvider delayDuration={300}>
                     <Tooltip>
@@ -148,6 +152,7 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
                   <span className="font-semibold">{(turbo.totalWordsWritten / 1000).toFixed(1)}K / {(turbo.WORDS_GOAL / 1000).toFixed(0)}K</span>
                 </div>
                 <Progress value={turbo.wordsProgress} className="h-1.5" />
+                </div>
               </div>
             )}
 
