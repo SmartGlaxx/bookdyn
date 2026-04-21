@@ -500,7 +500,11 @@ const Index = () => {
           <div className="container max-w-6xl mx-auto px-4 py-8">
             {toolbar}
 
-            <Tabs defaultValue="library" className="mt-4">
+            <Tabs
+              value={activeTab}
+              onValueChange={(v) => setActiveTab(v as "library" | "shelves")}
+              className="mt-4"
+            >
               <TabsList>
                 <TabsTrigger value="library">Library</TabsTrigger>
                 <TabsTrigger value="shelves">Shelves</TabsTrigger>
