@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
       const reason = body.reason ? String(body.reason).slice(0, 500) : null;
       const redirectTo = body.redirectTo
         ? String(body.redirectTo)
-        : `${new URL(req.url).origin}/dashboard`;
+        : `${new URL(req.url).origin}/admin/override-callback`;
 
       if (!targetEmail) return json({ error: "Email required" }, 400);
 
