@@ -17,18 +17,21 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return json({ error: "Unauthorized" }, 401);
+    if (!authHeader?.startsWith("Bearer ")) {
+      return json({ error: "Unauthorized" }, 401);
+    }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: { user: adminUser }, error: userError } = await userClient
-      .auth.getUser();
-    if (userError || !adminUser || !isAdminEmail(adminUser.email)) {
+    const userClient = createClient(supabaseUrl, anonKey);
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsErr } = await userClient.auth
+      .getClaims(token);
+    const adminEmail = claimsData?.claims?.email as string | undefined;
+    const adminUserId = claimsData?.claims?.sub as string | undefined;
+    if (claimsErr || !adminUserId || !isAdminEmail(adminEmail)) {
       return json({ error: "Forbidden" }, 403);
     }
 
@@ -86,8 +89,8 @@ Deno.serve(async (req) => {
 
       // Audit log
       await admin.from("admin_override_log").insert({
-        admin_user_id: adminUser.id,
-        admin_email: adminUser.email!,
+        admin_user_id: adminUserId,
+        admin_email: adminEmail!,
         target_user_id: target.id,
         target_email: targetEmail,
         reason,
