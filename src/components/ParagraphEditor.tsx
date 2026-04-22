@@ -8,6 +8,8 @@ import { sanitizeHtml, sanitizeRichText } from "@/lib/sanitize";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RichTextToolbar } from "@/components/RichTextToolbar";
+import { TypewriterText } from "@/components/TypewriterText";
+import { markRevealed } from "@/lib/revealRegistry";
 
 interface ParagraphEditorProps {
   paragraph: string;
@@ -22,6 +24,11 @@ interface ParagraphEditorProps {
   readOnly?: boolean;
   totalParagraphs?: number;
   highlightText?: (text: string) => React.ReactNode;
+  /**
+   * When true, reveal this paragraph word-by-word via the typewriter animation
+   * (used for freshly-generated content). When false/undefined, render instantly.
+   */
+  animateReveal?: boolean;
 }
 
 export function ParagraphEditor({
@@ -37,6 +44,7 @@ export function ParagraphEditor({
   readOnly = false,
   totalParagraphs = 1,
   highlightText,
+  animateReveal = false,
 }: ParagraphEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isRewriting, setIsRewriting] = useState(false);
@@ -205,8 +213,19 @@ export function ParagraphEditor({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <p className="whitespace-pre-wrap leading-relaxed text-foreground/90 break-words"
-         dangerouslySetInnerHTML={{ __html: sanitizeHtml(paragraph) }} />
+      {animateReveal && !/<[a-z][^>]*>/i.test(paragraph) ? (
+        <p className="whitespace-pre-wrap leading-relaxed text-foreground/90 break-words">
+          <TypewriterText
+            text={paragraph}
+            intervalMs={60}
+            fadeMs={350}
+            onComplete={() => markRevealed(subsectionId)}
+          />
+        </p>
+      ) : (
+        <p className="whitespace-pre-wrap leading-relaxed text-foreground/90 break-words"
+           dangerouslySetInnerHTML={{ __html: sanitizeHtml(paragraph) }} />
+      )}
 
       {/* Floating toolbar */}
       {!readOnly && (

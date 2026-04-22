@@ -16,6 +16,7 @@ import { Book, Chapter as ChapterType, AutomationLevel, VISUAL_BOOK_TYPES, BOOK_
 import { TemplateImage } from "@/components/TemplateImage";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ParagraphEditor } from "@/components/ParagraphEditor";
+import { isRevealed } from "@/lib/revealRegistry";
 import { GuidedWritingToolbar } from "@/components/GuidedWritingToolbar";
 import { CharacterGallery } from "@/components/CharacterGallery";
 import { Textarea } from "@/components/ui/textarea";
@@ -152,6 +153,10 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
     const paragraphs = content.split(/\n\n+/).filter(p => p.trim());
     if (paragraphs.length === 0) return null;
 
+    // Animate reveal only for completed subsections that haven't been
+    // shown to the user yet this session (i.e. freshly generated content).
+    const shouldAnimate = sub.status === "completed" && !isRevealed(sub.id);
+
     return (
       <div className="space-y-3">
         {paragraphs.map((para, pIdx) => (
@@ -169,6 +174,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
             readOnly={!onUpdateBook}
             totalParagraphs={paragraphs.length}
             highlightText={searchQuery ? highlightSearchInText : undefined}
+            animateReveal={shouldAnimate}
           />
         ))}
       </div>

@@ -368,42 +368,13 @@ const Index = () => {
         >
           {sortedShelves.map(([type, typeBooks]) => {
             const info = BOOK_TYPE_INFO[type as BookType];
-            // Show max 5 books per stack, latest first (already sorted)
-            const stackBooks = typeBooks.slice(0, 5);
-            const topBook = stackBooks[0];
+            const topBook = typeBooks[0];
             return (
               <div key={type} className="flex flex-col">
                 <div
                   className="relative aspect-[2/3] cursor-pointer"
                   onClick={() => topBook && handleSelectBook(topBook)}
                 >
-                  {/* Background cards (oldest to newest, back to front) */}
-                  {stackBooks
-                    .slice(1)
-                    .reverse()
-                    .map((book, i) => {
-                      const stackIndex = stackBooks.length - 1 - i;
-                      const angle = stackIndex * 4;
-                      return (
-                        <div
-                          key={book.id}
-                          className="absolute inset-0 rounded-[2px_6px_6px_2px] overflow-hidden bg-card border border-border"
-                          style={{
-                            transformOrigin: "bottom left",
-                            transform: `rotate(${angle}deg)`,
-                            zIndex: i,
-                            boxShadow: "-2px 2px 6px rgba(0,0,0,0.15)",
-                          }}
-                        >
-                          {book.coverUrl ? (
-                            <img src={book.coverUrl} alt="" className="w-full h-full object-cover opacity-80" />
-                          ) : (
-                            <div className="w-full h-full bg-muted/60" />
-                          )}
-                          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-black/20" />
-                        </div>
-                      );
-                    })}
                   {topBook && (
                     <div className="relative z-10 w-full h-full">
                       <BookCard
