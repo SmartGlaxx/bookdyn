@@ -1,106 +1,114 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface TypewriterTextProps {
   text: string;
-  /** Milliseconds between each word (default 60ms ≈ ~1000 words/min) */
+  /** Milliseconds between each word reveal (default 60ms ≈ ~1000 words/min) */
   intervalMs?: number;
+  /** Duration of each word's fade-in animation in ms (default 350ms) */
+  fadeMs?: number;
   onComplete?: () => void;
-  children?: (visibleText: string) => React.ReactNode;
 }
 
 /**
- * Streams text word-by-word using setInterval.
- * Splits text into words, appends one word + space per tick.
- * Clears interval when all words are rendered.
- * Tracks previous text length so only NEW appended content animates.
+ * Renders text token-by-token with a per-word fade-in reveal.
+ * Already-revealed words stay fully opaque so the page fills naturally
+ * (ink-on-paper feel) while new tokens gently materialise.
+ *
+ * The full text is rendered immediately (so layout is stable), but each
+ * word/whitespace token is wrapped in a span whose opacity transitions
+ * from 0 to 1 staggered by `intervalMs`.
  */
-export function TypewriterText({ text, intervalMs = 60, children }: TypewriterTextProps) {
-  const [displayText, setDisplayText] = useState("");
-  const prevTextRef = useRef("");
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const currentIndexRef = useRef(0);
-  const wordsRef = useRef<string[]>([]);
-  const baseTextRef = useRef("");
+export function TypewriterText({
+  text,
+  intervalMs = 60,
+  fadeMs = 350,
+  onComplete,
+}: TypewriterTextProps) {
+  // Tokenize preserving whitespace so layout (newlines, spaces) is exact.
+  const tokens = useMemo(() => text.split(/(\s+)/).filter((t) => t.length > 0), [text]);
 
-  const clearTimer = useCallback(() => {
-    if (intervalRef.current !== null) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }, []);
+  // How many tokens are currently "revealed" (fully visible).
+  // We persist this so adding more text doesn't re-animate already-shown tokens.
+  const [revealedCount, setRevealedCount] = useState(0);
+  const revealedRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const completedRef = useRef(false);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    revealedRef.current = revealedCount;
+  }, [revealedCount]);
 
   useEffect(() => {
-    if (text === prevTextRef.current) return;
-
-    const prevLen = prevTextRef.current.length;
-    prevTextRef.current = text;
-
-    // Text grew — animate the delta
-    if (text.length > prevLen) {
-      const alreadyShown = text.slice(0, prevLen);
-      const newPart = text.slice(prevLen);
-      const newWords = newPart.split(/\s+/).filter(Boolean);
-
-      if (newWords.length === 0) {
-        setDisplayText(text);
-        return;
-      }
-
-      clearTimer();
-      baseTextRef.current = alreadyShown;
-      wordsRef.current = newWords;
-      currentIndexRef.current = 0;
-      setDisplayText(alreadyShown);
-
-      intervalRef.current = setInterval(() => {
-        currentIndexRef.current += 1;
-        const slice = wordsRef.current.slice(0, currentIndexRef.current);
-        setDisplayText(baseTextRef.current + slice.join(" ") + " ");
-
-        if (currentIndexRef.current >= wordsRef.current.length) {
-          clearTimer();
-          setDisplayText(text); // ensure exact final text
-        }
-      }, intervalMs);
-    } else if (prevLen === 0 && text.length > 0) {
-      // First render — animate from scratch
-      const words = text.split(/\s+/).filter(Boolean);
-      if (words.length === 0) {
-        setDisplayText(text);
-        return;
-      }
-
-      clearTimer();
-      baseTextRef.current = "";
-      wordsRef.current = words;
-      currentIndexRef.current = 0;
-      setDisplayText("");
-
-      intervalRef.current = setInterval(() => {
-        currentIndexRef.current += 1;
-        const slice = wordsRef.current.slice(0, currentIndexRef.current);
-        setDisplayText(slice.join(" ") + " ");
-
-        if (currentIndexRef.current >= wordsRef.current.length) {
-          clearTimer();
-          setDisplayText(text);
-        }
-      }, intervalMs);
-    } else {
-      // Text shrunk or replaced — show immediately
-      clearTimer();
-      setDisplayText(text);
+    // If text shrank (e.g. switched section), reset.
+    if (revealedRef.current > tokens.length) {
+      revealedRef.current = 0;
+      setRevealedCount(0);
     }
 
-    return clearTimer;
-  }, [text, intervalMs, clearTimer]);
+    // Already caught up — nothing to animate.
+    if (revealedRef.current >= tokens.length) {
+      if (!completedRef.current && tokens.length > 0) {
+        completedRef.current = true;
+        onComplete?.();
+      }
+      return;
+    }
 
-  // Cleanup on unmount
-  useEffect(() => clearTimer, [clearTimer]);
+    completedRef.current = false;
 
-  if (children) {
-    return <>{children(displayText)}</>;
-  }
+    // Clear any existing timer before starting a new one.
+    if (timerRef.current !== null) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
 
-  return <>{displayText}</>;
+    timerRef.current = setInterval(() => {
+      const next = revealedRef.current + 1;
+      revealedRef.current = next;
+      setRevealedCount(next);
+
+      if (next >= tokens.length) {
+        if (timerRef.current !== null) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+        if (!completedRef.current) {
+          completedRef.current = true;
+          onComplete?.();
+        }
+      }
+    }, intervalMs);
+
+    return () => {
+      if (timerRef.current !== null) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [tokens, intervalMs, onComplete]);
+
+  return (
+    <>
+      {tokens.map((tok, i) => {
+        const revealed = i < revealedCount;
+        // Whitespace tokens just need to occupy space — no need for transitions.
+        if (/^\s+$/.test(tok)) {
+          return <span key={i}>{tok}</span>;
+        }
+        return (
+          <span
+            key={i}
+            style={{
+              opacity: revealed ? 1 : 0,
+              transition: `opacity ${fadeMs}ms ease-out`,
+              willChange: revealed ? undefined : "opacity",
+            }}
+          >
+            {tok}
+          </span>
+        );
+      })}
+    </>
+  );
 }

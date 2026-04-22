@@ -351,37 +351,28 @@ const Index = () => {
     </div>
   );
 
+  const sortedShelves = Object.entries(booksByType).sort(([a], [b]) => {
+    const labelA = BOOK_TYPE_INFO[a as BookType]?.label || a;
+    const labelB = BOOK_TYPE_INFO[b as BookType]?.label || b;
+    return labelA.localeCompare(labelB);
+  });
+
   const shelvesView = (
-    <div className="space-y-10 mt-6">
-      {Object.entries(booksByType)
-        .sort(([a], [b]) => {
-          const labelA = BOOK_TYPE_INFO[a as BookType]?.label || a;
-          const labelB = BOOK_TYPE_INFO[b as BookType]?.label || b;
-          return labelA.localeCompare(labelB);
-        })
-        .map(([type, typeBooks]) => {
-          const info = BOOK_TYPE_INFO[type as BookType];
-          // Show max 5 books per stack, latest first (already sorted)
-          const stackBooks = typeBooks.slice(0, 5);
-          const topBook = stackBooks[0];
-          return (
-            <div key={type}>
-              <div className="mb-4">
-                <h3 className="text-xl font-serif font-bold flex items-center gap-2">
-                  <span>{info?.icon}</span>
-                  {info?.label || type}
-                </h3>
-                <p className="text-muted-foreground text-sm mt-0.5">
-                  {typeBooks.length} book{typeBooks.length !== 1 ? "s" : ""}
-                </p>
-              </div>
-              <motion.div
-                className="grid gap-4 sm:gap-5 md:gap-6"
-                style={{ gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                {/* Stacked book: show top book with fanned cards behind */}
+    <div className="mt-6">
+      {sortedShelves.length > 0 && (
+        <motion.div
+          className="grid gap-6 sm:gap-7 md:gap-8"
+          style={{ gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          {sortedShelves.map(([type, typeBooks]) => {
+            const info = BOOK_TYPE_INFO[type as BookType];
+            // Show max 5 books per stack, latest first (already sorted)
+            const stackBooks = typeBooks.slice(0, 5);
+            const topBook = stackBooks[0];
+            return (
+              <div key={type} className="flex flex-col">
                 <div
                   className="relative aspect-[2/3] cursor-pointer"
                   onClick={() => topBook && handleSelectBook(topBook)}
@@ -391,8 +382,8 @@ const Index = () => {
                     .slice(1)
                     .reverse()
                     .map((book, i) => {
-                      const stackIndex = stackBooks.length - 1 - i; // position from back
-                      const angle = stackIndex * 4; // 4 degrees per card
+                      const stackIndex = stackBooks.length - 1 - i;
+                      const angle = stackIndex * 4;
                       return (
                         <div
                           key={book.id}
@@ -413,7 +404,6 @@ const Index = () => {
                         </div>
                       );
                     })}
-                  {/* Top book (latest) */}
                   {topBook && (
                     <div className="relative z-10 w-full h-full">
                       <BookCard
@@ -426,25 +416,21 @@ const Index = () => {
                     </div>
                   )}
                 </div>
-                {/* Remaining books shown individually if more than 5 */}
-                {typeBooks.length > 5 &&
-                  typeBooks
-                    .slice(5)
-                    .map((book, index) => (
-                      <BookCard
-                        key={book.id}
-                        book={book}
-                        index={index + 1}
-                        onSelect={handleSelectBook}
-                        onDelete={handleDeleteBook}
-                        onUpdateCover={handleUpdateCover}
-                      />
-                    ))}
-              </motion.div>
-            </div>
-          );
-        })}
-      {Object.keys(booksByType).length === 0 && activeFilterCount > 0 && (
+                <div className="mt-3 px-1">
+                  <h3 className="text-sm font-serif font-bold flex items-center gap-1.5 leading-tight">
+                    <span>{info?.icon}</span>
+                    <span className="truncate">{info?.label || type}</span>
+                  </h3>
+                  <p className="text-muted-foreground text-xs mt-0.5">
+                    {typeBooks.length} book{typeBooks.length !== 1 ? "s" : ""}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </motion.div>
+      )}
+      {sortedShelves.length === 0 && activeFilterCount > 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
           <Filter className="w-10 h-10 text-muted-foreground/50" />
           <p className="text-muted-foreground">No books match your filters</p>
