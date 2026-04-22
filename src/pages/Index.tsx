@@ -17,6 +17,40 @@ import { toast } from "sonner";
 
 const BOOKS_PER_PAGE = 12;
 
+// Mature decorative top patterns for each shelf category. Uses semantic tokens.
+const SHELF_PATTERNS: Record<string, string> = {
+  // Diagonal stripes
+  novel:
+    "repeating-linear-gradient(45deg, hsl(var(--primary) / 0.18) 0 6px, transparent 6px 12px), hsl(var(--card))",
+  // Dotted grid
+  technical:
+    "radial-gradient(hsl(var(--primary) / 0.35) 1px, transparent 1.5px) 0 0/8px 8px, hsl(var(--card))",
+  // Soft horizontal lines
+  textbook:
+    "repeating-linear-gradient(0deg, hsl(var(--border)) 0 1px, transparent 1px 6px), hsl(var(--card))",
+  // Cross hatch
+  poetry:
+    "repeating-linear-gradient(45deg, hsl(var(--primary) / 0.15) 0 1px, transparent 1px 8px), repeating-linear-gradient(-45deg, hsl(var(--primary) / 0.15) 0 1px, transparent 1px 8px), hsl(var(--card))",
+  // Vertical pinstripes
+  drama:
+    "repeating-linear-gradient(90deg, hsl(var(--foreground) / 0.12) 0 1px, transparent 1px 5px), hsl(var(--card))",
+  // Subtle gradient wash
+  cookbook:
+    "linear-gradient(90deg, hsl(var(--accent) / 0.25), hsl(var(--primary) / 0.15))",
+  // Chevron
+  comic:
+    "repeating-linear-gradient(135deg, hsl(var(--primary) / 0.2) 0 4px, transparent 4px 10px), hsl(var(--card))",
+  // Wavy underscore feel
+  childrens:
+    "radial-gradient(circle at 6px 12px, hsl(var(--primary) / 0.3) 2px, transparent 2.5px) 0 0/12px 12px, hsl(var(--card))",
+  // Tight weave
+  shortstory:
+    "repeating-linear-gradient(0deg, hsl(var(--primary) / 0.12) 0 2px, transparent 2px 6px), hsl(var(--card))",
+  // Default
+  __default:
+    "repeating-linear-gradient(45deg, hsl(var(--muted-foreground) / 0.15) 0 4px, transparent 4px 10px), hsl(var(--card))",
+};
+
 type SortOption = "updated" | "bookType" | "dateCompleted";
 type CoverFilter = "all" | "with-cover" | "without-cover";
 
