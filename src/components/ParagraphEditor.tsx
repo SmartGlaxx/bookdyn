@@ -213,8 +213,19 @@ export function ParagraphEditor({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <p className="whitespace-pre-wrap leading-relaxed text-foreground/90 break-words"
-         dangerouslySetInnerHTML={{ __html: sanitizeHtml(paragraph) }} />
+      {animateReveal && !/<[a-z][^>]*>/i.test(paragraph) ? (
+        <p className="whitespace-pre-wrap leading-relaxed text-foreground/90 break-words">
+          <TypewriterText
+            text={paragraph}
+            intervalMs={60}
+            fadeMs={350}
+            onComplete={() => markRevealed(subsectionId)}
+          />
+        </p>
+      ) : (
+        <p className="whitespace-pre-wrap leading-relaxed text-foreground/90 break-words"
+           dangerouslySetInnerHTML={{ __html: sanitizeHtml(paragraph) }} />
+      )}
 
       {/* Floating toolbar */}
       {!readOnly && (
