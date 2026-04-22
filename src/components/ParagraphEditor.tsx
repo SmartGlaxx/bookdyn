@@ -44,6 +44,7 @@ export function ParagraphEditor({
   readOnly = false,
   totalParagraphs = 1,
   highlightText,
+  animateReveal = false,
 }: ParagraphEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isRewriting, setIsRewriting] = useState(false);
