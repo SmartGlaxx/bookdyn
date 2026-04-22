@@ -8,6 +8,8 @@ import { sanitizeHtml, sanitizeRichText } from "@/lib/sanitize";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { RichTextToolbar } from "@/components/RichTextToolbar";
+import { TypewriterText } from "@/components/TypewriterText";
+import { markRevealed } from "@/lib/revealRegistry";
 
 interface ParagraphEditorProps {
   paragraph: string;
@@ -22,6 +24,11 @@ interface ParagraphEditorProps {
   readOnly?: boolean;
   totalParagraphs?: number;
   highlightText?: (text: string) => React.ReactNode;
+  /**
+   * When true, reveal this paragraph word-by-word via the typewriter animation
+   * (used for freshly-generated content). When false/undefined, render instantly.
+   */
+  animateReveal?: boolean;
 }
 
 export function ParagraphEditor({
