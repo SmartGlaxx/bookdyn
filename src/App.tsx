@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +23,7 @@ import Onboarding from "./pages/Onboarding";
 import BookDetail from "./pages/BookDetail";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { BookOpen } from "lucide-react";
+import { BOOK_TYPE_INFO } from "@/types/book";
 
 const queryClient = new QueryClient();
 
@@ -103,6 +104,16 @@ const RootRedirect = () => {
   return <Navigate to="/auth" replace />;
 };
 
+const DashboardRoute = () => {
+  const { slug } = useParams<{ slug: string }>();
+
+  if (slug && Object.prototype.hasOwnProperty.call(BOOK_TYPE_INFO, slug)) {
+    return <Index />;
+  }
+
+  return <BookDetail />;
+};
+
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
@@ -123,8 +134,8 @@ const App = () => (
               element={<ProtectedRoute><Index /></ProtectedRoute>}
             />
             <Route
-              path="/dashboard/:bookId"
-              element={<ProtectedRoute><BookDetail /></ProtectedRoute>}
+              path="/dashboard/:slug"
+              element={<ProtectedRoute><DashboardRoute /></ProtectedRoute>}
             />
             <Route
               path="/manage-subscription"
