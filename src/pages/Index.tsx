@@ -404,22 +404,39 @@ const Index = () => {
               <HoverCard key={type} openDelay={120} closeDelay={120}>
                 <HoverCardTrigger asChild>
                   <div className="flex flex-col">
-                    <div
-                      className="relative aspect-[2/3] cursor-pointer"
+                    <button
+                      type="button"
+                      className="relative aspect-[2/3] cursor-pointer rounded-[2px_6px_6px_2px] overflow-hidden group text-left"
+                      style={{
+                        boxShadow: "4px 4px 0px rgba(0,0,0,0.3), 8px 8px 16px rgba(0,0,0,0.4)",
+                      }}
                       onClick={() => handleOpenShelf(type as BookType)}
                     >
-                      {topBook && (
-                        <div className="relative z-10 w-full h-full">
-                          <BookCard
-                            book={topBook}
-                            index={0}
-                            onSelect={handleSelectBook}
-                            onDelete={handleDeleteBook}
-                            onUpdateCover={handleUpdateCover}
+                      {topBook?.coverUrl ? (
+                        <>
+                          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-black/30 z-10" />
+                          <img
+                            src={topBook.coverUrl}
+                            alt={topBook.title}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                            loading="lazy"
                           />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-300 flex items-end p-3">
+                            <p className="text-sm font-serif font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 line-clamp-2">
+                              {topBook.title}
+                            </p>
+                          </div>
+                        </>
+                      ) : topBook ? (
+                        <div className="w-full h-full bg-card border border-border p-4 flex flex-col justify-between">
+                          <div>
+                            <p className="text-xs text-muted-foreground mb-2">{info?.label || type}</p>
+                            <h4 className="font-serif font-bold text-sm leading-tight line-clamp-3">{topBook.title}</h4>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">Open shelf</p>
                         </div>
-                      )}
-                    </div>
+                      ) : null}
+                    </button>
                     <div className="mt-3 px-1">
                       <h3 className="text-sm font-serif font-bold flex items-center gap-1.5 leading-tight">
                         <span>{info?.icon}</span>
