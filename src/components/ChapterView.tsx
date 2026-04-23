@@ -162,9 +162,19 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
     const paragraphs = content.split(/\n\n+/).filter(p => p.trim());
     if (paragraphs.length === 0) return null;
 
-    // Animate reveal only for completed subsections that haven't been
-    // shown to the user yet this session (i.e. freshly generated content).
-    const shouldAnimate = sub.status === "completed" && !isRevealed(sub.id);
+    // Animate reveal only inside the chapter that is actively being written.
+    // This keeps the effect tied to the live writing process instead of
+    // replaying on older completed chapters when the user revisits them.
+    const activeWritingChapter =
+      book.status === "writing" &&
+      chapters[chapterIdx]?.status === "writing" &&
+      chapterIdx === book.currentChapterIndex;
+    const shouldAnimate =
+      activeWritingChapter &&
+      book.currentSubsectionIndex > 0 &&
+      sub.status === "completed" &&
+      subIdx <= book.currentSubsectionIndex - 1 &&
+      !isRevealed(sub.id);
 
     // Queue gate: a freshly-completed subsection must wait until every
     // earlier completed subsection in this chapter has finished its reveal.
@@ -172,9 +182,14 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
     // typing itself out.
     if (shouldAnimate) {
       const chapterSubs = chapters[chapterIdx]?.subsections || [];
-      const previousStillAnimating = chapterSubs
-        .slice(0, subIdx)
-        .some((prev: any) => prev.status === "completed" && !isRevealed(prev.id));
+        const previousStillAnimating = chapterSubs
+          .slice(0, subIdx)
+          .some(
+            (prev: any, prevIdx: number) =>
+              prev.status === "completed" &&
+              prevIdx <= book.currentSubsectionIndex - 1 &&
+              !isRevealed(prev.id),
+          );
       if (previousStillAnimating) {
         // Hold this subsection back — render an invisible placeholder so
         // layout doesn't jump, but no text appears yet.
