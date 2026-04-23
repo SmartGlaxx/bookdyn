@@ -370,34 +370,92 @@ const Index = () => {
           {sortedShelves.map(([type, typeBooks]) => {
             const info = BOOK_TYPE_INFO[type as BookType];
             const topBook = typeBooks[0];
+            const previewBooks = typeBooks.slice(0, 4);
+            const hasMore = typeBooks.length > previewBooks.length;
             return (
-              <div key={type} className="flex flex-col">
-                <div
-                  className="relative aspect-[2/3] cursor-pointer"
-                  onClick={() => topBook && handleSelectBook(topBook)}
-                >
-                  {topBook && (
-                    <div className="relative z-10 w-full h-full">
-                      <BookCard
-                        book={topBook}
-                        index={0}
-                        onSelect={handleSelectBook}
-                        onDelete={handleDeleteBook}
-                        onUpdateCover={handleUpdateCover}
-                      />
+              <HoverCard key={type} openDelay={120} closeDelay={120}>
+                <HoverCardTrigger asChild>
+                  <div className="flex flex-col">
+                    <div
+                      className="relative aspect-[2/3] cursor-pointer"
+                      onClick={() => topBook && handleSelectBook(topBook)}
+                    >
+                      {topBook && (
+                        <div className="relative z-10 w-full h-full">
+                          <BookCard
+                            book={topBook}
+                            index={0}
+                            onSelect={handleSelectBook}
+                            onDelete={handleDeleteBook}
+                            onUpdateCover={handleUpdateCover}
+                          />
+                        </div>
+                      )}
                     </div>
+                    <div className="mt-3 px-1">
+                      <h3 className="text-sm font-serif font-bold flex items-center gap-1.5 leading-tight">
+                        <span>{info?.icon}</span>
+                        <span className="truncate">{info?.label || type}</span>
+                      </h3>
+                      <p className="text-muted-foreground text-xs mt-0.5">
+                        {typeBooks.length} book{typeBooks.length !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                  </div>
+                </HoverCardTrigger>
+                <HoverCardContent
+                  side="right"
+                  align="start"
+                  sideOffset={12}
+                  className="w-72 p-3 bg-card/95 backdrop-blur border-border shadow-xl"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium flex items-center gap-1.5">
+                      <span>{info?.icon}</span>
+                      <span>{info?.label || type}</span>
+                    </p>
+                    <span className="text-[10px] text-muted-foreground">
+                      {typeBooks.length} total
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {previewBooks.map((b) => (
+                      <button
+                        key={b.id}
+                        onClick={() => handleSelectBook(b)}
+                        className="group/cover relative aspect-[2/3] rounded-md overflow-hidden border border-border bg-muted/40 hover:ring-2 hover:ring-primary/60 transition"
+                        title={b.title}
+                      >
+                        {b.coverUrl ? (
+                          <img
+                            src={b.coverUrl}
+                            alt={b.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center p-1 text-[8px] text-center text-muted-foreground leading-tight">
+                            {b.title}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  {hasMore && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full mt-3 h-7 text-xs"
+                      onClick={() => {
+                        setActiveTab("library");
+                        setFilterType(type as BookType);
+                      }}
+                    >
+                      See all {typeBooks.length}
+                    </Button>
                   )}
-                </div>
-                <div className="mt-3 px-1">
-                  <h3 className="text-sm font-serif font-bold flex items-center gap-1.5 leading-tight">
-                    <span>{info?.icon}</span>
-                    <span className="truncate">{info?.label || type}</span>
-                  </h3>
-                  <p className="text-muted-foreground text-xs mt-0.5">
-                    {typeBooks.length} book{typeBooks.length !== 1 ? "s" : ""}
-                  </p>
-                </div>
-              </div>
+                </HoverCardContent>
+              </HoverCard>
             );
           })}
         </motion.div>
