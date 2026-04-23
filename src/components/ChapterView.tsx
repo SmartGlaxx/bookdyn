@@ -166,6 +166,22 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
     // shown to the user yet this session (i.e. freshly generated content).
     const shouldAnimate = sub.status === "completed" && !isRevealed(sub.id);
 
+    // Queue gate: a freshly-completed subsection must wait until every
+    // earlier completed subsection in this chapter has finished its reveal.
+    // This prevents section 2 from animating while section 1 is still
+    // typing itself out.
+    if (shouldAnimate) {
+      const chapterSubs = chapters[chapterIdx]?.subsections || [];
+      const previousStillAnimating = chapterSubs
+        .slice(0, subIdx)
+        .some((prev: any) => prev.status === "completed" && !isRevealed(prev.id));
+      if (previousStillAnimating) {
+        // Hold this subsection back — render an invisible placeholder so
+        // layout doesn't jump, but no text appears yet.
+        return <div className="min-h-[1.5rem]" aria-hidden />;
+      }
+    }
+
     // While animating, render the WHOLE subsection as a single sequential
     // reveal so words appear one-after-another across all paragraphs (not
     // each paragraph fading in parallel). Once complete, swap to the
