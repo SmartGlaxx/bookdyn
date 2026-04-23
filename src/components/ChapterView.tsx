@@ -16,7 +16,8 @@ import { Book, Chapter as ChapterType, AutomationLevel, VISUAL_BOOK_TYPES, BOOK_
 import { TemplateImage } from "@/components/TemplateImage";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ParagraphEditor } from "@/components/ParagraphEditor";
-import { isRevealed } from "@/lib/revealRegistry";
+import { isRevealed, markRevealed } from "@/lib/revealRegistry";
+import { SequentialReveal } from "@/components/SequentialReveal";
 import { GuidedWritingToolbar } from "@/components/GuidedWritingToolbar";
 import { CharacterGallery } from "@/components/CharacterGallery";
 import { Textarea } from "@/components/ui/textarea";
@@ -55,6 +56,9 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   const [editingChapterIdx, setEditingChapterIdx] = useState<number | null>(null);
   const [editChapterTitle, setEditChapterTitle] = useState("");
   const editChapterRef = useRef<HTMLInputElement>(null);
+  // Bumped each time a sequential reveal completes, to trigger a re-render
+  // and swap that subsection from animated view to editable per-paragraph view.
+  const [, setRevealTick] = useState(0);
   const chapters = book.outline?.chapters || [];
   const hasCharacters = book.outline?.characters && book.outline.characters.length > 0;
   const isVisualBook = VISUAL_BOOK_TYPES.includes(book.bookType);
@@ -157,6 +161,26 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
     // shown to the user yet this session (i.e. freshly generated content).
     const shouldAnimate = sub.status === "completed" && !isRevealed(sub.id);
 
+    // While animating, render the WHOLE subsection as a single sequential
+    // reveal so words appear one-after-another across all paragraphs (not
+    // each paragraph fading in parallel). Once complete, swap to the
+    // editable per-paragraph view.
+    if (shouldAnimate) {
+      return (
+        <SequentialReveal
+          content={content}
+          intervalMs={60}
+          fadeMs={350}
+          onComplete={() => {
+            markRevealed(sub.id);
+            // Force a re-render so the next render path takes the
+            // editable ParagraphEditor branch.
+            setRevealTick((t) => t + 1);
+          }}
+        />
+      );
+    }
+
     return (
       <div className="space-y-3">
         {paragraphs.map((para, pIdx) => (
@@ -174,7 +198,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
             readOnly={!onUpdateBook}
             totalParagraphs={paragraphs.length}
             highlightText={searchQuery ? highlightSearchInText : undefined}
-            animateReveal={shouldAnimate}
+            animateReveal={false}
           />
         ))}
       </div>
