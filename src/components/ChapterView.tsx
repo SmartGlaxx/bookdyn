@@ -16,7 +16,7 @@ import { Book, Chapter as ChapterType, AutomationLevel, VISUAL_BOOK_TYPES, BOOK_
 import { TemplateImage } from "@/components/TemplateImage";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ParagraphEditor } from "@/components/ParagraphEditor";
-import { isRevealed, markRevealed } from "@/lib/revealRegistry";
+import { isRevealed, markRevealed, subscribeRevealed } from "@/lib/revealRegistry";
 import { SequentialReveal } from "@/components/SequentialReveal";
 import { GuidedWritingToolbar } from "@/components/GuidedWritingToolbar";
 import { CharacterGallery } from "@/components/CharacterGallery";
