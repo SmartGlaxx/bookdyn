@@ -294,3 +294,7 @@
   color: hsl(35 100% 55%);
   text-shadow: 0 0 6px hsla(35, 100%, 55%, 0.4);
 }
+
+#lovable-badge {
+  display: none !important;
+}
