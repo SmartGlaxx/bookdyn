@@ -32,7 +32,8 @@ const transformDbToBook = (row: any): Book => ({
 });
 
 const BookDetail = () => {
-  const { bookId } = useParams<{ bookId: string }>();
+  const { slug, bookId: bookIdParam } = useParams<{ slug?: string; bookId?: string }>();
+  const bookId = bookIdParam || slug;
   const navigate = useNavigate();
   const { user } = useAuth();
   const { books, isLoading } = useBooks();
