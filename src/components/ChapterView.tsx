@@ -16,7 +16,7 @@ import { Book, Chapter as ChapterType, AutomationLevel, VISUAL_BOOK_TYPES, BOOK_
 import { TemplateImage } from "@/components/TemplateImage";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ParagraphEditor } from "@/components/ParagraphEditor";
-import { isRevealed, markRevealed } from "@/lib/revealRegistry";
+import { isRevealed, markRevealed, subscribeRevealed } from "@/lib/revealRegistry";
 import { SequentialReveal } from "@/components/SequentialReveal";
 import { GuidedWritingToolbar } from "@/components/GuidedWritingToolbar";
 import { CharacterGallery } from "@/components/CharacterGallery";
@@ -59,6 +59,11 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   // Bumped each time a sequential reveal completes, to trigger a re-render
   // and swap that subsection from animated view to editable per-paragraph view.
   const [, setRevealTick] = useState(0);
+
+  // Re-render whenever the reveal registry updates so queued subsections
+  // can pick up where the previous one left off.
+  useEffect(() => subscribeRevealed(() => setRevealTick((t) => t + 1)), []);
+
   const chapters = book.outline?.chapters || [];
   const hasCharacters = book.outline?.characters && book.outline.characters.length > 0;
   const isVisualBook = VISUAL_BOOK_TYPES.includes(book.bookType);
@@ -160,6 +165,22 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
     // Animate reveal only for completed subsections that haven't been
     // shown to the user yet this session (i.e. freshly generated content).
     const shouldAnimate = sub.status === "completed" && !isRevealed(sub.id);
+
+    // Queue gate: a freshly-completed subsection must wait until every
+    // earlier completed subsection in this chapter has finished its reveal.
+    // This prevents section 2 from animating while section 1 is still
+    // typing itself out.
+    if (shouldAnimate) {
+      const chapterSubs = chapters[chapterIdx]?.subsections || [];
+      const previousStillAnimating = chapterSubs
+        .slice(0, subIdx)
+        .some((prev: any) => prev.status === "completed" && !isRevealed(prev.id));
+      if (previousStillAnimating) {
+        // Hold this subsection back — render an invisible placeholder so
+        // layout doesn't jump, but no text appears yet.
+        return <div className="min-h-[1.5rem]" aria-hidden />;
+      }
+    }
 
     // While animating, render the WHOLE subsection as a single sequential
     // reveal so words appear one-after-another across all paragraphs (not
