@@ -59,6 +59,11 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   // Bumped each time a sequential reveal completes, to trigger a re-render
   // and swap that subsection from animated view to editable per-paragraph view.
   const [, setRevealTick] = useState(0);
+
+  // Re-render whenever the reveal registry updates so queued subsections
+  // can pick up where the previous one left off.
+  useEffect(() => subscribeRevealed(() => setRevealTick((t) => t + 1)), []);
+
   const chapters = book.outline?.chapters || [];
   const hasCharacters = book.outline?.characters && book.outline.characters.length > 0;
   const isVisualBook = VISUAL_BOOK_TYPES.includes(book.bookType);
