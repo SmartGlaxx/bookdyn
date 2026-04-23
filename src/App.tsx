@@ -123,6 +123,10 @@ const App = () => (
               element={<ProtectedRoute><Index /></ProtectedRoute>}
             />
             <Route
+              path="/dashboard/:bookType"
+              element={<ProtectedRoute><Index /></ProtectedRoute>}
+            />
+            <Route
               path="/dashboard/:bookId"
               element={<ProtectedRoute><BookDetail /></ProtectedRoute>}
             />
