@@ -10,7 +10,6 @@
   }
 }
 
-
 @layer base {
   :root {
     --background: 220 20% 97%;
@@ -294,8 +293,4 @@
 .turbo-text-glow {
   color: hsl(35 100% 55%);
   text-shadow: 0 0 6px hsla(35, 100%, 55%, 0.4);
-}
-
-#lovable-badge {
-  display: none !important;
 }
