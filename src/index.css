@@ -295,9 +295,9 @@
   text-shadow: 0 0 6px hsla(35, 100%, 55%, 0.4);
 }
 
-#lovable-badge {
-  display: none !important;
-}
+// #lovable-badge {
+//   display: none !important;
+// }
 
 /* Creates a 100x100px white square over the bottom-right corner */
 body::after {
