@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Navigation from "@/components/Navigation";
-import { BookOpen, Sparkles, ArrowUpDown, Filter, X } from "lucide-react";
+import { BookOpen, Sparkles, ArrowLeft, ArrowUpDown, Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,7 @@ type CoverFilter = "all" | "with-cover" | "without-cover";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { bookType: routeBookType, slug } = useParams<{ bookType?: string; slug?: string }>();
   const [showEngine, setShowEngine] = useState(false);
   const [sortBy, setSortBy] = useState<SortOption>("updated");
   const [filterCategory, setFilterCategory] = useState<BookCategory | "all">("all");
@@ -36,9 +37,15 @@ const Index = () => {
   const sentinelCompletedRef = useRef<HTMLDivElement | null>(null);
 
   const { books, isLoading, addBook, deleteBook, updateBook } = useBooks();
+  const dashboardBookType = (routeBookType ?? slug) as BookType | undefined;
+  const isBookTypeRoute = !!dashboardBookType && Object.prototype.hasOwnProperty.call(BOOK_TYPE_INFO, dashboardBookType);
 
   const handleSelectBook = (book: Book) => {
     navigate(`/dashboard/${book.id}`);
+  };
+
+  const handleOpenShelf = (bookType: BookType) => {
+    navigate(`/dashboard/${bookType}`);
   };
 
   const handleUpdateCover = async (id: string, coverUrl: string) => {
@@ -53,6 +60,7 @@ const Index = () => {
   const filterBooks = useCallback(
     (list: Book[]) => {
       return list.filter((b) => {
+        if (isBookTypeRoute && b.bookType !== dashboardBookType) return false;
         if (filterCategory !== "all") {
           const info = BOOK_TYPE_INFO[b.bookType];
           if (info?.category !== filterCategory) return false;
@@ -63,7 +71,7 @@ const Index = () => {
         return true;
       });
     },
-    [filterCategory, filterType, filterCover],
+    [filterCategory, filterType, filterCover, isBookTypeRoute, dashboardBookType],
   );
 
   // Sort function
@@ -185,6 +193,8 @@ const Index = () => {
       ? Object.entries(BOOK_TYPE_INFO)
       : Object.entries(BOOK_TYPE_INFO).filter(([, info]) => info.category === filterCategory);
 
+  const routeBookTypeInfo = isBookTypeRoute ? BOOK_TYPE_INFO[dashboardBookType] : null;
+
   const clearFilters = () => {
     setFilterCategory("all");
     setFilterType("all");
@@ -255,9 +265,27 @@ const Index = () => {
   const toolbar = (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-2xl font-serif font-bold">
-          {activeTab === "shelves" ? "Your Shelves" : "Your Library"}
-        </h3>
+        <div className="flex items-center gap-3">
+          {isBookTypeRoute && (
+            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} className="h-9 w-9">
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          )}
+          <div>
+            <h3 className="text-2xl font-serif font-bold">
+              {isBookTypeRoute
+                ? routeBookTypeInfo?.label || "Shelf"
+                : activeTab === "shelves"
+                  ? "Your Shelves"
+                  : "Your Library"}
+            </h3>
+            {isBookTypeRoute && (
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {routeBookTypeInfo?.icon} {books.filter((book) => book.bookType === dashboardBookType).length} book{books.filter((book) => book.bookType === dashboardBookType).length !== 1 ? "s" : ""}
+              </p>
+            )}
+          </div>
+        </div>
         <div className="flex items-center gap-2">
           <Button
             variant={showFilters ? "secondary" : "outline"}
@@ -378,7 +406,7 @@ const Index = () => {
                   <div className="flex flex-col">
                     <div
                       className="relative aspect-[2/3] cursor-pointer"
-                      onClick={() => topBook && handleSelectBook(topBook)}
+                      onClick={() => handleOpenShelf(type as BookType)}
                     >
                       {topBook && (
                         <div className="relative z-10 w-full h-full">
@@ -446,10 +474,7 @@ const Index = () => {
                       variant="outline"
                       size="sm"
                       className="w-full mt-3 h-7 text-xs"
-                      onClick={() => {
-                        setActiveTab("library");
-                        setFilterType(type as BookType);
-                      }}
+                        onClick={() => handleOpenShelf(type as BookType)}
                     >
                       See all {typeBooks.length}
                     </Button>
@@ -517,30 +542,44 @@ const Index = () => {
           <div className="container max-w-6xl mx-auto px-4 py-8">
             {toolbar}
 
-            <Tabs
-              value={activeTab}
-              onValueChange={(v) => setActiveTab(v as "library" | "shelves")}
-              className="mt-4"
-            >
-              <TabsList>
-                <TabsTrigger value="library">Library</TabsTrigger>
-                <TabsTrigger value="shelves">Shelves</TabsTrigger>
-              </TabsList>
-              <TabsContent value="library">
-                {wipBooks.length === 0 && completedBooks.length === 0 && activeFilterCount > 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-                    <Filter className="w-10 h-10 text-muted-foreground/50" />
-                    <p className="text-muted-foreground">No books match your filters</p>
-                    <Button variant="outline" size="sm" onClick={clearFilters}>
-                      Clear Filters
-                    </Button>
-                  </div>
-                ) : (
-                  gridView
-                )}
-              </TabsContent>
-              <TabsContent value="shelves">{shelvesView}</TabsContent>
-            </Tabs>
+            {isBookTypeRoute ? (
+              wipBooks.length === 0 && completedBooks.length === 0 && activeFilterCount > 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                  <Filter className="w-10 h-10 text-muted-foreground/50" />
+                  <p className="text-muted-foreground">No books match your filters</p>
+                  <Button variant="outline" size="sm" onClick={clearFilters}>
+                    Clear Filters
+                  </Button>
+                </div>
+              ) : (
+                gridView
+              )
+            ) : (
+              <Tabs
+                value={activeTab}
+                onValueChange={(v) => setActiveTab(v as "library" | "shelves")}
+                className="mt-4"
+              >
+                <TabsList>
+                  <TabsTrigger value="library">Library</TabsTrigger>
+                  <TabsTrigger value="shelves">Shelves</TabsTrigger>
+                </TabsList>
+                <TabsContent value="library">
+                  {wipBooks.length === 0 && completedBooks.length === 0 && activeFilterCount > 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                      <Filter className="w-10 h-10 text-muted-foreground/50" />
+                      <p className="text-muted-foreground">No books match your filters</p>
+                      <Button variant="outline" size="sm" onClick={clearFilters}>
+                        Clear Filters
+                      </Button>
+                    </div>
+                  ) : (
+                    gridView
+                  )}
+                </TabsContent>
+                <TabsContent value="shelves">{shelvesView}</TabsContent>
+              </Tabs>
+            )}
           </div>
         )}
       </main>
