@@ -56,6 +56,9 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   const [editingChapterIdx, setEditingChapterIdx] = useState<number | null>(null);
   const [editChapterTitle, setEditChapterTitle] = useState("");
   const editChapterRef = useRef<HTMLInputElement>(null);
+  // Bumped each time a sequential reveal completes, to trigger a re-render
+  // and swap that subsection from animated view to editable per-paragraph view.
+  const [, setRevealTick] = useState(0);
   const chapters = book.outline?.chapters || [];
   const hasCharacters = book.outline?.characters && book.outline.characters.length > 0;
   const isVisualBook = VISUAL_BOOK_TYPES.includes(book.bookType);
