@@ -300,14 +300,14 @@
 }
 
 /* Creates a 100x100px white square over the bottom-right corner */
-// body::after {
-//   content: "";
-//   position: fixed;
-//   bottom: 0;
-//   right: 0;
-//   width: 120px; /* Adjust to cover the full badge */
-//   height: 60px; /* Adjust to cover the full badge */
-//   background-color: white; /* Matches your site background */
-//   z-index: 2147483647; /* Maximum possible z-index */
-//   pointer-events: all;
-// }
+body::after {
+  content: "";
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 120px; /* Adjust to cover the full badge */
+  height: 60px; /* Adjust to cover the full badge */
+  background-color: white; /* Matches your site background */
+  z-index: 2147483647; /* Maximum possible z-index */
+  pointer-events: all;
+}
