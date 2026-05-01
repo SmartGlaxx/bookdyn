@@ -403,6 +403,7 @@ export interface Book {
   bookType: BookType;
   theme: string;
   genre?: string;
+  language?: string;
   audience: string;
   pov: POV;
   toneProfile: ToneProfile;
@@ -426,6 +427,7 @@ export interface CreateBookInput {
   bookType: BookType;
   theme: string;
   genre?: string;
+  language?: string;
   audience: string;
   pov: POV;
   toneProfile: ToneProfile;
