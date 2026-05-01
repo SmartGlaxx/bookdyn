@@ -299,6 +299,7 @@ BOOK CONTEXT:
 - Title: "${book.title}"
 - Theme: ${book.theme}
 - Genre: ${book.genre || "General"}
+- Language: ${book.language || "English"} (write the entire output in this language)
 - Audience: ${book.audience}
 - POV: ${book.pov}
 - Tone: ${book.toneProfile.primary} (formality: ${book.toneProfile.formality}/10, emotion: ${book.toneProfile.emotionalIntensity}/10)
