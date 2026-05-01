@@ -20,6 +20,7 @@ interface ParagraphEditorProps {
   bookTitle: string;
   chapterTitle: string;
   subsectionTitle: string;
+  language?: string;
   onContentUpdate: (newFullContent: string) => void;
   readOnly?: boolean;
   totalParagraphs?: number;
@@ -40,6 +41,7 @@ export function ParagraphEditor({
   bookTitle,
   chapterTitle,
   subsectionTitle,
+  language,
   onContentUpdate,
   readOnly = false,
   totalParagraphs = 1,
@@ -111,6 +113,7 @@ export function ParagraphEditor({
           bookTitle,
           chapterTitle,
           subsectionTitle,
+          language,
         },
       });
 

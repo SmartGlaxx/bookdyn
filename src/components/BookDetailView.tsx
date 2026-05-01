@@ -189,7 +189,7 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const { data, error } = await supabase.functions.invoke("generate-intro", {
-        body: { book },
+        body: { book, language: book.language },
         headers: session?.access_token
           ? { Authorization: `Bearer ${session.access_token}` }
           : undefined,

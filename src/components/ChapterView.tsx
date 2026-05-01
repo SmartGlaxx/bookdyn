@@ -230,6 +230,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
             bookTitle={book.title}
             chapterTitle={chapters[chapterIdx]?.title || ""}
             subsectionTitle={sub.title}
+            language={book.language}
             onContentUpdate={(newContent) => handleSubsectionContentUpdate(chapterIdx, subIdx, newContent)}
             readOnly={!onUpdateBook}
             totalParagraphs={paragraphs.length}
@@ -293,6 +294,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
                       bookTitle={book.title}
                       chapterTitle={chapters[chapterIdx]?.title || ""}
                       subsectionTitle={sub.title}
+            language={book.language}
                       currentContent={sub.content}
                       subsectionGoal={sub.goal}
                       showContinue={automationLevel === "guided"}
@@ -325,6 +327,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
                         bookTitle={book.title}
                         chapterTitle={chapters[chapterIdx]?.title || ""}
                         subsectionTitle={sub.title}
+            language={book.language}
                         currentContent={sub.content}
                         subsectionGoal={sub.goal}
                         showContinue={automationLevel === "guided"}
@@ -384,6 +387,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
                     bookTitle={book.title}
                     chapterTitle={chapters[chapterIdx]?.title || ""}
                     subsectionTitle={sub.title}
+            language={book.language}
                     currentContent={sub.content}
                     subsectionGoal={sub.goal}
                     showContinue={automationLevel === "guided"}

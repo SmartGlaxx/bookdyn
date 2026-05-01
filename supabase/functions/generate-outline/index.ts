@@ -87,11 +87,19 @@ serve(async (req) => {
     
     const systemPrompt = `You are a professional book architect. Your task is to create a detailed, structured outline for a ${book.bookType} book.
 
+OUTPUT LANGUAGE — ABSOLUTE, NON-NEGOTIABLE RULE:
+- You MUST write 100% of the outline in ${book.language || "English"}.
+- Every chapter title, subsection title, goal, summary, open promise, and book goal must be entirely in ${book.language || "English"}.
+- Do NOT mix in English (or any other language) words unless the chosen language is English.
+- Do NOT include English meta-labels, commentary, or explanations anywhere in the JSON values.
+- Use natural phrasing, idioms, and conventions native to ${book.language || "English"}.
+- This rule overrides every other instruction below.
+
 BOOK DETAILS:
 - Title: ${book.title}
 - Theme: ${book.theme}
 - Genre: ${book.genre || "General"}
-- Language: ${book.language || "English"} (write the outline — chapter titles, subsection titles, goals, summaries — entirely in this language)
+- Language: ${book.language || "English"}
 - Target Audience: ${book.audience}
 - Point of View: ${book.pov}
 - Tone: ${book.toneProfile.primary} (intensity: ${book.toneProfile.intensity}/10)

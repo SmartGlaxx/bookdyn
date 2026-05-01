@@ -159,12 +159,14 @@ serve(async (req) => {
     const validationError = validateInput(body);
     if (validationError) return new Response(JSON.stringify({ error: validationError }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-    const { paragraph, bookTitle, chapterTitle, subsectionTitle, guidedAction, fullContent, subsectionGoal } = body;
+    const { paragraph, bookTitle, chapterTitle, subsectionTitle, guidedAction, fullContent, subsectionGoal, language } = body;
+    const outputLanguage = (typeof language === "string" && language.trim()) ? language.trim() : "English";
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const formatBanRule = "\n\nFORMAT & WORD BAN RULES (STRICTLY ENFORCED):\n- NEVER use markdown formatting such as **, *, ##, or any markdown syntax. Write in plain prose only.\n- NEVER use the word \"magic\" or \"magical\". Use alternatives like \"enchantment\", \"sorcery\", \"extraordinary\", \"remarkable\", \"uncanny\".\n- Do not use asterisks for emphasis.";
+    const languageRule = `\n\nOUTPUT LANGUAGE — ABSOLUTE, NON-NEGOTIABLE RULE:\n- Write 100% of your response in ${outputLanguage}. Every word — narration, dialogue, thought — must be in ${outputLanguage}.\n- Do NOT mix in English (or any other language) unless the requested language is English.\n- Use natural idioms, syntax, and punctuation native to ${outputLanguage}. This rule overrides every other rule.`;
+    const formatBanRule = languageRule + "\n\nFORMAT & WORD BAN RULES (STRICTLY ENFORCED):\n- NEVER use markdown formatting such as **, *, ##, or any markdown syntax. Write in plain prose only.\n- NEVER use the word \"magic\" or \"magical\". Use alternatives like \"enchantment\", \"sorcery\", \"extraordinary\", \"remarkable\", \"uncanny\".\n- Do not use asterisks for emphasis.";
 
     const systemPrompt = guidedAction
       ? getGuidedPrompt(guidedAction, paragraph, bookTitle || "", chapterTitle || "", subsectionTitle || "", fullContent, subsectionGoal) + formatBanRule
