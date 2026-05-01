@@ -138,8 +138,14 @@ serve(async (req) => {
     const source: string = completed[sourceIdx].content as string;
     const sourceExcerpt = source.length > 4000 ? source.slice(0, 4000) : source;
 
+    const introLanguage = book.language || "English";
     const systemPrompt = `You are a master writer crafting a teaser intro for a finished ${book.bookType}.
 Your job: write a single short cliffhanger snippet (150–220 words) that will be placed BEFORE chapter 1 to hook the reader and force them to keep reading.
+
+OUTPUT LANGUAGE — ABSOLUTE, NON-NEGOTIABLE RULE:
+- Write 100% of the snippet in ${introLanguage}. Every word — narration, dialogue, thought, sound — must be in ${introLanguage}.
+- Do NOT mix in English (or any other language) unless the requested language is English.
+- Use natural idioms, syntax, and punctuation native to ${introLanguage}. This rule overrides every other rule below.
 
 CRITICAL RULES:
 - Lift the energy and voice from the supplied excerpt — this snippet must feel like it belongs to this exact book.
