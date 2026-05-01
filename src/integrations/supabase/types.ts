@@ -88,6 +88,7 @@ export type Database = {
           full_text: string
           genre: string | null
           id: string
+          language: string
           outline: Json | null
           pov: string
           status: string
@@ -114,6 +115,7 @@ export type Database = {
           full_text?: string
           genre?: string | null
           id?: string
+          language?: string
           outline?: Json | null
           pov: string
           status?: string
@@ -140,6 +142,7 @@ export type Database = {
           full_text?: string
           genre?: string | null
           id?: string
+          language?: string
           outline?: Json | null
           pov?: string
           status?: string
