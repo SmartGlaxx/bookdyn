@@ -299,12 +299,19 @@ BOOK CONTEXT:
 - Title: "${book.title}"
 - Theme: ${book.theme}
 - Genre: ${book.genre || "General"}
-- Language: ${book.language || "English"} (write the entire output in this language)
 - Audience: ${book.audience}
 - POV: ${book.pov}
 - Tone: ${book.toneProfile.primary} (formality: ${book.toneProfile.formality}/10, emotion: ${book.toneProfile.emotionalIntensity}/10)
 
-LANGUAGE & GRAMMAR LEVEL (IELTS Band ${band}):
+OUTPUT LANGUAGE — ABSOLUTE, NON-NEGOTIABLE RULE:
+- You MUST write 100% of the output in ${book.language || "English"}.
+- Every single word — narration, description, dialogue, internal thought, scene headings, character names where appropriate, sound effects, onomatopoeia, exclamations, transitions — must be in ${book.language || "English"}.
+- Do NOT mix in English (or any other language) words, phrases, idioms, brand names translated, or filler unless the chosen language is English.
+- Do NOT prepend, append, or insert any English meta-commentary, labels, or explanations.
+- If the requested language is not English, think directly in ${book.language || "English"} — do not draft in English and translate. Use natural idioms, syntax, punctuation conventions, and cultural register native to ${book.language || "English"}.
+- This rule overrides every other style instruction. If a style example below is in English, render the same energy and craft in ${book.language || "English"} — never copy English wording.
+
+LANGUAGE & GRAMMAR LEVEL (IELTS Band ${band}, applied within ${book.language || "English"}):
 ${languageGuidelines}
 
 ${screenplayRules}
