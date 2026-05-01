@@ -274,6 +274,22 @@ META RULE: Show > tell. Panels > paragraphs.
     ? `\n- The following words and their close variants MUST NEVER appear in the output: ${userBannedWords.join(", ")}.`
     : "";
 
+  const genreRaw = (book.genre || "").toString().toLowerCase();
+  const isChaseGenre = isNarrative && /(crime|detective|thriller|mystery|noir|hard[- ]?boiled)/.test(genreRaw);
+  const chaseStyleProfile = isChaseGenre ? `
+JAMES HADLEY CHASE STYLE PROFILE (MANDATORY — this book's genre is "${book.genre}"):
+- Channel James Hadley Chase, with shades of Raymond Chandler, Dashiell Hammett, and Lee Child. Hard-boiled, lean, cinematic, ruthless.
+- Sentences are short, muscular, and concrete. Cut every spare word. Verbs do the work; adjectives earn their place.
+- Dialogue is clipped, loaded, and dangerous. Characters say less than they mean. Subtext carries the weight. Never explain a line of dialogue.
+- Every scene smells, tastes, and sweats: cigarette smoke, cheap bourbon, wet asphalt, gun oil, perfume cutting through fear. Use sensory specifics, never abstractions.
+- Violence is sudden, ugly, and brief. Suggest more than you show; the cut to the next beat hits harder than the punch itself.
+- Women are written with menace and allure intact — never as decoration. Men carry damage in their hands, their silence, the way they pour a drink.
+- Settings are seedy, neon-lit, rain-slick, sun-bleached. Hotel rooms with thin walls. Diners at 3 a.m. Empty highways. The world feels like it owes the protagonist nothing.
+- Suspense rises through what is withheld, not what is told. End scenes one beat before the reader is ready. Leave the door half-open.
+- No moralising. No interior philosophising. No purple prose. The story judges no one; the reader does.
+- Pace: relentless. Every paragraph either tightens the screw, plants a knife, or pays one off.
+- Tone words to lean into: cold, steady, taut, dry, neon, smoke, edge, weight, glass, blood. Tone words to avoid: lovely, beautiful, magical, wonderful, gentle (unless ironic).` : "";
+
   return `You are a master writer creating content for a ${book.bookType} book.
 ${isScreenplay ? "You are writing in SCREENPLAY FORMAT. Every line of output must follow screenplay conventions." : ""}
 ${isChildren ? "You are writing a CHILDREN'S BOOK for ages 1–9. Every line must obey the Children's Book Engine rules below." : ""}
@@ -282,6 +298,7 @@ ${isComic ? "You are writing a COMIC / GRAPHIC NOVEL. Every subsection must be d
 BOOK CONTEXT:
 - Title: "${book.title}"
 - Theme: ${book.theme}
+- Genre: ${book.genre || "General"}
 - Audience: ${book.audience}
 - POV: ${book.pov}
 - Tone: ${book.toneProfile.primary} (formality: ${book.toneProfile.formality}/10, emotion: ${book.toneProfile.emotionalIntensity}/10)
@@ -294,6 +311,7 @@ ${childrensEngineRules}
 ${comicEngineRules}
 
 ${pacingRules}
+${chaseStyleProfile}
 
 ANTI-REPETITION RULE (STRICTLY ENFORCED):
 - NEVER rewrite, paraphrase, or revisit scenes, dialogue, descriptions, or events that already appeared in the previous section.
