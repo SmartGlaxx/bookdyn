@@ -251,6 +251,7 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
       bookType: bookData.bookType,
       theme: bookData.theme,
       genre: bookData.genre,
+      language: bookData.language || "English",
       audience: bookData.audience,
       pov: bookData.pov,
       toneProfile: bookData.toneProfile,

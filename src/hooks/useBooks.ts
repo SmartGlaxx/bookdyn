@@ -13,6 +13,7 @@ const transformDbToBook = (row: any): Book => ({
   bookType: row.book_type as BookType,
   theme: row.theme,
   genre: row.genre,
+  language: row.language || "English",
   audience: row.audience,
   pov: row.pov as POV,
   toneProfile: row.tone_profile as ToneProfile,
@@ -38,6 +39,7 @@ const transformBookToDb = (book: Partial<Book> & { id?: string }) => ({
   ...(book.bookType !== undefined && { book_type: book.bookType }),
   ...(book.theme !== undefined && { theme: book.theme }),
   ...(book.genre !== undefined && { genre: book.genre }),
+  ...(book.language !== undefined && { language: book.language }),
   ...(book.audience !== undefined && { audience: book.audience }),
   ...(book.pov !== undefined && { pov: book.pov }),
   ...(book.toneProfile !== undefined && { tone_profile: book.toneProfile }),
@@ -86,6 +88,7 @@ export const useBooks = () => {
         book_type: input.bookType,
         theme: input.theme,
         genre: input.genre ?? null,
+        language: input.language ?? "English",
         audience: input.audience,
         pov: input.pov,
         tone_profile: JSON.parse(JSON.stringify(input.toneProfile)) as Json,
@@ -131,6 +134,7 @@ export const useBooks = () => {
       if (updates.bookType !== undefined) dbUpdates.book_type = updates.bookType;
       if (updates.theme !== undefined) dbUpdates.theme = updates.theme;
       if (updates.genre !== undefined) dbUpdates.genre = updates.genre;
+      if (updates.language !== undefined) dbUpdates.language = updates.language;
       if (updates.audience !== undefined) dbUpdates.audience = updates.audience;
       if (updates.pov !== undefined) dbUpdates.pov = updates.pov;
       if (updates.toneProfile !== undefined) dbUpdates.tone_profile = updates.toneProfile;

@@ -403,6 +403,7 @@ export interface Book {
   bookType: BookType;
   theme: string;
   genre?: string;
+  language?: string;
   audience: string;
   pov: POV;
   toneProfile: ToneProfile;
@@ -426,6 +427,7 @@ export interface CreateBookInput {
   bookType: BookType;
   theme: string;
   genre?: string;
+  language?: string;
   audience: string;
   pov: POV;
   toneProfile: ToneProfile;
@@ -621,7 +623,7 @@ export const WORD_COUNT_PRESETS = [
 
 export const GENRE_PRESETS: Record<BookCategory, string[]> = {
   fiction: [
-    "Science Fiction", "Romance", "Mystery", "Crime", "Detective", "Thriller",
+    "Science Fiction", "Romance", "Mystery", "Crime/Detective", "Thriller",
     "Literary Fiction", "Historical Fiction", "Adventure",
     "Contemporary"
   ],

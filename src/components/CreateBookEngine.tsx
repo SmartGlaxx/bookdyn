@@ -76,6 +76,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
   const [selectedCategory, setSelectedCategory] = useState<BookCategory>("fiction");
   const [formData, setFormData] = useState<Partial<CreateBookInput>>({
     bookType: "novel",
+    language: "English",
     pov: "third-person-limited",
     toneProfile: {
       primary: "conversational",
@@ -456,6 +457,23 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                       </Select>
                     </FieldGroup>
                   </div>
+
+                  <FieldGroup label="Language" tooltip="The language the book will be written in">
+                    <Select
+                      value={formData.language || "English"}
+                      onValueChange={(v) => updateForm("language", v)}
+                    >
+                      <SelectTrigger className="text-xs"><SelectValue placeholder="Select language" /></SelectTrigger>
+                      <SelectContent className="bg-popover z-50">
+                        {[
+                          "English","French","Spanish","German","Portuguese",
+                          "Chinese","Japanese","Russian","Hindi","Arabic"
+                        ].map((lang) => (
+                          <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FieldGroup>
                 </motion.div>
               )}
 

@@ -91,6 +91,7 @@ BOOK DETAILS:
 - Title: ${book.title}
 - Theme: ${book.theme}
 - Genre: ${book.genre || "General"}
+- Language: ${book.language || "English"} (write the outline — chapter titles, subsection titles, goals, summaries — entirely in this language)
 - Target Audience: ${book.audience}
 - Point of View: ${book.pov}
 - Tone: ${book.toneProfile.primary} (intensity: ${book.toneProfile.intensity}/10)

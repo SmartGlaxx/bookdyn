@@ -275,7 +275,7 @@ META RULE: Show > tell. Panels > paragraphs.
     : "";
 
   const genreRaw = (book.genre || "").toString().toLowerCase();
-  const isChaseGenre = isNarrative && /(crime|detective|thriller|mystery|noir|hard[- ]?boiled)/.test(genreRaw);
+  const isChaseGenre = isNarrative && /(crime|detective|thriller|mystery|noir|hard[- ]?boiled)/i.test(genreRaw);
   const chaseStyleProfile = isChaseGenre ? `
 JAMES HADLEY CHASE STYLE PROFILE (MANDATORY — this book's genre is "${book.genre}"):
 - Channel James Hadley Chase, with shades of Raymond Chandler, Dashiell Hammett, and Lee Child. Hard-boiled, lean, cinematic, ruthless.
@@ -299,6 +299,7 @@ BOOK CONTEXT:
 - Title: "${book.title}"
 - Theme: ${book.theme}
 - Genre: ${book.genre || "General"}
+- Language: ${book.language || "English"} (write the entire output in this language)
 - Audience: ${book.audience}
 - POV: ${book.pov}
 - Tone: ${book.toneProfile.primary} (formality: ${book.toneProfile.formality}/10, emotion: ${book.toneProfile.emotionalIntensity}/10)
