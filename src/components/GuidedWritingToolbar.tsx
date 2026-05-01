@@ -11,6 +11,7 @@ interface GuidedWritingToolbarProps {
   subsectionTitle: string;
   currentContent: string;
   subsectionGoal?: string;
+  language?: string;
   onContentAppend: (newContent: string) => void;
   onContentReplace: (newContent: string) => void;
   onManualAdd: () => void;
@@ -24,6 +25,7 @@ export function GuidedWritingToolbar({
   subsectionTitle,
   currentContent,
   subsectionGoal,
+  language,
   onContentAppend,
   onContentReplace,
   onManualAdd,
@@ -43,6 +45,7 @@ export function GuidedWritingToolbar({
           guidedAction: action,
           fullContent: currentContent,
           subsectionGoal,
+          language,
         },
       });
 
