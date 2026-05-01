@@ -621,7 +621,7 @@ export const WORD_COUNT_PRESETS = [
 
 export const GENRE_PRESETS: Record<BookCategory, string[]> = {
   fiction: [
-    "Science Fiction", "Romance", "Mystery", "Thriller",
+    "Science Fiction", "Romance", "Mystery", "Crime", "Detective", "Thriller",
     "Literary Fiction", "Historical Fiction", "Adventure",
     "Contemporary"
   ],
