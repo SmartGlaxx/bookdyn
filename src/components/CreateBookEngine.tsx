@@ -76,6 +76,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
   const [selectedCategory, setSelectedCategory] = useState<BookCategory>("fiction");
   const [formData, setFormData] = useState<Partial<CreateBookInput>>({
     bookType: "novel",
+    language: "English",
     pov: "third-person-limited",
     toneProfile: {
       primary: "conversational",
