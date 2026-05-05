@@ -515,10 +515,18 @@ const Index = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Premium aurora ambient backdrop */}
+      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-40 left-1/4 w-[800px] h-[800px] rounded-full opacity-30 blur-[140px] animate-aurora"
+          style={{ background: "radial-gradient(circle, hsl(262 88% 55% / 0.5), transparent 60%)" }} />
+        <div className="absolute top-1/3 -right-40 w-[600px] h-[600px] rounded-full opacity-25 blur-[140px] animate-aurora"
+          style={{ background: "radial-gradient(circle, hsl(190 95% 50% / 0.45), transparent 60%)", animationDelay: "-8s" }} />
+        <div className="absolute inset-0 grid-bg opacity-60" />
+      </div>
       <Navigation onCreateBook={() => setShowEngine(true)} />
 
-      <main>
+      <main className="relative">
         {isLoading ? (
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center space-y-4">
@@ -527,19 +535,19 @@ const Index = () => {
             </div>
           </div>
         ) : books.length === 0 ? (
-          <div className="container max-w-6xl mx-auto px-4 py-8">
+          <div className="container max-w-6xl mx-auto px-4 py-12">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h3 className="text-2xl font-serif font-bold">Your Library</h3>
+                <h3 className="text-3xl font-serif font-bold text-shimmer">Your Library</h3>
                 <p className="text-muted-foreground mt-1">No books yet</p>
               </div>
             </div>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center justify-center py-24 text-center space-y-6"
+              className="flex flex-col items-center justify-center py-24 text-center space-y-6 glass-card rounded-3xl"
             >
-              <div className="p-6 rounded-full bg-primary/10">
+              <div className="p-6 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 shadow-glow">
                 <BookOpen className="w-12 h-12 text-primary" />
               </div>
               <div className="space-y-2 max-w-md">
