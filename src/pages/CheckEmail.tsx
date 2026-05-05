@@ -23,7 +23,7 @@ const CheckEmail = () => {
             <BookOpen className="w-7 h-7 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="font-serif font-bold text-2xl">Authoryti</h1>
+            <h1 className="font-serif font-bold text-2xl">Bookdyn</h1>
             <p className="text-xs text-muted-foreground">AI-Powered Book Creation</p>
           </div>
         </div>
