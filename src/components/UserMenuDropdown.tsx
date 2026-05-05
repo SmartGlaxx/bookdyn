@@ -50,7 +50,7 @@ export function UserMenuDropdown({ className }: UserMenuDropdownProps) {
 
   const handleSignOut = async () => {
     await signOut();
-    window.location.href = "https://authoryti.com?logout=true";
+    window.location.href = "https://bookdyn.com?logout=true";
   };
 
   const handleManageBilling = () => {
