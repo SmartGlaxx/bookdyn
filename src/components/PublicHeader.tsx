@@ -3,10 +3,10 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const NAV_LINKS: [string, string][] = [
-  ["Features", "https://authoryti.com/features"],
-  ["Pricing", "https://authoryti.com/pricing"],
-  ["Blog", "https://authoryti.com/blog"],
-  ["Docs", "https://authoryti.com/docs"],
+  ["Features", "https://bookdyn.com/features"],
+  ["Pricing", "https://bookdyn.com/pricing"],
+  ["Blog", "https://bookdyn.com/blog"],
+  ["Docs", "https://bookdyn.com/docs"],
   ["Join Waitlist", "/waitlist"],
 ];
 
@@ -131,7 +131,7 @@ const PublicHeader = () => {
         <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between" style={{ height: 64 }}>
           {/* Logo */}
           <a
-            href="https://authoryti.com"
+            href="https://bookdyn.com"
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             style={{ textDecoration: "none" }}
           >
@@ -147,7 +147,7 @@ const PublicHeader = () => {
                 color: "hsl(var(--foreground))",
               }}
             >
-              Authoryti
+              Bookdyn
             </h1>
           </a>
 
