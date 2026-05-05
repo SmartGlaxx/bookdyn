@@ -20,11 +20,12 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
               style={{
                 padding: 8,
                 borderRadius: 10,
-                background: "hsla(35,92%,55%,0.12)",
+                background: "linear-gradient(135deg, hsl(262 88% 60%), hsl(190 95% 55%))",
                 display: "flex",
+                boxShadow: "0 4px 16px hsla(262, 88%, 50%, 0.4)",
               }}
             >
-              <BookOpen size={20} color="hsl(35,92%,55%)" strokeWidth={2} />
+              <BookOpen size={20} color="white" strokeWidth={2} />
             </div>
             <h1
               style={{
