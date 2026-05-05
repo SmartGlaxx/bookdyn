@@ -48,7 +48,7 @@ const PublicHeader = () => {
           width: "80%",
           maxWidth: 320,
           height: "100%",
-          background: "hsl(240 25% 5%)",
+          background: "hsl(222 30% 7%)",
           zIndex: 99999,
           padding: 24,
           overflowY: "auto",
@@ -78,7 +78,7 @@ const PublicHeader = () => {
               const linkStyle: React.CSSProperties = {
                 fontSize: 18,
                 fontWeight: 600,
-                color: isWaitlist ? "hsl(262 88% 70%)" : "hsl(var(--foreground))",
+                color: isWaitlist ? "hsl(35,92%,55%)" : "hsl(var(--foreground))",
                 padding: "14px 0",
                 borderBottom: "1px solid hsl(var(--border))",
                 textDecoration: "none",
@@ -106,7 +106,7 @@ const PublicHeader = () => {
                 justifyContent: "center",
                 padding: "14px 24px",
                 borderRadius: 999,
-                background: "linear-gradient(135deg, hsl(262 88% 60%) 0%, hsl(220 90% 60%) 50%, hsl(190 95% 55%) 100%)",
+                background: "linear-gradient(135deg, hsl(35,92%,48%) 0%, hsl(25,95%,55%) 100%)",
                 color: "#fff",
                 fontWeight: 700,
                 fontSize: 16,
@@ -123,7 +123,7 @@ const PublicHeader = () => {
       <nav
         className="fixed top-0 left-0 right-0 z-[10000] border-b border-border"
         style={{
-          background: "rgba(10,12,22,0.85)",
+          background: "rgba(18,22,35,0.95)",
           backdropFilter: "blur(14px)",
           boxShadow: "0 1px 0 rgba(255,255,255,0.05)",
         }}
@@ -135,8 +135,8 @@ const PublicHeader = () => {
             className="flex items-center gap-3 hover:opacity-80 transition-opacity"
             style={{ textDecoration: "none" }}
           >
-            <div style={{ padding: 8, borderRadius: 10, background: "linear-gradient(135deg, hsl(262 88% 60%), hsl(190 95% 55%))", display: "flex", boxShadow: "0 4px 16px hsla(262, 88%, 50%, 0.4)" }}>
-              <BookOpen size={20} color="white" strokeWidth={2} />
+            <div style={{ padding: 8, borderRadius: 10, background: "hsla(35,92%,55%,0.12)", display: "flex" }}>
+              <BookOpen size={20} color="hsl(35,92%,55%)" strokeWidth={2} />
             </div>
             <h1
               style={{
@@ -159,7 +159,7 @@ const PublicHeader = () => {
               const style: React.CSSProperties = {
                 fontSize: 14,
                 fontWeight: 500,
-                color: isWaitlist ? "hsl(262 88% 70%)" : "hsl(var(--muted-foreground))",
+                color: isWaitlist ? "hsl(35,92%,55%)" : "hsl(var(--muted-foreground))",
                 textDecoration: "none",
                 transition: "color 0.2s",
               };
@@ -185,7 +185,7 @@ const PublicHeader = () => {
                 gap: 8,
                 padding: "10px 20px",
                 borderRadius: 999,
-                background: "linear-gradient(135deg, hsl(262 88% 60%) 0%, hsl(220 90% 60%) 50%, hsl(190 95% 55%) 100%)",
+                background: "linear-gradient(135deg, hsl(35,92%,48%) 0%, hsl(25,95%,55%) 100%)",
                 color: "#fff",
                 fontWeight: 700,
                 fontSize: 14,
