@@ -108,7 +108,7 @@ const Onboarding = () => {
             <BookOpen className="w-7 h-7 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="font-serif font-bold text-2xl">Welcome to Authoryti</h1>
+            <h1 className="font-serif font-bold text-2xl">Welcome to Bookdyn</h1>
             <p className="text-xs text-muted-foreground">Let's personalize your experience</p>
           </div>
         </div>

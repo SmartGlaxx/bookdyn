@@ -104,7 +104,7 @@ export function FeedbackModal({ open, onOpenChange }: FeedbackModalProps) {
             Give Feedback
           </DialogTitle>
           <DialogDescription>
-            Help us improve Authoryti with your feedback.
+            Help us improve Bookdyn with your feedback.
           </DialogDescription>
         </DialogHeader>
 

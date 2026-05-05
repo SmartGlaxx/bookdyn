@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 const Landing = () => {
   useEffect(() => {
-    window.location.href = "https://authoryti.com";
+    window.location.href = "https://bookdyn.com";
   }, []);
 
   return null;

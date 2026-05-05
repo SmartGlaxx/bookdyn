@@ -64,9 +64,9 @@ const steps = [
 
 /* ─── Testimonials ─── */
 const testimonials = [
-  { name: "Sarah Chen", role: "Self-Published Author", quote: "Authoryti turned my rough ideas into a complete novel outline in minutes. The AI understood exactly the tone I wanted.", avatar: "SC" },
+  { name: "Sarah Chen", role: "Self-Published Author", quote: "Bookdyn turned my rough ideas into a complete novel outline in minutes. The AI understood exactly the tone I wanted.", avatar: "SC" },
   { name: "Marcus Rivera", role: "Content Creator", quote: "I've used it to create three technical guides. The structure and depth of content is genuinely impressive.", avatar: "MR" },
-  { name: "Emily Watson", role: "Writing Coach", quote: "I recommend Authoryti to all my students. It's the best tool for overcoming writer's block and structuring ideas.", avatar: "EW" },
+  { name: "Emily Watson", role: "Writing Coach", quote: "I recommend Bookdyn to all my students. It's the best tool for overcoming writer's block and structuring ideas.", avatar: "EW" },
 ];
 
 interface LandingPageProps {
@@ -384,10 +384,10 @@ const LandingPage = ({ onCreateBook, bookCount }: LandingPageProps) => {
               <div className="p-2 rounded-lg bg-primary/10">
                 <BookOpen className="w-5 h-5 text-primary" />
               </div>
-              <span className="font-serif font-bold text-lg">Authoryti</span>
+              <span className="font-serif font-bold text-lg">Bookdyn</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Authoryti. AI-powered book creation.
+              © {new Date().getFullYear()} Bookdyn. AI-powered book creation.
             </p>
           </div>
         </div>

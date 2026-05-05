@@ -46,7 +46,7 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
   const handleSignOut = async () => {
     setOpen(false);
     await signOut();
-    window.location.href = "https://authoryti.com?logout=true";
+    window.location.href = "https://bookdyn.com?logout=true";
   };
 
   const handleManageBilling = () => {

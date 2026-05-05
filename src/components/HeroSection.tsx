@@ -57,7 +57,7 @@ const HeroSection = ({ onCreateBook, bookCount }: HeroSectionProps) => {
           </div>
 
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold tracking-tight">
-            <span className="text-gradient">Authoryti</span>
+            <span className="text-gradient">Bookdyn</span>
             <br />
             <span className="text-foreground">Book Creation</span>
           </h1>

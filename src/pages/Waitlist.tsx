@@ -85,7 +85,7 @@ export default function WaitlistPage() {
           </p>
 
           <p className="text-sm text-muted-foreground max-w-lg">
-            Authoryti is an AI-powered book creation engine. We're putting
+            Bookdyn is an AI-powered book creation engine. We're putting
             the finishing touches on something writers have been waiting for.
           </p>
 

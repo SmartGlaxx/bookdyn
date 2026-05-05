@@ -1,8 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const ALLOWED_ORIGINS = [
-  "https://authoryti.com",
-  "https://authoryti.lovable.app",
+  "https://bookdyn.com",
+  "https://bookdyn.lovable.app",
 ];
 
 function getCorsHeaders(req: Request) {
