@@ -76,7 +76,7 @@ serve(async (req) => {
             currency: "usd",
             unit_amount: dollarAmount * 100, // cents
             product_data: {
-              name: `${credits} Authoryti Credits`,
+              name: `${credits} Bookdyn Credits`,
               description: `${credits.toLocaleString()} credits (≈${(credits * 1000).toLocaleString()} words)`,
             },
           },
