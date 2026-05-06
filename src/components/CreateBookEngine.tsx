@@ -391,6 +391,42 @@ const CreateBookEngine = ({ onClose, onCreate, existingBooks = [] }: CreateBookE
                       />
                     </div>
                   )}
+
+                  {/* Serialized fiction sub-flow */}
+                  {isSerial && (
+                    <div className="mt-3 p-3 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
+                      <div className="flex items-center gap-2 text-xs font-medium">
+                        <Layers className="w-3.5 h-3.5 text-primary" />
+                        Serialized Fiction
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Start a new series, or continue from one of your existing books. Continuing copies all
+                        the source book's settings (you can still edit anything) and links the new book into the same series.
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => { setSerialChoice("new"); setParentBook(null); setParentSeriesId(null); }}
+                          className={`p-2.5 rounded-lg border text-left transition-all ${
+                            serialChoice === "new" ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          <div className="font-medium text-xs">Start a new series</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5">Configure everything from scratch.</div>
+                        </button>
+                        <button
+                          onClick={() => setShowSeriesPicker(true)}
+                          className={`p-2.5 rounded-lg border text-left transition-all ${
+                            serialChoice === "continue" ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          <div className="font-medium text-xs">Continue from existing book</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5">
+                            {parentBook ? `From: ${parentBook.title}` : "Pick any novel or series book."}
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               )}
 
