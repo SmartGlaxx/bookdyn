@@ -29,6 +29,11 @@ const transformDbToBook = (row: any): Book => ({
   entities: row.entities || [],
   concepts: row.concepts || [],
   coverUrl: row.cover_url || undefined,
+  seriesId: row.series_id || undefined,
+  parentBookId: row.parent_book_id || undefined,
+  runningSummary: row.running_summary || "",
+  backCoverSummary: row.back_cover_summary || undefined,
+  frontMatter: row.front_matter || undefined,
 });
 
 // Transform Book to database row format
@@ -53,6 +58,11 @@ const transformBookToDb = (book: Partial<Book> & { id?: string }) => ({
   ...(book.entities !== undefined && { entities: book.entities }),
   ...(book.concepts !== undefined && { concepts: book.concepts }),
   ...(book.coverUrl !== undefined && { cover_url: book.coverUrl }),
+  ...(book.seriesId !== undefined && { series_id: book.seriesId }),
+  ...(book.parentBookId !== undefined && { parent_book_id: book.parentBookId }),
+  ...(book.runningSummary !== undefined && { running_summary: book.runningSummary }),
+  ...(book.backCoverSummary !== undefined && { back_cover_summary: book.backCoverSummary }),
+  ...(book.frontMatter !== undefined && { front_matter: book.frontMatter as unknown as Json }),
 });
 
 export const useBooks = () => {
@@ -101,6 +111,9 @@ export const useBooks = () => {
         entities: [] as string[],
         concepts: [] as string[],
         user_id: user.id,
+        series_id: input.seriesId ?? null,
+        parent_book_id: input.parentBookId ?? null,
+        front_matter: input.frontMatter ? (JSON.parse(JSON.stringify(input.frontMatter)) as Json) : null,
       };
 
       const { data, error } = await supabase
@@ -148,6 +161,11 @@ export const useBooks = () => {
       if (updates.entities !== undefined) dbUpdates.entities = updates.entities;
       if (updates.concepts !== undefined) dbUpdates.concepts = updates.concepts;
       if (updates.coverUrl !== undefined) dbUpdates.cover_url = updates.coverUrl;
+      if (updates.seriesId !== undefined) dbUpdates.series_id = updates.seriesId;
+      if (updates.parentBookId !== undefined) dbUpdates.parent_book_id = updates.parentBookId;
+      if (updates.runningSummary !== undefined) dbUpdates.running_summary = updates.runningSummary;
+      if (updates.backCoverSummary !== undefined) dbUpdates.back_cover_summary = updates.backCoverSummary;
+      if (updates.frontMatter !== undefined) dbUpdates.front_matter = updates.frontMatter as unknown as Json;
       
       const { data, error } = await supabase
         .from("books")
