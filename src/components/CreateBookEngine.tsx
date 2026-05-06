@@ -59,7 +59,6 @@ import {
 } from "@/types/book";
 import { TemplateSelector } from "@/components/TemplateSelector";
 import { SeriesPicker } from "@/components/SeriesPicker";
-import { Switch } from "@/components/ui/switch";
 
 interface CreateBookEngineProps {
   onClose: () => void;
