@@ -35,7 +35,8 @@ function validateInput(body: any): string | null {
   if (!body.content || typeof body.content !== "string") return "Missing content";
   if (body.content.length > 100_000) return "Content too long";
   if (!body.type || !["subsection", "chapter"].includes(body.type)) return "Invalid type";
-  if (detectPromptInjection(body.content)) return "Input contains prohibited patterns";
+  // Note: prompt-injection check intentionally omitted — content is the user's own
+  // generated narrative which legitimately contains words like "system:" or dialogue.
   return null;
 }
 
