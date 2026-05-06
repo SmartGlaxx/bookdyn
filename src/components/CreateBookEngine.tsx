@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { sanitizeText } from "@/lib/sanitize";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronRight, ChevronLeft, Sparkles, HelpCircle, Settings2, Palette, BookOpen, Sliders, Check } from "lucide-react";
+import { X, ChevronRight, ChevronLeft, Sparkles, HelpCircle, Settings2, Palette, BookOpen, Sliders, Check, FileText, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,15 +52,21 @@ import {
   TeaserStyle,
   VISUAL_BOOK_TYPES,
   BOOK_TEMPLATES,
+  FrontMatterSelection,
+  FRONT_MATTER_LABELS,
+  getDefaultFrontMatter,
+  Book,
 } from "@/types/book";
 import { TemplateSelector } from "@/components/TemplateSelector";
+import { SeriesPicker } from "@/components/SeriesPicker";
 
 interface CreateBookEngineProps {
   onClose: () => void;
   onCreate: (input: CreateBookInput) => void;
+  existingBooks?: Book[];
 }
 
-type Step = 1 | 2 | 3 | 4 | 5;
+type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
 const STEP_META = [
   { title: "Type", icon: BookOpen, color: "from-primary/80 to-primary" },
@@ -68,12 +74,19 @@ const STEP_META = [
   { title: "Voice", icon: Palette, color: "from-primary to-accent" },
   { title: "Controls", icon: Sliders, color: "from-accent to-primary" },
   { title: "Advanced", icon: Settings2, color: "from-primary/80 to-primary" },
+  { title: "Front Matter", icon: FileText, color: "from-amber-glow/80 to-primary" },
 ];
 
-const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
+const CreateBookEngine = ({ onClose, onCreate, existingBooks = [] }: CreateBookEngineProps) => {
   const [step, setStep] = useState<Step>(1);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedCategory, setSelectedCategory] = useState<BookCategory>("fiction");
+  // Series flow state (only used for fiction-serial)
+  const [serialChoice, setSerialChoice] = useState<"none" | "new" | "continue">("none");
+  const [showSeriesPicker, setShowSeriesPicker] = useState(false);
+  const [parentBook, setParentBook] = useState<Book | null>(null);
+  const [frontMatter, setFrontMatter] = useState<FrontMatterSelection>(getDefaultFrontMatter("novel"));
+  const [parentSeriesId, setParentSeriesId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<CreateBookInput>>({
     bookType: "novel",
     language: "English",
@@ -135,9 +148,18 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
     updateForm("bookType", type);
     // Image Generation is temporarily disabled across the app for the test launch.
     updateForm("controls", { ...getDefaultControls(type), imageGeneration: false, automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel, temporalContext: { era: "" as TemporalEra, timelineStructure: "" as TimelineStructure }, structureControls: { ...getDefaultControls(type).structureControls, chapterCount: "" as any, sectionsPerChapterMode: "" as any } });
+    setFrontMatter(getDefaultFrontMatter(type));
     const allowed = BOOK_TYPE_AUDIENCES[type];
     if (formData.audience && allowed && !allowed.includes(formData.audience)) {
       updateForm("audience", "");
+    }
+    // Reset series flow if type changes away from fiction-serial
+    if (type !== "fiction-serial") {
+      setSerialChoice("none");
+      setParentBook(null);
+      setParentSeriesId(null);
+    } else {
+      setSerialChoice("none");
     }
     // Auto-select first template for visual book types, clear for others
     if (VISUAL_BOOK_TYPES.includes(type)) {
@@ -153,6 +175,31 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
   };
 
   const isVisualBookType = VISUAL_BOOK_TYPES.includes(formData.bookType || "novel");
+  const isSerial = formData.bookType === "fiction-serial";
+
+  /** When a parent book is picked: pre-fill EVERYTHING (editable). */
+  const handlePickParent = (source: Book) => {
+    setParentBook(source);
+    setParentSeriesId(source.seriesId || source.id);
+    setShowSeriesPicker(false);
+    setSerialChoice("continue");
+    setFormData((prev) => ({
+      ...prev,
+      // Reset title — user names the new book
+      title: "",
+      subtitle: undefined,
+      // Copy everything else, fully editable
+      bookType: "fiction-serial",
+      theme: source.theme,
+      genre: source.genre,
+      language: source.language,
+      audience: source.audience,
+      pov: source.pov,
+      toneProfile: source.toneProfile,
+      controls: source.controls,
+    }));
+    setFrontMatter(source.frontMatter?.selection || getDefaultFrontMatter("fiction-serial"));
+  };
 
   const filteredBookTypes = useMemo(() => {
     return Object.entries(BOOK_TYPE_INFO).filter(
@@ -169,6 +216,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
       case 3: return !!formData.pov && !!formData.toneProfile?.primary;
       case 4: return true;
       case 5: return true;
+      case 6: return true;
       default: return false;
     }
   };
@@ -181,6 +229,9 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
       title: sanitizeText((formData.title || "").trim()).substring(0, 200),
       theme: sanitizeText((formData.theme || "").trim()).substring(0, 1000),
       subtitle: formData.subtitle ? sanitizeText(formData.subtitle.trim()).substring(0, 300) : undefined,
+      seriesId: parentSeriesId || undefined,
+      parentBookId: parentBook?.id,
+      frontMatter: { selection: frontMatter },
     } as CreateBookInput;
     onCreate(sanitized);
   };
@@ -338,6 +389,42 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                         selectedTemplateId={formData.controls?.selectedTemplateId}
                         onSelect={(id) => updateControls("selectedTemplateId", id)}
                       />
+                    </div>
+                  )}
+
+                  {/* Serialized fiction sub-flow */}
+                  {isSerial && (
+                    <div className="mt-3 p-3 rounded-xl border border-primary/20 bg-primary/5 space-y-3">
+                      <div className="flex items-center gap-2 text-xs font-medium">
+                        <Layers className="w-3.5 h-3.5 text-primary" />
+                        Serialized Fiction
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Start a new series, or continue from one of your existing books. Continuing copies all
+                        the source book's settings (you can still edit anything) and links the new book into the same series.
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => { setSerialChoice("new"); setParentBook(null); setParentSeriesId(null); }}
+                          className={`p-2.5 rounded-lg border text-left transition-all ${
+                            serialChoice === "new" ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          <div className="font-medium text-xs">Start a new series</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5">Configure everything from scratch.</div>
+                        </button>
+                        <button
+                          onClick={() => setShowSeriesPicker(true)}
+                          className={`p-2.5 rounded-lg border text-left transition-all ${
+                            serialChoice === "continue" ? "border-primary bg-primary/10" : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          <div className="font-medium text-xs">Continue from existing book</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5">
+                            {parentBook ? `From: ${parentBook.title}` : "Pick any novel or series book."}
+                          </div>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </motion.div>
@@ -787,6 +874,53 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
                   </Section>
                 </motion.div>
               )}
+
+              {/* ───── Step 6: Front Matter & Summary ───── */}
+              {step === 6 && (
+                <motion.div key="step6" {...stepAnim} className="space-y-4">
+                  <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      <FileText className="w-3.5 h-3.5 text-primary inline mr-1.5 -mt-0.5" />
+                      Pick which front-matter pages to include. Copyright and Table of Contents are
+                      generated automatically from your details. Preface, Introduction, and Prologue are
+                      drafted by AI <em>after</em> the book is finished, so the details match what was actually written.
+                      A one-page Book Summary is built quietly in the background as you write and placed at the back of the book.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    {(Object.keys(FRONT_MATTER_LABELS) as (keyof FrontMatterSelection)[]).map((key) => {
+                      const meta = FRONT_MATTER_LABELS[key];
+                      const checked = !!frontMatter[key];
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setFrontMatter((p) => ({ ...p, [key]: !p[key] }))}
+                          className={`w-full p-3 rounded-xl border text-left transition-all flex items-start gap-3 ${
+                            checked ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          <div className={`w-4 h-4 rounded border flex items-center justify-center mt-0.5 shrink-0 ${
+                            checked ? "bg-primary border-primary" : "border-border"
+                          }`}>
+                            {checked && <Check className="w-3 h-3 text-primary-foreground" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-xs">{meta.label}</div>
+                            <div className="text-[10px] text-muted-foreground mt-0.5 leading-snug">{meta.description}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {parentBook && (
+                    <div className="p-3 rounded-xl border border-amber-glow/30 bg-amber-glow/5 text-[11px] text-muted-foreground">
+                      <strong className="text-foreground">Continuing from:</strong> {parentBook.title}. The new
+                      book will be linked into the same series. The previous book's summary will guide outline generation.
+                    </div>
+                  )}
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </div>
@@ -808,7 +942,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
             <Button variant="ghost" size="sm" onClick={onClose} className="text-xs text-muted-foreground">
               Cancel
             </Button>
-            {step < 5 ? (
+            {step < 6 ? (
               <Button size="sm" onClick={() => setStep((s) => (s + 1) as Step)} disabled={!canProceed()} className="text-xs">
                 Next
                 <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
