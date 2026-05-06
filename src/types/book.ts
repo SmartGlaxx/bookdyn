@@ -664,7 +664,46 @@ export const BOOK_TYPE_GENRES: Partial<Record<BookType, string[]>> = {
 
 // Book types that are enabled in the Creation Engine right now.
 // Other types are visible but disabled (coming soon) for the test launch.
-export const ENABLED_BOOK_TYPES: BookType[] = ["novel", "self-help", "business"];
+export const ENABLED_BOOK_TYPES: BookType[] = ["novel", "fiction-serial", "self-help", "business"];
+
+// ============= FRONT MATTER =============
+export interface FrontMatterSelection {
+  copyright: boolean;
+  tableOfContents: boolean;
+  preface: boolean;
+  introduction: boolean;
+  prologue: boolean;
+  backCoverSummary: boolean;
+}
+
+export interface FrontMatterContent {
+  copyright?: string;
+  tableOfContents?: string;
+  preface?: string;
+  introduction?: string;
+  prologue?: string;
+}
+
+export const FRONT_MATTER_LABELS: Record<keyof FrontMatterSelection, { label: string; description: string }> = {
+  copyright: { label: "Copyright Page", description: "Author, year, and rights notice. Auto-generated from your details." },
+  tableOfContents: { label: "Table of Contents", description: "Lists every chapter. Auto-built from the outline." },
+  preface: { label: "Preface", description: "Author note about why and how the book was written. Generated after the book is complete." },
+  introduction: { label: "Introduction", description: "Sets the subject and context. Generated after the book is complete." },
+  prologue: { label: "Prologue", description: "A scene that opens the story before Chapter 1. Generated after the book is complete." },
+  backCoverSummary: { label: "Book Summary (back of book)", description: "A one-page condensed summary, built quietly while you write." },
+};
+
+// Smart defaults by genre/category
+export const getDefaultFrontMatter = (bookType: BookType): FrontMatterSelection => {
+  const cat = BOOK_TYPE_INFO[bookType].category;
+  if (cat === "fiction") {
+    return { copyright: true, tableOfContents: true, preface: false, introduction: false, prologue: true, backCoverSummary: true };
+  }
+  if (cat === "non-fiction" || cat === "educational") {
+    return { copyright: true, tableOfContents: true, preface: true, introduction: true, prologue: false, backCoverSummary: true };
+  }
+  return { copyright: true, tableOfContents: true, preface: false, introduction: false, prologue: false, backCoverSummary: true };
+};
 
 // Helper to get default controls based on book type
 export const getDefaultControls = (bookType: BookType): BookControls => {
