@@ -77,6 +77,7 @@ export type Database = {
       books: {
         Row: {
           audience: string
+          back_cover_summary: string | null
           book_type: string
           concepts: string[] | null
           controls: Json
@@ -85,12 +86,16 @@ export type Database = {
           current_chapter_index: number
           current_subsection_index: number
           entities: string[] | null
+          front_matter: Json | null
           full_text: string
           genre: string | null
           id: string
           language: string
           outline: Json | null
+          parent_book_id: string | null
           pov: string
+          running_summary: string
+          series_id: string | null
           status: string
           subtitle: string | null
           theme: string
@@ -104,6 +109,7 @@ export type Database = {
         }
         Insert: {
           audience: string
+          back_cover_summary?: string | null
           book_type: string
           concepts?: string[] | null
           controls: Json
@@ -112,12 +118,16 @@ export type Database = {
           current_chapter_index?: number
           current_subsection_index?: number
           entities?: string[] | null
+          front_matter?: Json | null
           full_text?: string
           genre?: string | null
           id?: string
           language?: string
           outline?: Json | null
+          parent_book_id?: string | null
           pov: string
+          running_summary?: string
+          series_id?: string | null
           status?: string
           subtitle?: string | null
           theme: string
@@ -131,6 +141,7 @@ export type Database = {
         }
         Update: {
           audience?: string
+          back_cover_summary?: string | null
           book_type?: string
           concepts?: string[] | null
           controls?: Json
@@ -139,12 +150,16 @@ export type Database = {
           current_chapter_index?: number
           current_subsection_index?: number
           entities?: string[] | null
+          front_matter?: Json | null
           full_text?: string
           genre?: string | null
           id?: string
           language?: string
           outline?: Json | null
+          parent_book_id?: string | null
           pov?: string
+          running_summary?: string
+          series_id?: string | null
           status?: string
           subtitle?: string | null
           theme?: string
