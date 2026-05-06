@@ -874,6 +874,53 @@ const CreateBookEngine = ({ onClose, onCreate, existingBooks = [] }: CreateBookE
                   </Section>
                 </motion.div>
               )}
+
+              {/* ───── Step 6: Front Matter & Summary ───── */}
+              {step === 6 && (
+                <motion.div key="step6" {...stepAnim} className="space-y-4">
+                  <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      <FileText className="w-3.5 h-3.5 text-primary inline mr-1.5 -mt-0.5" />
+                      Pick which front-matter pages to include. Copyright and Table of Contents are
+                      generated automatically from your details. Preface, Introduction, and Prologue are
+                      drafted by AI <em>after</em> the book is finished, so the details match what was actually written.
+                      A one-page Book Summary is built quietly in the background as you write and placed at the back of the book.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    {(Object.keys(FRONT_MATTER_LABELS) as (keyof FrontMatterSelection)[]).map((key) => {
+                      const meta = FRONT_MATTER_LABELS[key];
+                      const checked = !!frontMatter[key];
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setFrontMatter((p) => ({ ...p, [key]: !p[key] }))}
+                          className={`w-full p-3 rounded-xl border text-left transition-all flex items-start gap-3 ${
+                            checked ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"
+                          }`}
+                        >
+                          <div className={`w-4 h-4 rounded border flex items-center justify-center mt-0.5 shrink-0 ${
+                            checked ? "bg-primary border-primary" : "border-border"
+                          }`}>
+                            {checked && <Check className="w-3 h-3 text-primary-foreground" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-xs">{meta.label}</div>
+                            <div className="text-[10px] text-muted-foreground mt-0.5 leading-snug">{meta.description}</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {parentBook && (
+                    <div className="p-3 rounded-xl border border-amber-glow/30 bg-amber-glow/5 text-[11px] text-muted-foreground">
+                      <strong className="text-foreground">Continuing from:</strong> {parentBook.title}. The new
+                      book will be linked into the same series. The previous book's summary will guide outline generation.
+                    </div>
+                  )}
+                </motion.div>
+              )}
             </AnimatePresence>
           </div>
         </div>
