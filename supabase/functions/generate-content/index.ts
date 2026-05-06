@@ -574,12 +574,15 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "deepseek-reasoner",
+          model: "deepseek-v4-flash",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
           ],
           stream: true,
+          max_tokens: 16384,
+          reasoning_effort: "high",
+          thinking: { type: "enabled" },
         }),
       });
     } else {
