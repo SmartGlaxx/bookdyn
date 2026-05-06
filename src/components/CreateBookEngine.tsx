@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { sanitizeText } from "@/lib/sanitize";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronRight, ChevronLeft, Sparkles, HelpCircle, Settings2, Palette, BookOpen, Sliders, Check } from "lucide-react";
+import { X, ChevronRight, ChevronLeft, Sparkles, HelpCircle, Settings2, Palette, BookOpen, Sliders, Check, FileText, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,15 +52,22 @@ import {
   TeaserStyle,
   VISUAL_BOOK_TYPES,
   BOOK_TEMPLATES,
+  FrontMatterSelection,
+  FRONT_MATTER_LABELS,
+  getDefaultFrontMatter,
+  Book,
 } from "@/types/book";
 import { TemplateSelector } from "@/components/TemplateSelector";
+import { SeriesPicker } from "@/components/SeriesPicker";
+import { Switch } from "@/components/ui/switch";
 
 interface CreateBookEngineProps {
   onClose: () => void;
   onCreate: (input: CreateBookInput) => void;
+  existingBooks?: Book[];
 }
 
-type Step = 1 | 2 | 3 | 4 | 5;
+type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
 const STEP_META = [
   { title: "Type", icon: BookOpen, color: "from-primary/80 to-primary" },
@@ -68,12 +75,19 @@ const STEP_META = [
   { title: "Voice", icon: Palette, color: "from-primary to-accent" },
   { title: "Controls", icon: Sliders, color: "from-accent to-primary" },
   { title: "Advanced", icon: Settings2, color: "from-primary/80 to-primary" },
+  { title: "Front Matter", icon: FileText, color: "from-amber-glow/80 to-primary" },
 ];
 
-const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
+const CreateBookEngine = ({ onClose, onCreate, existingBooks = [] }: CreateBookEngineProps) => {
   const [step, setStep] = useState<Step>(1);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedCategory, setSelectedCategory] = useState<BookCategory>("fiction");
+  // Series flow state (only used for fiction-serial)
+  const [serialChoice, setSerialChoice] = useState<"none" | "new" | "continue">("none");
+  const [showSeriesPicker, setShowSeriesPicker] = useState(false);
+  const [parentBook, setParentBook] = useState<Book | null>(null);
+  const [frontMatter, setFrontMatter] = useState<FrontMatterSelection>(getDefaultFrontMatter("novel"));
+  const [parentSeriesId, setParentSeriesId] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<CreateBookInput>>({
     bookType: "novel",
     language: "English",
@@ -135,9 +149,18 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
     updateForm("bookType", type);
     // Image Generation is temporarily disabled across the app for the test launch.
     updateForm("controls", { ...getDefaultControls(type), imageGeneration: false, automationLevel: "" as AutomationLevel, depthLevel: "" as DepthLevel, temporalContext: { era: "" as TemporalEra, timelineStructure: "" as TimelineStructure }, structureControls: { ...getDefaultControls(type).structureControls, chapterCount: "" as any, sectionsPerChapterMode: "" as any } });
+    setFrontMatter(getDefaultFrontMatter(type));
     const allowed = BOOK_TYPE_AUDIENCES[type];
     if (formData.audience && allowed && !allowed.includes(formData.audience)) {
       updateForm("audience", "");
+    }
+    // Reset series flow if type changes away from fiction-serial
+    if (type !== "fiction-serial") {
+      setSerialChoice("none");
+      setParentBook(null);
+      setParentSeriesId(null);
+    } else {
+      setSerialChoice("none");
     }
     // Auto-select first template for visual book types, clear for others
     if (VISUAL_BOOK_TYPES.includes(type)) {
@@ -153,6 +176,31 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
   };
 
   const isVisualBookType = VISUAL_BOOK_TYPES.includes(formData.bookType || "novel");
+  const isSerial = formData.bookType === "fiction-serial";
+
+  /** When a parent book is picked: pre-fill EVERYTHING (editable). */
+  const handlePickParent = (source: Book) => {
+    setParentBook(source);
+    setParentSeriesId(source.seriesId || source.id);
+    setShowSeriesPicker(false);
+    setSerialChoice("continue");
+    setFormData((prev) => ({
+      ...prev,
+      // Reset title — user names the new book
+      title: "",
+      subtitle: undefined,
+      // Copy everything else, fully editable
+      bookType: "fiction-serial",
+      theme: source.theme,
+      genre: source.genre,
+      language: source.language,
+      audience: source.audience,
+      pov: source.pov,
+      toneProfile: source.toneProfile,
+      controls: source.controls,
+    }));
+    setFrontMatter(source.frontMatter?.selection || getDefaultFrontMatter("fiction-serial"));
+  };
 
   const filteredBookTypes = useMemo(() => {
     return Object.entries(BOOK_TYPE_INFO).filter(
@@ -169,6 +217,7 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
       case 3: return !!formData.pov && !!formData.toneProfile?.primary;
       case 4: return true;
       case 5: return true;
+      case 6: return true;
       default: return false;
     }
   };
@@ -181,6 +230,9 @@ const CreateBookEngine = ({ onClose, onCreate }: CreateBookEngineProps) => {
       title: sanitizeText((formData.title || "").trim()).substring(0, 200),
       theme: sanitizeText((formData.theme || "").trim()).substring(0, 1000),
       subtitle: formData.subtitle ? sanitizeText(formData.subtitle.trim()).substring(0, 300) : undefined,
+      seriesId: parentSeriesId || undefined,
+      parentBookId: parentBook?.id,
+      frontMatter: { selection: frontMatter },
     } as CreateBookInput;
     onCreate(sanitized);
   };
