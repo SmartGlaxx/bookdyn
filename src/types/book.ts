@@ -419,6 +419,14 @@ export interface Book {
   entities: string[];
   concepts: string[];
   coverUrl?: string;
+  // Series support
+  seriesId?: string;
+  parentBookId?: string;
+  // Summaries
+  runningSummary?: string;
+  backCoverSummary?: string;
+  // Front matter
+  frontMatter?: { selection?: FrontMatterSelection; content?: FrontMatterContent };
 }
 
 export interface CreateBookInput {
@@ -432,6 +440,9 @@ export interface CreateBookInput {
   pov: POV;
   toneProfile: ToneProfile;
   controls: BookControls;
+  seriesId?: string;
+  parentBookId?: string;
+  frontMatter?: { selection: FrontMatterSelection };
 }
 
 // ============= BOOK TYPE CATEGORIES =============
