@@ -859,7 +859,7 @@ const CreateBookEngine = ({ onClose, onCreate, existingBooks = [] }: CreateBookE
             <Button variant="ghost" size="sm" onClick={onClose} className="text-xs text-muted-foreground">
               Cancel
             </Button>
-            {step < 5 ? (
+            {step < 6 ? (
               <Button size="sm" onClick={() => setStep((s) => (s + 1) as Step)} disabled={!canProceed()} className="text-xs">
                 Next
                 <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
