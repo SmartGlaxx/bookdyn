@@ -181,12 +181,14 @@ Now write the 150–220 word cliffhanger intro snippet.`;
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "deepseek-chat",
+          model: "deepseek-v4-flash",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
           ],
           stream: false,
+          max_tokens: 4096,
+          thinking: { type: "disabled" },
         }),
       });
     } else if (LOVABLE_API_KEY) {
