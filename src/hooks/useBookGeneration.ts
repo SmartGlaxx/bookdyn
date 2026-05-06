@@ -386,9 +386,15 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
   ): Promise<string> => {
     setState(s => ({ ...s, phase: "summarizing" }));
 
+    const trimmed = (content || "").trim();
+    if (!trimmed) {
+      console.warn("[summarizeContent] Skipped: empty content");
+      return "";
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke("summarize-content", {
-        body: { content, type },
+        body: { content: trimmed, type },
       });
       if (error) throw error;
       return data.summary || "";
