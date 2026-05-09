@@ -79,6 +79,7 @@ export type Database = {
           audience: string
           back_cover_summary: string | null
           book_type: string
+          character_ledger: Json
           concepts: string[] | null
           controls: Json
           cover_url: string | null
@@ -93,6 +94,7 @@ export type Database = {
           language: string
           outline: Json | null
           parent_book_id: string | null
+          plot_ledger: Json
           pov: string
           running_summary: string
           series_id: string | null
@@ -111,6 +113,7 @@ export type Database = {
           audience: string
           back_cover_summary?: string | null
           book_type: string
+          character_ledger?: Json
           concepts?: string[] | null
           controls: Json
           cover_url?: string | null
@@ -125,6 +128,7 @@ export type Database = {
           language?: string
           outline?: Json | null
           parent_book_id?: string | null
+          plot_ledger?: Json
           pov: string
           running_summary?: string
           series_id?: string | null
@@ -143,6 +147,7 @@ export type Database = {
           audience?: string
           back_cover_summary?: string | null
           book_type?: string
+          character_ledger?: Json
           concepts?: string[] | null
           controls?: Json
           cover_url?: string | null
@@ -157,6 +162,7 @@ export type Database = {
           language?: string
           outline?: Json | null
           parent_book_id?: string | null
+          plot_ledger?: Json
           pov?: string
           running_summary?: string
           series_id?: string | null
