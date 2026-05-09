@@ -10,6 +10,42 @@ const MAX_CONTEXT_CHARS = 2500;
 const MAX_SUMMARY_CHARS = 1200;
 const MAX_ANCHOR_CHARS = 600;
 
+// ── Continuity director helpers ────────────────────────────────────
+async function callUpdateContinuity(payload: Record<string, unknown>): Promise<{ characterLedger?: any; plotLedger?: any } | null> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const { data, error } = await supabase.functions.invoke("update-continuity", {
+      body: payload,
+      headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+    });
+    if (error) {
+      console.warn("[continuity] edge fn error:", error);
+      return null;
+    }
+    return data as any;
+  } catch (err) {
+    console.warn("[continuity] invoke failed:", err);
+    return null;
+  }
+}
+
+async function refetchLedgers(bookId: string): Promise<{ characterLedger?: any; plotLedger?: any }> {
+  try {
+    const { data, error } = await supabase
+      .from("books")
+      .select("character_ledger, plot_ledger")
+      .eq("id", bookId)
+      .maybeSingle();
+    if (error || !data) return {};
+    return {
+      characterLedger: (data as any).character_ledger || { characters: [] },
+      plotLedger: (data as any).plot_ledger || { todos: [], dones: [] },
+    };
+  } catch {
+    return {};
+  }
+}
+
 function trimContext(text?: string, maxChars: number = MAX_CONTEXT_CHARS): string | undefined {
   if (!text) return undefined;
   return text.length <= maxChars ? text : text.slice(-maxChars);
@@ -158,6 +194,31 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
         status: "ready_to_write",
       });
 
+      // Seed plot ledger todos from outline (one per subsection, assigned to it).
+      try {
+        const seedTodos: string[] = [];
+        const assignments: { chapter: number; subsection: number }[] = [];
+        outline.chapters.forEach((ch, ci) => {
+          ch.subsections.forEach((sub, si) => {
+            const goal = (sub.goal || sub.title || "").trim();
+            if (goal) {
+              seedTodos.push(`${ch.title} → ${sub.title}: ${goal}`);
+              assignments.push({ chapter: ci, subsection: si });
+            }
+          });
+        });
+        if (seedTodos.length > 0) {
+          await callUpdateContinuity({
+            bookId: book.id,
+            mode: "seed-todos",
+            todos: seedTodos,
+            assignments,
+          });
+        }
+      } catch (err) {
+        console.warn("[continuity] seed-todos failed:", err);
+      }
+
       return outline;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to generate outline";
@@ -272,6 +333,8 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
       targetWordsPerSubsection: effectiveWordsPerSubsection,
       teaserStyle: bookData.controls?.teaserStyle || "none",
       automationLevel,
+      characterLedger: bookData.characterLedger || { characters: [] },
+      plotLedger: bookData.plotLedger || { todos: [], dones: [] },
     };
 
     const payloadJson = JSON.stringify(payload);
@@ -580,6 +643,22 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
             MAX_RETRIES,
           );
 
+          // ── Continuity director: extract character + plot updates from this section ──
+          try {
+            const cont = await callUpdateContinuity({
+              bookId: book.id,
+              sectionText: cleanContent,
+              chapterIndex: chIdx,
+              subsectionIndex: subIdx,
+              chapterTitle: chapter.title,
+              subsectionTitle: subsection.title,
+            });
+            if (cont?.characterLedger) currentBook = { ...currentBook, characterLedger: cont.characterLedger };
+            if (cont?.plotLedger) currentBook = { ...currentBook, plotLedger: cont.plotLedger };
+          } catch (err) {
+            console.warn("[continuity] update after section failed:", err);
+          }
+
           // APPROVAL GATES based on automation level
           if (automationLevel === "guided") {
             // Guided: approval after every section
@@ -653,6 +732,12 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
 
     // All done
     if (!abortRef.current) {
+      // Continuity director: dedupe + reconcile plot ledger before back-cover summary
+      try {
+        await callUpdateContinuity({ bookId: book.id, mode: "finalize" });
+      } catch (err) {
+        console.warn("[continuity] finalize failed:", err);
+      }
       setState(s => ({ ...s, phase: "completed" }));
       onUpdateBook(book.id, { status: "completed" });
       toast.success("Book generation completed!");
@@ -818,6 +903,22 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
           wordCount: currentBook.wordCount,
         });
 
+        // ── Continuity director: extract character + plot updates from this section ──
+        try {
+          const cont = await callUpdateContinuity({
+            bookId: book.id,
+            sectionText: cleanContent,
+            chapterIndex,
+            subsectionIndex: subIdx,
+            chapterTitle: chapter.title,
+            subsectionTitle: subsection.title,
+          });
+          if (cont?.characterLedger) currentBook = { ...currentBook, characterLedger: cont.characterLedger };
+          if (cont?.plotLedger) currentBook = { ...currentBook, plotLedger: cont.plotLedger };
+        } catch (err) {
+          console.warn("[continuity] update after section failed:", err);
+        }
+
         // In guided mode, pause after each section
         if (automationLevel === "guided") {
           await waitForApproval({
@@ -844,7 +945,12 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
       const updatedChapters = [...outline.chapters];
       updatedChapters[chapterIndex] = { ...updatedChapters[chapterIndex], summary: chapterSummary, status: "completed" };
       outline = { ...outline, chapters: updatedChapters };
-      onUpdateBook(book.id, { outline, status: book.status });
+      const allDone = updatedChapters.every(ch => ch.status === "completed");
+      if (allDone) {
+        try { await callUpdateContinuity({ bookId: book.id, mode: "finalize" }); }
+        catch (err) { console.warn("[continuity] finalize failed:", err); }
+      }
+      onUpdateBook(book.id, { outline, status: allDone ? "completed" : book.status });
       setState(s => ({ ...s, phase: "idle" }));
       toast.success(`Chapter "${chapter.title}" completed!`);
     }

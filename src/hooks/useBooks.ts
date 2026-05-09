@@ -34,6 +34,8 @@ const transformDbToBook = (row: any): Book => ({
   runningSummary: row.running_summary || "",
   backCoverSummary: row.back_cover_summary || undefined,
   frontMatter: row.front_matter || undefined,
+  characterLedger: row.character_ledger || { characters: [] },
+  plotLedger: row.plot_ledger || { todos: [], dones: [] },
 });
 
 // Transform Book to database row format
@@ -63,6 +65,8 @@ const transformBookToDb = (book: Partial<Book> & { id?: string }) => ({
   ...(book.runningSummary !== undefined && { running_summary: book.runningSummary }),
   ...(book.backCoverSummary !== undefined && { back_cover_summary: book.backCoverSummary }),
   ...(book.frontMatter !== undefined && { front_matter: book.frontMatter as unknown as Json }),
+  ...(book.characterLedger !== undefined && { character_ledger: book.characterLedger as unknown as Json }),
+  ...(book.plotLedger !== undefined && { plot_ledger: book.plotLedger as unknown as Json }),
 });
 
 export const useBooks = () => {
@@ -166,6 +170,8 @@ export const useBooks = () => {
       if (updates.runningSummary !== undefined) dbUpdates.running_summary = updates.runningSummary;
       if (updates.backCoverSummary !== undefined) dbUpdates.back_cover_summary = updates.backCoverSummary;
       if (updates.frontMatter !== undefined) dbUpdates.front_matter = updates.frontMatter as unknown as Json;
+      if (updates.characterLedger !== undefined) dbUpdates.character_ledger = updates.characterLedger as unknown as Json;
+      if (updates.plotLedger !== undefined) dbUpdates.plot_ledger = updates.plotLedger as unknown as Json;
       
       const { data, error } = await supabase
         .from("books")

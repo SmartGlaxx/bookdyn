@@ -396,6 +396,49 @@ export interface BookOutline {
   intro?: string;
 }
 
+// ============= CONTINUITY DIRECTOR =============
+// Per-character append-only ledger that travels with the book to prevent
+// name swaps, role flips, and relationship drift across sections.
+export interface CharacterLedgerEntry {
+  id: string;
+  name: string;
+  aliases?: string[];
+  identity: string[];        // who they are, age, job, traits
+  relationships: string[];   // friend/foe/loyalty bullets, with section ref when shifts happen
+  keyStatements: string[];   // notable lines + whom said to
+  history: string[];         // append-only: what they did, where, to whom — each tagged "[ch:N s:M]"
+  lastSectionActivity: string[] | "N/A"; // bullets for the most recent section they appeared in
+  lastSeenChapterIndex?: number;
+  lastSeenSubsectionIndex?: number;
+}
+
+export interface CharacterLedger {
+  characters: CharacterLedgerEntry[];
+}
+
+export interface PlotTodo {
+  id: string;
+  text: string;
+  introducedChapter: number;
+  introducedSubsection: number;
+  assignedChapter?: number;
+  assignedSubsection?: number;
+}
+
+export interface PlotDone {
+  id: string;
+  text: string;
+  introducedChapter: number;
+  introducedSubsection: number;
+  completedChapter: number;
+  completedSubsection: number;
+}
+
+export interface PlotLedger {
+  todos: PlotTodo[];
+  dones: PlotDone[];
+}
+
 export interface Book {
   id: string;
   title: string;
@@ -427,6 +470,9 @@ export interface Book {
   backCoverSummary?: string;
   // Front matter
   frontMatter?: { selection?: FrontMatterSelection; content?: FrontMatterContent };
+  // Continuity director
+  characterLedger?: CharacterLedger;
+  plotLedger?: PlotLedger;
 }
 
 export interface CreateBookInput {
