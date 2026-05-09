@@ -945,7 +945,12 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
       const updatedChapters = [...outline.chapters];
       updatedChapters[chapterIndex] = { ...updatedChapters[chapterIndex], summary: chapterSummary, status: "completed" };
       outline = { ...outline, chapters: updatedChapters };
-      onUpdateBook(book.id, { outline, status: book.status });
+      const allDone = updatedChapters.every(ch => ch.status === "completed");
+      if (allDone) {
+        try { await callUpdateContinuity({ bookId: book.id, mode: "finalize" }); }
+        catch (err) { console.warn("[continuity] finalize failed:", err); }
+      }
+      onUpdateBook(book.id, { outline, status: allDone ? "completed" : book.status });
       setState(s => ({ ...s, phase: "idle" }));
       toast.success(`Chapter "${chapter.title}" completed!`);
     }
