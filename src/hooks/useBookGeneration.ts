@@ -897,6 +897,22 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
           wordCount: currentBook.wordCount,
         });
 
+        // ── Continuity director: extract character + plot updates from this section ──
+        try {
+          const cont = await callUpdateContinuity({
+            bookId: book.id,
+            sectionText: cleanContent,
+            chapterIndex,
+            subsectionIndex: subIdx,
+            chapterTitle: chapter.title,
+            subsectionTitle: subsection.title,
+          });
+          if (cont?.characterLedger) currentBook = { ...currentBook, characterLedger: cont.characterLedger };
+          if (cont?.plotLedger) currentBook = { ...currentBook, plotLedger: cont.plotLedger };
+        } catch (err) {
+          console.warn("[continuity] update after section failed:", err);
+        }
+
         // In guided mode, pause after each section
         if (automationLevel === "guided") {
           await waitForApproval({
