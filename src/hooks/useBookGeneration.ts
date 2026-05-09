@@ -732,6 +732,12 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
 
     // All done
     if (!abortRef.current) {
+      // Continuity director: dedupe + reconcile plot ledger before back-cover summary
+      try {
+        await callUpdateContinuity({ bookId: book.id, mode: "finalize" });
+      } catch (err) {
+        console.warn("[continuity] finalize failed:", err);
+      }
       setState(s => ({ ...s, phase: "completed" }));
       onUpdateBook(book.id, { status: "completed" });
       toast.success("Book generation completed!");
