@@ -351,7 +351,9 @@ function buildVariablePrompt(
   tonalAnchors: string[] | undefined, teaserStyle: string | undefined,
   isScreenplay: boolean, isChildren: boolean, isComic: boolean,
   targetWordsPerSubsection: number | undefined,
-  reqAutomationLevel: string | undefined
+  reqAutomationLevel: string | undefined,
+  characterLedgerBlock: string | undefined,
+  plotLedgerBlock: string | undefined
 ): string {
   let prompt = `CURRENT POSITION:
 - Chapter ${chapter.chapterNumber}: "${chapter.title}"
@@ -359,6 +361,24 @@ function buildVariablePrompt(
 - Goal: ${subsection.goal || "Continue the narrative"}
 
 `;
+
+  if (characterLedgerBlock) {
+    prompt += `# CHARACTER LEDGER (MUST NOT CONTRADICT)
+The following are established facts about characters who already exist in this book. NEVER rename them, NEVER change their job, role, or relationships unless the section explicitly narrates the shift. Use the EXACT names listed.
+
+${characterLedgerBlock}
+
+`;
+  }
+
+  if (plotLedgerBlock) {
+    prompt += `# PLOT THREADS
+These are unresolved plot threads currently open in the book. Resolve the ones tagged "ASSIGNED TO THIS SECTION" inside this subsection. Do not contradict or re-resolve threads listed under "RECENT DONES".
+
+${plotLedgerBlock}
+
+`;
+  }
 
   if (previousNovelText && previousNovelText.length > 0) {
     prompt += `[PREVIOUS_NOVEL_TEXT] (the entire prior novel text, verbatim — DO NOT repeat any of this content; continue seamlessly from where it ends):
@@ -467,7 +487,7 @@ serve(async (req) => {
       });
     }
 
-    const { book, chapterIndex, subsectionIndex, previousSummary, previousRawContent, tonalAnchors, ieltsBand, targetWordsPerSubsection, teaserStyle, automationLevel: reqAutomationLevel } = body;
+    const { book, chapterIndex, subsectionIndex, previousSummary, previousRawContent, tonalAnchors, ieltsBand, targetWordsPerSubsection, teaserStyle, automationLevel: reqAutomationLevel, characterLedger, plotLedger } = body;
 
     // ── Credit & daily word cap enforcement ──
     const estimatedWords = targetWordsPerSubsection || 600;
@@ -540,11 +560,93 @@ serve(async (req) => {
     const systemPrompt = buildStaticSystemPrompt(book, band, isScreenplay, isChildren, isComic, isNarrative, book.controls);
     
     // Variable user prompt = changes per subsection (not cached)
+    // ── Build continuity blocks (only for narrative books to keep token budget tight) ──
+    let characterLedgerBlock: string | undefined;
+    let plotLedgerBlock: string | undefined;
+    if (isNarrative && !isComic) {
+      // Narrow character ledger to characters likely to appear: anyone whose name appears
+      // in the chapter summary, the subsection goal, the previous content, or who was
+      // active in the previous section. Always include protagonists by always-keeping
+      // the first 3 entries (assumed leads).
+      const chars = (characterLedger?.characters || []) as any[];
+      if (chars.length > 0) {
+        const haystack = [
+          chapter?.summary || "",
+          chapter?.title || "",
+          subsection?.goal || "",
+          subsection?.title || "",
+          previousRawContent || "",
+          previousSummary || "",
+        ].join(" ").toLowerCase();
+        const relevant = chars.filter((c, i) => {
+          if (i < 3) return true;
+          const nm = (c.name || "").toLowerCase();
+          if (nm && haystack.includes(nm)) return true;
+          if (Array.isArray(c.aliases)) {
+            for (const a of c.aliases) {
+              if (typeof a === "string" && a && haystack.includes(a.toLowerCase())) return true;
+            }
+          }
+          // Also include if active in previous section
+          return Array.isArray(c.lastSectionActivity) && c.lastSectionActivity.length > 0;
+        }).slice(0, 8); // cap to 8 entries to control token budget
+
+        if (relevant.length > 0) {
+          characterLedgerBlock = relevant.map((c: any) => {
+            const lines: string[] = [];
+            lines.push(`## ${c.name}${Array.isArray(c.aliases) && c.aliases.length ? ` (aka ${c.aliases.join(", ")})` : ""}`);
+            const idArr: string[] = Array.isArray(c.identity) ? c.identity.slice(-12) : [];
+            const relArr: string[] = Array.isArray(c.relationships) ? c.relationships.slice(-12) : [];
+            const ksArr: string[] = Array.isArray(c.keyStatements) ? c.keyStatements.slice(-6) : [];
+            const histArr: string[] = Array.isArray(c.history) ? c.history.slice(-15) : [];
+            const lsa = c.lastSectionActivity;
+            if (idArr.length) lines.push(`Identity:\n  - ${idArr.join("\n  - ")}`);
+            if (relArr.length) lines.push(`Relationships:\n  - ${relArr.join("\n  - ")}`);
+            if (ksArr.length) lines.push(`Key statements:\n  - ${ksArr.join("\n  - ")}`);
+            if (histArr.length) lines.push(`Recent history:\n  - ${histArr.join("\n  - ")}`);
+            if (Array.isArray(lsa) && lsa.length) {
+              lines.push(`Last section activity:\n  - ${lsa.join("\n  - ")}`);
+            } else {
+              lines.push(`Last section activity: N/A (not present in the immediately preceding section)`);
+            }
+            return lines.join("\n");
+          }).join("\n\n");
+        }
+      }
+
+      // Plot ledger block: assigned todos for this section + recent dones
+      const allTodos = (plotLedger?.todos || []) as any[];
+      const allDones = (plotLedger?.dones || []) as any[];
+      if (allTodos.length || allDones.length) {
+        const assigned = allTodos.filter(
+          (t: any) =>
+            (t.assignedChapter === chapterIndex && t.assignedSubsection === subsectionIndex) ||
+            (t.assignedChapter === chapterIndex && t.assignedSubsection === undefined)
+        );
+        const otherOpen = allTodos
+          .filter((t: any) => !assigned.includes(t))
+          .slice(0, 8);
+        const recentDones = allDones.slice(-8);
+        const parts: string[] = [];
+        if (assigned.length) {
+          parts.push(`ASSIGNED TO THIS SECTION (resolve within this subsection):\n${assigned.map((t: any) => `- [${t.id}] ${t.text}`).join("\n")}`);
+        }
+        if (otherOpen.length) {
+          parts.push(`OTHER OPEN THREADS (do not resolve here unless natural):\n${otherOpen.map((t: any) => `- [${t.id}] ${t.text}`).join("\n")}`);
+        }
+        if (recentDones.length) {
+          parts.push(`RECENT DONES (already resolved — do not re-resolve or contradict):\n${recentDones.map((t: any) => `- ${t.text}`).join("\n")}`);
+        }
+        if (parts.length) plotLedgerBlock = parts.join("\n\n");
+      }
+    }
+
     const userPrompt = buildVariablePrompt(
       book, chapter, subsection,
       previousNovelText,
       previousSummary, previousRawContent, tonalAnchors, teaserStyle,
-      isScreenplay, isChildren, isComic, targetWordsPerSubsection, reqAutomationLevel
+      isScreenplay, isChildren, isComic, targetWordsPerSubsection, reqAutomationLevel,
+      characterLedgerBlock, plotLedgerBlock
     );
 
     // ── Choose AI provider: DeepSeek (preferred for novels) vs Lovable AI (fallback) ──
