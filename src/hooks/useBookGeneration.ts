@@ -643,6 +643,22 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
             MAX_RETRIES,
           );
 
+          // ── Continuity director: extract character + plot updates from this section ──
+          try {
+            const cont = await callUpdateContinuity({
+              bookId: book.id,
+              sectionText: cleanContent,
+              chapterIndex: chIdx,
+              subsectionIndex: subIdx,
+              chapterTitle: chapter.title,
+              subsectionTitle: subsection.title,
+            });
+            if (cont?.characterLedger) currentBook = { ...currentBook, characterLedger: cont.characterLedger };
+            if (cont?.plotLedger) currentBook = { ...currentBook, plotLedger: cont.plotLedger };
+          } catch (err) {
+            console.warn("[continuity] update after section failed:", err);
+          }
+
           // APPROVAL GATES based on automation level
           if (automationLevel === "guided") {
             // Guided: approval after every section
