@@ -308,6 +308,8 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
       targetWordsPerSubsection: effectiveWordsPerSubsection,
       teaserStyle: bookData.controls?.teaserStyle || "none",
       automationLevel,
+      characterLedger: bookData.characterLedger || { characters: [] },
+      plotLedger: bookData.plotLedger || { todos: [], dones: [] },
     };
 
     const payloadJson = JSON.stringify(payload);
