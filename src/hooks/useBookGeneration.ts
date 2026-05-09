@@ -194,6 +194,31 @@ export function useBookGeneration(book: Book, options: UseBookGenerationOptions)
         status: "ready_to_write",
       });
 
+      // Seed plot ledger todos from outline (one per subsection, assigned to it).
+      try {
+        const seedTodos: string[] = [];
+        const assignments: { chapter: number; subsection: number }[] = [];
+        outline.chapters.forEach((ch, ci) => {
+          ch.subsections.forEach((sub, si) => {
+            const goal = (sub.goal || sub.title || "").trim();
+            if (goal) {
+              seedTodos.push(`${ch.title} → ${sub.title}: ${goal}`);
+              assignments.push({ chapter: ci, subsection: si });
+            }
+          });
+        });
+        if (seedTodos.length > 0) {
+          await callUpdateContinuity({
+            bookId: book.id,
+            mode: "seed-todos",
+            todos: seedTodos,
+            assignments,
+          });
+        }
+      } catch (err) {
+        console.warn("[continuity] seed-todos failed:", err);
+      }
+
       return outline;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to generate outline";
