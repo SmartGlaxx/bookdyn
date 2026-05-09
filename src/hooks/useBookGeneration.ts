@@ -10,6 +10,42 @@ const MAX_CONTEXT_CHARS = 2500;
 const MAX_SUMMARY_CHARS = 1200;
 const MAX_ANCHOR_CHARS = 600;
 
+// ── Continuity director helpers ────────────────────────────────────
+async function callUpdateContinuity(payload: Record<string, unknown>): Promise<{ characterLedger?: any; plotLedger?: any } | null> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const { data, error } = await supabase.functions.invoke("update-continuity", {
+      body: payload,
+      headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+    });
+    if (error) {
+      console.warn("[continuity] edge fn error:", error);
+      return null;
+    }
+    return data as any;
+  } catch (err) {
+    console.warn("[continuity] invoke failed:", err);
+    return null;
+  }
+}
+
+async function refetchLedgers(bookId: string): Promise<{ characterLedger?: any; plotLedger?: any }> {
+  try {
+    const { data, error } = await supabase
+      .from("books")
+      .select("character_ledger, plot_ledger")
+      .eq("id", bookId)
+      .maybeSingle();
+    if (error || !data) return {};
+    return {
+      characterLedger: (data as any).character_ledger || { characters: [] },
+      plotLedger: (data as any).plot_ledger || { todos: [], dones: [] },
+    };
+  } catch {
+    return {};
+  }
+}
+
 function trimContext(text?: string, maxChars: number = MAX_CONTEXT_CHARS): string | undefined {
   if (!text) return undefined;
   return text.length <= maxChars ? text : text.slice(-maxChars);
