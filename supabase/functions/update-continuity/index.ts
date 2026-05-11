@@ -137,7 +137,10 @@ Rules:
 - Only include characters that actually appear in the section text.
 - Be detailed but factual — no invention beyond what the text states or strongly implies.
 - A todo is "completed" only if the narrative shows clear resolution; if still in preparation, do NOT include it in completedTodoIds.
-- Use existing character names verbatim. Do not rename.`;
+- Use existing character names verbatim. Do not rename.
+- MANDATORY NAMING: every individual character must have a proper personal name in the "name" field. NEVER use bare descriptors like "the executive", "the doorman", "the stranger", "a man", "the woman in red". If the section text refers to an individual only by a descriptor, INVENT a fitting proper name for them and store the descriptor in parentheses inside the name (e.g. "John Reeves (Fortune 500 executive)", "Mara Vale (the woman in red)"). Once invented, the name is permanent and must be reused on every later appearance.
+- A name is treated like a const variable: assigned once, used forever, never replaced. Descriptors are metadata, never identity.
+- The ONLY exception is a true unnamed group (e.g. "four men", "the crowd"). Do NOT create a character entry for an unnamed group; only create entries for individuals.`;
 }
 
 async function callAI(prompt: string): Promise<string> {
