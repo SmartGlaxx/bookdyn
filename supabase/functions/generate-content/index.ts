@@ -335,6 +335,14 @@ ${isNarrative && !isChildren ? `CHARACTER DESCRIPTION (MANDATORY for every narra
 - Recurring characters must keep their established physical signature — never contradict earlier descriptions; deepen them with new angles instead.
 - Aim for descriptions that are vivid enough that a reader could close their eyes and recognise the character on a crowded street.` : ""}
 
+${isNarrative && !isChildren ? `MANDATORY CHARACTER NAMING (ABSOLUTE — NO EXCEPTIONS):
+- Every individual character who appears, even once, MUST be given a proper personal name (first name minimum, e.g. "John", "Mara", "Dr. Halden"). A name is the character's permanent ID — treat it like a const variable in code: assigned once, used forever.
+- Descriptive labels are NEVER acceptable as a character's identifier. FORBIDDEN: "the Fortune 500 executive", "the doorman", "the woman in red", "a passerby", "the stranger", "the man", "the businessman", "the cop". Each of these MUST be assigned a name on first appearance and referred to by that name thereafter.
+- If you need to keep their occupation/role audible to the reader, render it AFTER the name as a parenthetical or appositive on first reference only — e.g. "John Reeves, the Fortune 500 executive," — and then use only the name from then on.
+- The ONLY exception is a true unnamed group treated as a unit (e.g. "four men walked past him", "the crowd", "two guards"). Groups do not need names; individuals pulled out of a group DO ("one of the four — Karim — turned…").
+- Assume every character will reappear in this book or a sequel. A name lets the AI and reader locate them across sections; an unnamed character causes identity drift on the next reference.
+- Reuse names from the CHARACTER LEDGER verbatim. Do not invent a new name for someone already named there.` : ""}
+
 FORMAT & WORD BAN RULES (STRICTLY ENFORCED):
 - NEVER use markdown formatting such as **, *, ##, or any other markdown syntax in your output. Write in plain prose only.
 - NEVER use the word "magic" or "magical" in any context. Find more specific, vivid alternatives.
