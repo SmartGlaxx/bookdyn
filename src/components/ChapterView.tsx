@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Book, Chapter as ChapterType, AutomationLevel, VISUAL_BOOK_TYPES, BOOK_TEMPLATES, ImageLayoutSlot } from "@/types/book";
+import { Book, Chapter as ChapterType, AutomationLevel, VISUAL_BOOK_TYPES, BOOK_TEMPLATES, ImageLayoutSlot, CharacterReference, CharacterLedgerEntry } from "@/types/book";
 import { TemplateImage } from "@/components/TemplateImage";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ParagraphEditor } from "@/components/ParagraphEditor";
@@ -65,12 +65,47 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   useEffect(() => subscribeRevealed(() => setRevealTick((t) => t + 1)), []);
 
   const chapters = book.outline?.chapters || [];
-  const hasCharacters = book.outline?.characters && book.outline.characters.length > 0;
+
+  // Merge outline.characters (rich) with characterLedger entries (live, updated each section).
+  // Ledger-only entries are converted into a summarized CharacterReference so the
+  // Characters tab stays in sync as new characters appear during writing.
+  const mergedCharacters: CharacterReference[] = (() => {
+    const outlineChars = book.outline?.characters || [];
+    const ledgerChars: CharacterLedgerEntry[] = book.characterLedger?.characters || [];
+    const byKey = new Map<string, CharacterReference>();
+    for (const c of outlineChars) byKey.set(c.name.trim().toLowerCase(), c);
+    for (const lc of ledgerChars) {
+      const key = lc.name.trim().toLowerCase();
+      if (byKey.has(key)) continue;
+      const summary = lc.identity?.[0] || lc.relationships?.[0] || lc.history?.[0] || "Tracked from the latest sections.";
+      byKey.set(key, {
+        id: lc.id,
+        name: lc.name,
+        description: summary,
+        visualDescription: "",
+        role: "supporting",
+        identity: {
+          fullName: lc.name,
+          aliases: lc.aliases,
+        } as any,
+        personality: lc.identity && lc.identity.length > 0 ? ({ coreType: lc.identity.slice(0, 6).join("; ") } as any) : undefined,
+        backstory: lc.history && lc.history.length > 0 ? ({ formativeEvents: lc.history.slice(0, 6).join("; ") } as any) : undefined,
+        storyRole: {
+          relationshipToMainCharacter: (lc.relationships && lc.relationships.slice(0, 4).join("; ")) || undefined,
+          arc: Array.isArray(lc.lastSectionActivity) && lc.lastSectionActivity.length > 0
+            ? `Latest: ${lc.lastSectionActivity.slice(0, 3).join("; ")}`
+            : undefined,
+        } as any,
+      });
+    }
+    return Array.from(byKey.values());
+  })();
+  const hasCharacters = mergedCharacters.length > 0;
   const isVisualBook = VISUAL_BOOK_TYPES.includes(book.bookType);
   const selectedTemplate = book.controls?.selectedTemplateId
     ? BOOK_TEMPLATES.find(t => t.id === book.controls.selectedTemplateId)
     : null;
-  const selectedCharacter = selectedCharacterId ? book.outline?.characters?.find(c => c.id === selectedCharacterId) : null;
+  const selectedCharacter = selectedCharacterId ? mergedCharacters.find(c => c.id === selectedCharacterId) : null;
   const isMobile = useIsMobile();
   const isLandscapeMobile = isMobile && windowHeight < 500;
 
