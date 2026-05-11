@@ -685,7 +685,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
             </div>
           ) : (
             <div className="p-3 space-y-1">
-              {book.outline?.characters?.map((character) => {
+              {mergedCharacters.map((character) => {
                 const isActive = selectedCharacterId === character.id;
                 return (
                   <motion.button
