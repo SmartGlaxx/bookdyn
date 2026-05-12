@@ -514,14 +514,14 @@ const CreateBookEngine = ({ onClose, onCreate, existingBooks = [] }: CreateBookE
                       <Select
                         value={formData.controls?.automationLevel || ""}
                         onValueChange={(v) => {
-                          if (v === "auto-draft") return;
+                          if (v === "auto-draft" && !canAutoDraft) return;
                           updateControls("automationLevel", v as AutomationLevel);
                         }}
                       >
                         <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
                         <SelectContent className="bg-popover z-50">
                           {AUTOMATION_OPTIONS.map((opt) => {
-                            const isLocked = opt.value === "auto-draft";
+                            const isLocked = opt.value === "auto-draft" && !canAutoDraft;
                             return (
                               <SelectItem 
                                 key={opt.value} 
