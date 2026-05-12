@@ -1,4 +1,4 @@
-import { BookOpen, Sparkles, Plus, Flame, Zap, PenTool } from "lucide-react";
+import { BookOpen, Sparkles, Plus, Flame, PenTool } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTurbo } from "@/hooks/useTurbo";
@@ -70,19 +70,6 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
                 </Tooltip>
               )}
 
-              {turbo.turboUnlocked && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="hidden sm:flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-amber-500/10 text-amber-500 cursor-help">
-                      <Zap className="w-3.5 h-3.5" />
-                      Turbo
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-[220px] text-xs">
-                    Turbo mode unlocked! Enjoy boosted word generation capacity.
-                  </TooltipContent>
-                </Tooltip>
-              )}
             </TooltipProvider>
 
             <Button variant="hero" size="sm" onClick={onCreateBook} className="hidden sm:inline-flex">
