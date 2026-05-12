@@ -90,12 +90,28 @@ function buildExtractionPrompt(args: {
     .map((t) => `- [${t.id}] ${t.text}`)
     .join("\n") || "(none open)";
 
+  // Build forbidden 2-letter prefix list from every word in every known name + alias
+  const prefixes = new Set<string>();
+  for (const c of args.knownCharacters) {
+    const words = [c.name, ...(c.aliases || [])]
+      .join(" ")
+      .split(/\s+/)
+      .map((w) => w.replace(/[^A-Za-z]/g, ""))
+      .filter((w) => w.length >= 2);
+    for (const w of words) prefixes.add(w.slice(0, 2).toUpperCase());
+  }
+  const forbiddenPrefixes = Array.from(prefixes).sort().join(", ") || "(none yet)";
+  const tag = `[ch ${args.chapterIndex + 1} §${args.subsectionIndex + 1}]`;
+
   return `You are a strict continuity director for a book. Read the section below and output ONLY a JSON object describing what changed for character continuity and plot threads. No prose.
 
 POSITION: Chapter ${args.chapterIndex + 1} ("${args.chapterTitle}"), Subsection ${args.subsectionIndex + 1} ("${args.subsectionTitle}").
 
 KNOWN CHARACTERS (use existing names exactly when matching):
 ${known}
+
+FORBIDDEN NAME PREFIXES (no NEW first-name OR last-name word may start with any of these two-letter prefixes — case-insensitive):
+${forbiddenPrefixes}
 
 OPEN PLOT TODOS (decide which are clearly resolved by THIS section):
 ${todos}
@@ -111,20 +127,20 @@ Respond with a single JSON object matching this TypeScript type — no markdown,
     {
       "name": string,                  // existing character name (must match KNOWN list when possible)
       "lastSectionActivity": string[], // 3-12 detailed bullets of what they did this section
-      "newIdentity": string[],         // additional identity facts revealed (age, job, traits)
-      "newRelationships": string[],    // new/changed relationships, allegiances, oppositions — note shifts explicitly
+      "newIdentity": string[],         // additional identity facts revealed (age, job, traits) — EACH bullet MUST end with " ${tag}"
+      "newRelationships": string[],    // new/changed relationships, allegiances, oppositions — EACH bullet MUST end with " ${tag}"
       "newKeyStatements": string[],    // notable lines they spoke, with whom said to
-      "newHistory": string[]           // append-only history bullets — each MUST end with " [ch:${args.chapterIndex + 1} s:${args.subsectionIndex + 1}]"
+      "newHistory": string[]           // append-only history bullets — each MUST end with " ${tag}"
     }
   ],
   "newCharacters": [
     {
       "name": string,
       "aliases": string[],
-      "identity": string[],
-      "relationships": string[],
+      "identity": string[],            // EACH bullet MUST end with " ${tag}"
+      "relationships": string[],       // EACH bullet MUST end with " ${tag}"
       "keyStatements": string[],
-      "history": string[]              // each MUST end with " [ch:${args.chapterIndex + 1} s:${args.subsectionIndex + 1}]"
+      "history": string[]              // each MUST end with " ${tag}"
     }
   ],
   "plotUpdates": {
@@ -140,7 +156,13 @@ Rules:
 - Use existing character names verbatim. Do not rename.
 - MANDATORY NAMING: every individual character must have a proper personal name in the "name" field. NEVER use bare descriptors like "the executive", "the doorman", "the stranger", "a man", "the woman in red". If the section text refers to an individual only by a descriptor, INVENT a fitting proper name for them and store the descriptor in parentheses inside the name (e.g. "John Reeves (Fortune 500 executive)", "Mara Vale (the woman in red)"). Once invented, the name is permanent and must be reused on every later appearance.
 - A name is treated like a const variable: assigned once, used forever, never replaced. Descriptors are metadata, never identity.
-- The ONLY exception is a true unnamed group (e.g. "four men", "the crowd"). Do NOT create a character entry for an unnamed group; only create entries for individuals.`;
+- The ONLY exception is a true unnamed group (e.g. "four men", "the crowd"). Do NOT create a character entry for an unnamed group; only create entries for individuals.
+- NAME UNIQUENESS PROTOCOL when inventing a name for a NEW character (do these steps in order):
+  1. Determine the character's sex/gender from the text.
+  2. Read the FORBIDDEN NAME PREFIXES list above.
+  3. Pick a random first name and last name appropriate to the determined sex AND the book's setting/culture, such that NEITHER the first name NOR the last name starts with any forbidden two-letter prefix (e.g. if "Ra" is forbidden because of "Rachel", you may not pick "Rachel", "Ramon", "Ravi", "Ralston" — but "Arnold" is fine because "Ar" ≠ "Ra"). Last names follow the same rule against the same list.
+  4. The full name (first + last) must not duplicate any KNOWN CHARACTER name or alias.
+  5. Names should feel random and varied — avoid alliteration with existing cast.`;
 }
 
 async function callAI(prompt: string): Promise<string> {

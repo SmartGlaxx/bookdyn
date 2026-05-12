@@ -620,6 +620,26 @@ serve(async (req) => {
             return lines.join("\n");
           }).join("\n\n");
         }
+
+        // Build forbidden 2-letter prefix list from EVERY known character (not just relevant)
+        const prefixes = new Set<string>();
+        for (const c of chars) {
+          const all = [c.name, ...((c.aliases as string[]) || [])].filter(Boolean).join(" ");
+          for (const w of all.split(/\s+/)) {
+            const clean = w.replace(/[^A-Za-z]/g, "");
+            if (clean.length >= 2) prefixes.add(clean.slice(0, 2).toUpperCase());
+          }
+        }
+        if (prefixes.size > 0) {
+          const list = Array.from(prefixes).sort().join(", ");
+          characterLedgerBlock = (characterLedgerBlock ? characterLedgerBlock + "\n\n" : "") +
+            `## NAME UNIQUENESS PROTOCOL (when introducing a NEW character)\n` +
+            `1. First determine the character's sex/gender from context.\n` +
+            `2. Then check FORBIDDEN PREFIXES below.\n` +
+            `3. Choose a random first AND last name appropriate to that sex and the book's setting, where NEITHER name word starts with any forbidden two-letter prefix (case-insensitive).\n` +
+            `4. The full name must not duplicate any existing character name or alias.\n` +
+            `FORBIDDEN TWO-LETTER NAME PREFIXES: ${list}`;
+        }
       }
 
       // Plot ledger block: assigned todos for this section + recent dones
