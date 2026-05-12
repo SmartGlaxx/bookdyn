@@ -59,6 +59,7 @@ import {
 } from "@/types/book";
 import { TemplateSelector } from "@/components/TemplateSelector";
 import { SeriesPicker } from "@/components/SeriesPicker";
+import { useTurbo } from "@/hooks/useTurbo";
 
 interface CreateBookEngineProps {
   onClose: () => void;
