@@ -39,7 +39,7 @@ export default function AdminUsers() {
   const [generating, setGenerating] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
 
-  const isAdmin = !!user && ADMIN_EMAILS.includes(user.email ?? "");
+  const isAdmin = isAdminEmail(user?.email);
 
   const search = useCallback(async () => {
     setSearching(true);

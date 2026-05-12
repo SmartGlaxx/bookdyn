@@ -29,7 +29,7 @@ export default function AdminErrors() {
   const [source, setSource] = useState<"all" | "frontend" | "edge_function">("all");
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const isAdmin = !!user && ADMIN_EMAILS.includes(user.email ?? "");
+  const isAdmin = isAdminEmail(user?.email);
 
   const fetchErrors = useCallback(async () => {
     if (!isAdmin) return;

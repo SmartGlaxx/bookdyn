@@ -36,7 +36,7 @@ export default function AdminFeedback() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterRating, setFilterRating] = useState("all");
 
-  const isAdmin = user && ADMIN_EMAILS.includes(user.email ?? "");
+  const isAdmin = isAdminEmail(user?.email);
 
   const fetchFeedback = useCallback(async () => {
     if (!isAdmin) return;
