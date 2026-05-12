@@ -62,15 +62,22 @@ export function useTurbo() {
       0
     );
 
+    const plan = (data as any).plan || "free";
+    // Elite plan: Turbo is auto-enabled with full capacity, bypassing streak/word requirements.
+    const isElitePlan = plan === "elite";
+    const baseCapacity = (data as any).turbo_words_capacity || 50000;
+    const eliteCapacity = Math.max(baseCapacity, 100000);
     setStatus({
       streakDays: (data as any).streak_days || 0,
       totalWordsWritten: wordsLast30,
-      turboUnlocked: (data as any).turbo_unlocked || false,
-      turboWordsRemaining: (data as any).turbo_words_remaining || 0,
-      turboWordsCapacity: (data as any).turbo_words_capacity || 50000,
+      turboUnlocked: isElitePlan ? true : ((data as any).turbo_unlocked || false),
+      turboWordsRemaining: isElitePlan
+        ? eliteCapacity
+        : ((data as any).turbo_words_remaining || 0),
+      turboWordsCapacity: isElitePlan ? eliteCapacity : baseCapacity,
       turboCyclesCompleted: (data as any).turbo_cycles_completed || 0,
       lastActivityDate: (data as any).last_activity_date || null,
-      plan: (data as any).plan || "free",
+      plan,
       isLoading: false,
     });
   }, [user]);
