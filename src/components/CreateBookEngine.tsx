@@ -80,6 +80,7 @@ const STEP_META = [
 
 const CreateBookEngine = ({ onClose, onCreate, existingBooks = [] }: CreateBookEngineProps) => {
   const [step, setStep] = useState<Step>(1);
+  const { canUseAutoDraft: canAutoDraft } = useTurbo();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedCategory, setSelectedCategory] = useState<BookCategory>("fiction");
   // Series flow state (only used for fiction-serial)
