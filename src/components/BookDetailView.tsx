@@ -468,7 +468,11 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
         </AnimatePresence>
 
         {(isGenerating || isPaused || isAwaitingApproval) && generationState.phase !== "completed" && (
-          <motion.div className="mb-2 px-4 md:px-0" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+          <motion.div
+            className="fixed bottom-0 left-0 right-0 z-40 px-4 py-2 bg-background/80 backdrop-blur-md border-t border-border"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
             <GenerationStatus
               phase={generationState.phase}
               currentChapter={generationState.currentChapter}
