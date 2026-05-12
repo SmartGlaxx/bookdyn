@@ -70,26 +70,25 @@ export function WritingModeSelector({ value, onChange, disabled }: WritingModeSe
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {MODES.map((mode) => {
-          const Icon = mode.icon;
-          const isLocked = mode.value === "auto-draft" && !canAutoDraft;
-          return (
+        {MODES
+          .filter((mode) => mode.value !== "auto-draft" || canAutoDraft)
+          .map((mode) => {
+            const Icon = mode.icon;
+            return (
             <SelectItem
               key={mode.value}
               value={mode.value}
-              disabled={isLocked}
-              className={cn(isLocked && "opacity-50")}
             >
               <div className="flex items-center gap-2">
-                {isLocked ? <Lock className="w-3.5 h-3.5" /> : <Icon className="w-3.5 h-3.5" />}
+                <Icon className="w-3.5 h-3.5" />
                 <div className="text-left">
                   <div className="font-medium">{mode.label}</div>
                   <div className="text-[10px] text-muted-foreground">{mode.description}</div>
                 </div>
               </div>
             </SelectItem>
-          );
-        })}
+            );
+          })}
       </SelectContent>
     </Select>
   );

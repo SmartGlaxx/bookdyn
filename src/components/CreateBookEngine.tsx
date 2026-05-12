@@ -512,7 +512,7 @@ const CreateBookEngine = ({ onClose, onCreate, existingBooks = [] }: CreateBookE
                       </Select>
                     </FieldGroup>
 
-                    <FieldGroup label="Automation" tooltip="Controls generation flow. Auto Draft requires Pro+ plan and Turbo unlock.">
+                    <FieldGroup label="Automation" tooltip="Controls generation flow.">
                       <Select
                         value={formData.controls?.automationLevel || ""}
                         onValueChange={(v) => {
@@ -522,26 +522,23 @@ const CreateBookEngine = ({ onClose, onCreate, existingBooks = [] }: CreateBookE
                       >
                         <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
                         <SelectContent className="bg-popover z-50">
-                          {AUTOMATION_OPTIONS.map((opt) => {
-                            const isLocked = opt.value === "auto-draft" && !canAutoDraft;
-                            return (
+                          {AUTOMATION_OPTIONS
+                            .filter((opt) => opt.value !== "auto-draft" || canAutoDraft)
+                            .map((opt) => (
                               <SelectItem 
                                 key={opt.value} 
                                 value={opt.value}
-                                disabled={isLocked}
                               >
                                 <div className="flex items-center gap-2">
                                   <div>
                                     <div className="flex items-center gap-1">
                                       {opt.label}
-                                      {isLocked && <span className="text-[10px] text-muted-foreground">🔒 Pro+</span>}
                                     </div>
                                     <div className="text-xs text-muted-foreground">{opt.description}</div>
                                   </div>
                                 </div>
                               </SelectItem>
-                            );
-                          })}
+                            ))}
                         </SelectContent>
                       </Select>
                     </FieldGroup>
