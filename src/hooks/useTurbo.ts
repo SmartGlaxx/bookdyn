@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { canAccessTurbo } from "@/lib/plans";
+import { isAdminEmail } from "@/lib/admin";
 
 export interface TurboStatus {
   streakDays: number;
@@ -63,18 +63,15 @@ export function useTurbo() {
     );
 
     const plan = (data as any).plan || "free";
-    // Elite plan: Turbo is auto-enabled with full capacity, bypassing streak/word requirements.
-    const isElitePlan = plan === "elite";
-    const baseCapacity = (data as any).turbo_words_capacity || 50000;
-    const eliteCapacity = Math.max(baseCapacity, 100000);
+    // Turbo is now restricted to admin emails only. Plan tier no longer grants access.
+    const isAdmin = isAdminEmail(user.email);
+    const adminCapacity = 1_000_000;
     setStatus({
       streakDays: (data as any).streak_days || 0,
       totalWordsWritten: wordsLast30,
-      turboUnlocked: isElitePlan ? true : ((data as any).turbo_unlocked || false),
-      turboWordsRemaining: isElitePlan
-        ? eliteCapacity
-        : ((data as any).turbo_words_remaining || 0),
-      turboWordsCapacity: isElitePlan ? eliteCapacity : baseCapacity,
+      turboUnlocked: isAdmin,
+      turboWordsRemaining: isAdmin ? adminCapacity : 0,
+      turboWordsCapacity: isAdmin ? adminCapacity : 0,
       turboCyclesCompleted: (data as any).turbo_cycles_completed || 0,
       lastActivityDate: (data as any).last_activity_date || null,
       plan,
@@ -133,9 +130,9 @@ export function useTurbo() {
     }
   }, [user]);
 
-  // Plan-gated Turbo access
-  const hasTurboPlanAccess = canAccessTurbo(status.plan);
-  const canUseAutoDraft = hasTurboPlanAccess && status.turboUnlocked && status.turboWordsRemaining > 0;
+  // Admin-gated Turbo access
+  const hasTurboPlanAccess = isAdminEmail(user?.email);
+  const canUseAutoDraft = hasTurboPlanAccess && status.turboUnlocked;
   const isElite = status.plan === "elite";
 
   const streakProgress = Math.min(100, (status.streakDays / STREAK_GOAL) * 100);
