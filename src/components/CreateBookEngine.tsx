@@ -59,6 +59,7 @@ import {
 } from "@/types/book";
 import { TemplateSelector } from "@/components/TemplateSelector";
 import { SeriesPicker } from "@/components/SeriesPicker";
+import { useTurbo } from "@/hooks/useTurbo";
 
 interface CreateBookEngineProps {
   onClose: () => void;
@@ -79,6 +80,7 @@ const STEP_META = [
 
 const CreateBookEngine = ({ onClose, onCreate, existingBooks = [] }: CreateBookEngineProps) => {
   const [step, setStep] = useState<Step>(1);
+  const { canUseAutoDraft: canAutoDraft } = useTurbo();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedCategory, setSelectedCategory] = useState<BookCategory>("fiction");
   // Series flow state (only used for fiction-serial)
@@ -514,14 +516,14 @@ const CreateBookEngine = ({ onClose, onCreate, existingBooks = [] }: CreateBookE
                       <Select
                         value={formData.controls?.automationLevel || ""}
                         onValueChange={(v) => {
-                          if (v === "auto-draft") return;
+                          if (v === "auto-draft" && !canAutoDraft) return;
                           updateControls("automationLevel", v as AutomationLevel);
                         }}
                       >
                         <SelectTrigger className="text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
                         <SelectContent className="bg-popover z-50">
                           {AUTOMATION_OPTIONS.map((opt) => {
-                            const isLocked = opt.value === "auto-draft";
+                            const isLocked = opt.value === "auto-draft" && !canAutoDraft;
                             return (
                               <SelectItem 
                                 key={opt.value} 
