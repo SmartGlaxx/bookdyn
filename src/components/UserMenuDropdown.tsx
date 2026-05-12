@@ -104,30 +104,27 @@ export function UserMenuDropdown({ className }: UserMenuDropdownProps) {
 
         <DropdownMenuSeparator />
 
-        {/* Streak & Words progress */}
+        {/* Writing activity */}
         {!turbo.isLoading && (
           <div className="px-2 py-2 space-y-2">
             <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide mb-1">
-              Unlock Turbo
+              Writing Activity
             </div>
             <div className="pl-3 border-l border-border space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="flex items-center gap-1">
-                <Flame className="w-3.5 h-3.5 text-orange-500" />
-                Streak
-              </span>
-              <span className="font-semibold">{turbo.streakDays} / {turbo.STREAK_GOAL} days</span>
-            </div>
-            <Progress value={turbo.streakProgress} className="h-1.5" variant="warning" />
-
-            <div className="flex items-center justify-between text-xs mt-1">
-              <span className="flex items-center gap-1">
-                <PenTool className="w-3.5 h-3.5 text-primary" />
-                Words Written
-              </span>
-              <span className="font-semibold">{(turbo.totalWordsWritten / 1000).toFixed(1)}K / {(turbo.WORDS_GOAL / 1000).toFixed(0)}K</span>
-            </div>
-            <Progress value={turbo.wordsProgress} className="h-1.5" />
+              <div className="flex items-center justify-between text-xs">
+                <span className="flex items-center gap-1">
+                  <Flame className="w-3.5 h-3.5 text-orange-500" />
+                  Streak
+                </span>
+                <span className="font-semibold">{turbo.streakDays} days</span>
+              </div>
+              <div className="flex items-center justify-between text-xs mt-1">
+                <span className="flex items-center gap-1">
+                  <PenTool className="w-3.5 h-3.5 text-primary" />
+                  Words Written
+                </span>
+                <span className="font-semibold">{(turbo.totalWordsWritten / 1000).toFixed(1)}K</span>
+              </div>
             </div>
           </div>
         )}

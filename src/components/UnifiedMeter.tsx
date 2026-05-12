@@ -117,19 +117,7 @@ export function UnifiedMeter({
               {(turboWordsRemaining / 1000).toFixed(0)}K Turbo
             </span>
           )}
-          {!showTurbo && hasTurboPlanAccess && (
-            <span className="flex items-center gap-0.5">
-              <Lock className="w-3 h-3" />
-              Turbo Locked
-            </span>
-          )}
-          {!hasTurboPlanAccess && (
-            <span className="flex items-center gap-0.5">
-              <Crown className="w-3 h-3" />
-              Pro+ for Turbo
-            </span>
-          )}
-          <span>{normalRemaining} / {creditsLimit} credits</span>
+          <span className="ml-auto">{normalRemaining} / {creditsLimit} credits</span>
         </div>
       </div>
     );
@@ -208,23 +196,13 @@ export function UnifiedMeter({
 
       {/* Legend */}
       <div className="flex items-center justify-between text-xs">
-        {showTurbo ? (
+        {showTurbo && (
           <span className="flex items-center gap-1 turbo-text-glow font-semibold">
             <Zap className="w-3.5 h-3.5" />
             Turbo: {(turboWordsRemaining / 1000).toFixed(0)}K words
           </span>
-        ) : hasTurboPlanAccess ? (
-          <span className="flex items-center gap-1 text-muted-foreground">
-            <Lock className="w-3.5 h-3.5" />
-            Unlock Auto Draft: 30-day streak + 500K words
-          </span>
-        ) : (
-          <span className="flex items-center gap-1 text-muted-foreground">
-            <Crown className="w-3.5 h-3.5" />
-            Upgrade to Pro+ for Turbo
-          </span>
         )}
-        <span className="text-muted-foreground font-medium">
+        <span className="ml-auto text-muted-foreground font-medium">
           {normalRemaining} credits remaining
         </span>
       </div>
