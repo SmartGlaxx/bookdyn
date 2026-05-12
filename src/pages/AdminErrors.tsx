@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-
-const ADMIN_EMAILS = ["mailsmartcodes@gmail.com"];
+import { isAdminEmail } from "@/lib/admin";
 
 interface ErrorRow {
   id: string;

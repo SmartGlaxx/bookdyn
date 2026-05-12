@@ -11,8 +11,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-
-const ADMIN_EMAILS = ["mailsmartcodes@gmail.com"];
+import { isAdminEmail } from "@/lib/admin";
 
 interface UserRow {
   id: string;
