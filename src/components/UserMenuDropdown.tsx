@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useTurbo } from "@/hooks/useTurbo";
 import { getPlanDisplayName } from "@/lib/plans";
+import { isAdminEmail } from "@/lib/admin";
 import { UnifiedMeter } from "@/components/UnifiedMeter";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -143,7 +144,7 @@ export function UserMenuDropdown({ className }: UserMenuDropdownProps) {
           Give Feedback
         </DropdownMenuItem>
 
-        {user?.email === "mailsmartcodes@gmail.com" && (
+        {isAdminEmail(user?.email) && (
           <>
             <DropdownMenuItem onClick={() => navigate("/admin/feedback")}>
               <MessageSquare className="w-4 h-4 mr-2" />

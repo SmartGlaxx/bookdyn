@@ -11,8 +11,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-
-const ADMIN_EMAILS = ["mailsmartcodes@gmail.com"];
+import { isAdminEmail } from "@/lib/admin";
 
 interface UserRow {
   id: string;
@@ -40,7 +39,7 @@ export default function AdminUsers() {
   const [generating, setGenerating] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
 
-  const isAdmin = !!user && ADMIN_EMAILS.includes(user.email ?? "");
+  const isAdmin = isAdminEmail(user?.email);
 
   const search = useCallback(async () => {
     setSearching(true);

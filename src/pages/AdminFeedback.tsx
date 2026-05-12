@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-
-const ADMIN_EMAILS = ["mailsmartcodes@gmail.com"];
+import { isAdminEmail } from "@/lib/admin";
 
 const CATEGORY_META: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   bug: { label: "Bug Report", icon: <Bug className="w-3.5 h-3.5" />, color: "bg-red-500/10 text-red-500 border-red-500/20" },
@@ -37,7 +36,7 @@ export default function AdminFeedback() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterRating, setFilterRating] = useState("all");
 
-  const isAdmin = user && ADMIN_EMAILS.includes(user.email ?? "");
+  const isAdmin = isAdminEmail(user?.email);
 
   const fetchFeedback = useCallback(async () => {
     if (!isAdmin) return;
