@@ -21,7 +21,7 @@ import { SequentialReveal } from "@/components/SequentialReveal";
 import { GuidedWritingToolbar } from "@/components/GuidedWritingToolbar";
 import { CharacterGallery } from "@/components/CharacterGallery";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2, Circle, Loader2, FileText, ChevronDown, Play, Check, X, Users, User, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2, Circle, Loader2, FileText, ChevronDown, Play, Check, X, Users, User, Pencil, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 interface ChapterViewProps {
   book: Book;
@@ -53,6 +53,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 800);
   const [sidebarTab, setSidebarTab] = useState<"chapters" | "characters">("chapters");
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [editingChapterIdx, setEditingChapterIdx] = useState<number | null>(null);
   const [editChapterTitle, setEditChapterTitle] = useState("");
   const editChapterRef = useRef<HTMLInputElement>(null);
@@ -626,29 +627,51 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
 
   return (
     <div className="flex gap-4 min-h-0" style={{ height: "calc(100vh - 64px - 1rem)" }}>
-      {/* Sidebar */}
-      <Card className="w-64 shrink-0 flex flex-col min-h-0">
-        <div className="p-4 border-b shrink-0">
-          {hasCharacters ? (
-            <Tabs value={sidebarTab} onValueChange={(v) => { setSidebarTab(v as "chapters" | "characters"); if (v === "chapters") setSelectedCharacterId(null); }}>
-              <TabsList className="w-full">
-                <TabsTrigger value="chapters" className="flex-1 gap-1.5 text-xs">
-                  <BookOpen className="w-3.5 h-3.5" />
+      {/* Sidebar (collapsible on desktop/tablet) */}
+      <div
+        className={cn(
+          "shrink-0 overflow-hidden transition-[width,opacity] duration-300 ease-in-out",
+          sidebarCollapsed ? "w-0 opacity-0" : "w-64 opacity-100"
+        )}
+      >
+        <Card className="w-64 h-full flex flex-col min-h-0">
+          <div className="p-3 border-b shrink-0">
+            <div className="flex items-center gap-1.5">
+              {hasCharacters ? (
+                <Tabs
+                  value={sidebarTab}
+                  onValueChange={(v) => { setSidebarTab(v as "chapters" | "characters"); if (v === "chapters") setSelectedCharacterId(null); }}
+                  className="flex-1 min-w-0"
+                >
+                  <TabsList className="w-full">
+                    <TabsTrigger value="chapters" className="flex-1 gap-1 text-xs px-1.5">
+                      <BookOpen className="w-3.5 h-3.5" />
+                      Chapters
+                    </TabsTrigger>
+                    <TabsTrigger value="characters" className="flex-1 gap-1 text-xs px-1.5">
+                      <Users className="w-3.5 h-3.5" />
+                      Characters
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              ) : (
+                <h3 className="font-medium text-sm flex items-center gap-2 flex-1 min-w-0">
+                  <BookOpen className="w-4 h-4" />
                   Chapters
-                </TabsTrigger>
-                <TabsTrigger value="characters" className="flex-1 gap-1.5 text-xs">
-                  <Users className="w-3.5 h-3.5" />
-                  Characters
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          ) : (
-            <h3 className="font-medium text-sm flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              Chapters
-            </h3>
-          )}
-        </div>
+                </h3>
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+                onClick={() => setSidebarCollapsed(true)}
+                aria-label="Collapse sidebar"
+                title="Collapse sidebar"
+              >
+                <PanelLeftClose className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
 
         <ScrollArea className="flex-1 min-h-0">
           {sidebarTab === "chapters" ? (
@@ -712,7 +735,20 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
             </div>
           )}
         </ScrollArea>
-      </Card>
+        </Card>
+      </div>
+
+      {/* Floating expand button when collapsed */}
+      {sidebarCollapsed && (
+        <button
+          onClick={() => setSidebarCollapsed(false)}
+          aria-label="Expand sidebar"
+          title="Expand sidebar"
+          className="fixed left-2 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center w-8 h-10 rounded-r-md bg-card/90 backdrop-blur border border-l-0 border-border shadow-md text-muted-foreground hover:text-foreground hover:bg-card transition-colors"
+        >
+          <PanelLeftOpen className="w-4 h-4" />
+        </button>
+      )}
 
       {/* Main Content */}
       {sidebarTab === "characters" ? (
@@ -782,7 +818,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
           </div>
 
           <ScrollArea className="flex-1 min-h-0">
-            <CardContent className="p-6 pb-12">
+            <CardContent className={cn("p-6 pb-12", sidebarCollapsed && "max-w-4xl mx-auto w-full")}>
               <AnimatePresence mode="wait">
                 <motion.div
                   key={selectedChapter}
