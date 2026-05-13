@@ -656,42 +656,6 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
           </Tabs>
         </div>
 
-        {/* Compact mobile chapter header — capped height, prev/title/Display/next */}
-        <div className="shrink-0 border-b bg-background/95 backdrop-blur-sm px-2 py-2 flex items-center gap-1.5" style={{ maxHeight: 56 }}>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0"
-            onClick={() => setSelectedChapter(Math.max(0, selectedChapter - 1))}
-            disabled={selectedChapter === 0}
-            aria-label="Previous chapter"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-
-          <div className="flex-1 min-w-0 flex flex-col justify-center overflow-hidden">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground leading-none">
-              Ch {currentChapter.chapterNumber} / {chapters.length}
-            </div>
-            <div className="font-serif text-sm font-semibold truncate" title={currentChapter.title}>
-              {currentChapter.title}
-            </div>
-          </div>
-
-          {renderDisplayPopover(true)}
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 shrink-0"
-            onClick={() => setSelectedChapter(Math.min(chapters.length - 1, selectedChapter + 1))}
-            disabled={selectedChapter === chapters.length - 1}
-            aria-label="Next chapter"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
-
         {/* Tab content */}
         <ScrollArea className="flex-1 min-h-0">
           {mobileTab === "chapters" && (
@@ -763,7 +727,44 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
           )}
 
           {mobileTab === "main" && (
-            <div className={cn("p-4 overflow-hidden", canvasClass)} style={{ fontSize: `${canvasFontSize}px` }}>
+            <>
+              {/* Compact chapter header — Main tab only */}
+              <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur-sm px-2 py-2 flex items-center gap-1.5" style={{ maxHeight: 56 }}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => setSelectedChapter(Math.max(0, selectedChapter - 1))}
+                  disabled={selectedChapter === 0}
+                  aria-label="Previous chapter"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+
+                <div className="flex-1 min-w-0 flex flex-col justify-center overflow-hidden">
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground leading-none">
+                    Ch {currentChapter.chapterNumber} / {chapters.length}
+                  </div>
+                  <div className="font-serif text-sm font-semibold truncate" title={currentChapter.title}>
+                    {currentChapter.title}
+                  </div>
+                </div>
+
+                {renderDisplayPopover(true)}
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => setSelectedChapter(Math.min(chapters.length - 1, selectedChapter + 1))}
+                  disabled={selectedChapter === chapters.length - 1}
+                  aria-label="Next chapter"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+
+              <div className={cn("px-3 py-5 mx-auto w-full max-w-prose overflow-hidden text-center", canvasClass)} style={{ fontSize: `${canvasFontSize}px` }}>
               {selectedChapter === 0 && book.outline?.intro && (
                 <div className="mb-6 pb-4 border-b border-dashed border-border/60">
                   <div className="text-[11px] uppercase tracking-widest text-muted-foreground mb-2">Cliffhanger Intro</div>
@@ -772,8 +773,11 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
                   </div>
                 </div>
               )}
-              {currentChapter.subsections.map((sub, subIdx) => renderSubsectionContent(sub, subIdx, selectedChapter))}
-            </div>
+                <div className="text-left">
+                  {currentChapter.subsections.map((sub, subIdx) => renderSubsectionContent(sub, subIdx, selectedChapter))}
+                </div>
+              </div>
+            </>
           )}
         </ScrollArea>
       </div>
