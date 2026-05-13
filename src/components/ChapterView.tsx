@@ -128,6 +128,86 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   const isMobile = useIsMobile();
   const isLandscapeMobile = isMobile && windowHeight < 500;
 
+  // Display Settings popover (typography suite) — shared between mobile and desktop headers.
+  const renderDisplayPopover = (compact = false) => (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size={compact ? "icon" : "sm"}
+          className={cn("font-sans shrink-0", compact ? "h-8 w-8" : "gap-1.5")}
+          title="Display Settings"
+          aria-label="Display Settings"
+        >
+          <Type className="w-3.5 h-3.5" />
+          {!compact && "Display"}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-72 font-sans">
+        <div className="space-y-4">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Layout</div>
+            <div className="grid grid-cols-3 gap-1">
+              {([
+                { id: "novel", label: "Novel" },
+                { id: "screenplay", label: "Script" },
+                { id: "digital", label: "Digital" },
+              ] as { id: CanvasLayout; label: string }[]).map((opt) => (
+                <Button
+                  key={opt.id}
+                  variant={canvasLayout === opt.id ? "default" : "outline"}
+                  size="sm"
+                  className="text-xs h-8 px-2"
+                  onClick={() => setCanvasLayout(opt.id)}
+                >
+                  {opt.label}
+                </Button>
+              ))}
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-1.5">
+              {canvasLayout === "novel" && "Published Novel — elegant serif"}
+              {canvasLayout === "screenplay" && "Screenplay Typewriter — monospace"}
+              {canvasLayout === "digital" && "Digital Essay — clean sans-serif"}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Font Size</div>
+              <div className="text-xs text-muted-foreground tabular-nums">{canvasFontSize}px</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCanvasFontSize((s) => Math.max(14, s - 1))} disabled={canvasFontSize <= 14} aria-label="Decrease font size">
+                <Minus className="w-3.5 h-3.5" />
+              </Button>
+              <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                <div className="h-full bg-primary transition-all" style={{ width: `${((canvasFontSize - 14) / (24 - 14)) * 100}%` }} />
+              </div>
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCanvasFontSize((s) => Math.min(24, s + 1))} disabled={canvasFontSize >= 24} aria-label="Increase font size">
+                <Plus className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Line Spacing</div>
+            <div className="grid grid-cols-3 gap-1">
+              {([
+                { id: "compact", label: "Compact" },
+                { id: "standard", label: "Standard" },
+                { id: "double", label: "Double" },
+              ] as { id: CanvasSpacing; label: string }[]).map((opt) => (
+                <Button key={opt.id} variant={canvasSpacing === opt.id ? "default" : "outline"} size="sm" className="text-xs h-8 px-2" onClick={() => setCanvasSpacing(opt.id)}>
+                  {opt.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+
   useEffect(() => {
     if (editingChapterIdx !== null && editChapterRef.current) {
       editChapterRef.current.focus();
