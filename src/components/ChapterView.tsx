@@ -764,7 +764,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
                 </Button>
               </div>
 
-              <div className={cn("px-4 py-5 mx-auto w-full max-w-prose overflow-hidden", canvasClass)} style={{ fontSize: `${canvasFontSize}px` }}>
+              <div className={cn("px-4 py-5 mx-auto w-full max-w-full break-words overflow-x-hidden", canvasClass)} style={{ fontSize: `${canvasFontSize}px`, overflowWrap: "anywhere" }}>
               {selectedChapter === 0 && book.outline?.intro && (
                 <div className="mb-6 pb-4 border-b border-dashed border-border/60">
                   <div className="text-[11px] uppercase tracking-widest text-muted-foreground mb-2">Cliffhanger Intro</div>
