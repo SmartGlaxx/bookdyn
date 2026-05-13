@@ -960,14 +960,14 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
         renderCharacterDetail()
       ) : (
         <Card className={cn("flex-1 flex flex-col overflow-hidden min-h-0", canvasClass)} style={{ fontSize: `${canvasFontSize}px` }}>
-          <div className="p-4 border-b shrink-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" onClick={() => setSelectedChapter(Math.max(0, selectedChapter - 1))} disabled={selectedChapter === 0}>
+          <div className="px-4 py-2 border-b shrink-0" style={{ maxHeight: 64 }}>
+            <div className="flex items-center justify-between gap-2 min-w-0">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setSelectedChapter(Math.max(0, selectedChapter - 1))} disabled={selectedChapter === 0}>
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider leading-none">
                     Chapter {currentChapter.chapterNumber} of {chapters.length}
                   </div>
                   {editingChapterIdx === selectedChapter ? (
@@ -980,128 +980,28 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
                           if (e.key === "Enter") handleSaveChapterTitle(selectedChapter);
                           if (e.key === "Escape") setEditingChapterIdx(null);
                         }}
-                        className="font-serif text-xl font-semibold h-auto py-1 w-64"
+                        className="font-serif text-xl font-semibold h-auto py-1 w-full max-w-md"
                       />
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSaveChapterTitle(selectedChapter)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => handleSaveChapterTitle(selectedChapter)}>
                         <Check className="w-3.5 h-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingChapterIdx(null)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setEditingChapterIdx(null)}>
                         <X className="w-3.5 h-3.5" />
                       </Button>
                     </div>
                   ) : (
-                    <div 
-                      className="flex items-center gap-2 group cursor-pointer" 
+                    <div
+                      className="flex items-center gap-2 group cursor-pointer min-w-0"
                       onClick={() => { setEditingChapterIdx(selectedChapter); setEditChapterTitle(currentChapter.title); }}
                     >
-                      <h2 className="font-serif text-xl font-semibold">{currentChapter.title}</h2>
-                      <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <h2 className="font-serif text-xl font-semibold truncate" title={currentChapter.title}>{currentChapter.title}</h2>
+                      <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                     </div>
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <Badge variant={currentChapter.status === "completed" ? "success" : "secondary"} className="text-xs">
-                    {statusConfig[currentChapter.status].label}
-                  </Badge>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {completedSubsections}/{totalSubsections} sections · {chapterProgress}%
-                  </div>
-                </div>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" size="sm" className="gap-1.5 font-sans" title="Display Settings">
-                      <Type className="w-3.5 h-3.5" />
-                      Display
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent align="end" className="w-72 font-sans">
-                    <div className="space-y-4">
-                      <div>
-                        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Layout</div>
-                        <div className="grid grid-cols-3 gap-1">
-                          {([
-                            { id: "novel", label: "Novel" },
-                            { id: "screenplay", label: "Script" },
-                            { id: "digital", label: "Digital" },
-                          ] as { id: CanvasLayout; label: string }[]).map((opt) => (
-                            <Button
-                              key={opt.id}
-                              variant={canvasLayout === opt.id ? "default" : "outline"}
-                              size="sm"
-                              className="text-xs h-8 px-2"
-                              onClick={() => setCanvasLayout(opt.id)}
-                            >
-                              {opt.label}
-                            </Button>
-                          ))}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground mt-1.5">
-                          {canvasLayout === "novel" && "Published Novel — elegant serif"}
-                          {canvasLayout === "screenplay" && "Screenplay Typewriter — monospace"}
-                          {canvasLayout === "digital" && "Digital Essay — clean sans-serif"}
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Font Size</div>
-                          <div className="text-xs text-muted-foreground tabular-nums">{canvasFontSize}px</div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setCanvasFontSize((s) => Math.max(14, s - 1))}
-                            disabled={canvasFontSize <= 14}
-                            aria-label="Decrease font size"
-                          >
-                            <Minus className="w-3.5 h-3.5" />
-                          </Button>
-                          <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                            <div
-                              className="h-full bg-primary transition-all"
-                              style={{ width: `${((canvasFontSize - 14) / (24 - 14)) * 100}%` }}
-                            />
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setCanvasFontSize((s) => Math.min(24, s + 1))}
-                            disabled={canvasFontSize >= 24}
-                            aria-label="Increase font size"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Line Spacing</div>
-                        <div className="grid grid-cols-3 gap-1">
-                          {([
-                            { id: "compact", label: "Compact" },
-                            { id: "standard", label: "Standard" },
-                            { id: "double", label: "Double" },
-                          ] as { id: CanvasSpacing; label: string }[]).map((opt) => (
-                            <Button
-                              key={opt.id}
-                              variant={canvasSpacing === opt.id ? "default" : "outline"}
-                              size="sm"
-                              className="text-xs h-8 px-2"
-                              onClick={() => setCanvasSpacing(opt.id)}
-                            >
-                              {opt.label}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+              <div className="flex items-center gap-2 shrink-0">
+                {renderDisplayPopover(false)}
                 {onGenerateChapter && currentChapter.status !== "completed" && (
                   <Button variant="hero" size="sm" onClick={() => onGenerateChapter(selectedChapter)}>
                     <Play className="w-3.5 h-3.5" />
