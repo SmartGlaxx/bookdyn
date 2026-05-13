@@ -391,20 +391,31 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
 
   const renderSubsectionContent = (sub: any, subIdx: number, chapterIdx: number) => {
     const isFirstEmpty = firstEmptyLocation?.chapterIdx === chapterIdx && firstEmptyLocation?.subIdx === subIdx;
+    const indentClass = isMobile ? "pl-0" : "pl-11";
 
     return (
     <div key={sub.id} className="mb-8 last:mb-0">
       {/* Subsection Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-medium text-sm shrink-0">
-          {subIdx + 1}
-        </div>
+        {!isMobile && (
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-medium text-sm shrink-0">
+            {subIdx + 1}
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <h3 className="font-medium text-lg">{sub.title}</h3>
           {/* Teasers are now woven into the prose itself — no separate display */}
         </div>
-        {sub.status === "completed" && <CheckCircle2 className="w-5 h-5 text-success shrink-0" />}
-        {sub.status === "writing" && <Loader2 className="w-5 h-5 text-primary shrink-0 animate-spin" />}
+        {isMobile ? (
+          <div className="flex items-center justify-center min-w-[2rem] h-8 px-2 rounded-full bg-primary/10 text-primary font-medium text-xs shrink-0">
+            {subIdx + 1}
+          </div>
+        ) : (
+          <>
+            {sub.status === "completed" && <CheckCircle2 className="w-5 h-5 text-success shrink-0" />}
+            {sub.status === "writing" && <Loader2 className="w-5 h-5 text-primary shrink-0 animate-spin" />}
+          </>
+        )}
       </div>
 
       {/* Image rendering with template-based layout */}
@@ -451,11 +462,11 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
               <TemplateImage imageUrl={sub.imageUrl} alt={`Illustration for ${sub.title}`} layout={layout} />
               {sub.content ? (
                 <>
-                  <div className="prose prose-sm dark:prose-invert max-w-none pl-11 overflow-hidden">
+                  <div className={cn("prose prose-sm dark:prose-invert max-w-none overflow-hidden", indentClass)}>
                     {renderParagraphs(sub.content, chapterIdx, subIdx, sub)}
                   </div>
                   {sub.status === "completed" && onUpdateBook && (
-                    <div className="pl-11 mt-2 border-t border-dashed border-muted pt-2">
+                    <div className={cn("mt-2 border-t border-dashed border-muted pt-2", indentClass)}>
                       <GuidedWritingToolbar
                         bookId={book.id}
                         bookTitle={book.title}
@@ -477,12 +488,12 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
                   )}
                 </>
               ) : sub.status === "writing" ? (
-                <div className="pl-11 flex items-center gap-2 text-muted-foreground">
+                <div className={cn("flex items-center gap-2 text-muted-foreground", indentClass)}>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-sm">Writing content...</span>
                 </div>
               ) : (
-                <div className="pl-11 flex flex-col items-start gap-2">
+                <div className={cn("flex flex-col items-start gap-2", indentClass)}>
                   <p className="text-muted-foreground italic text-sm">No content yet for this section.</p>
                   {isFirstEmpty && onGenerateChapter && (
                     <Button variant="hero" size="sm" onClick={() => onGenerateChapter(chapterIdx)} className="gap-1.5">
@@ -511,11 +522,11 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
         if (sub.content) {
           return (
             <>
-              <div className="prose prose-sm dark:prose-invert max-w-none pl-11 overflow-hidden">
+              <div className={cn("prose prose-sm dark:prose-invert max-w-none overflow-hidden", indentClass)}>
                 {renderParagraphs(sub.content, chapterIdx, subIdx, sub)}
               </div>
               {sub.status === "completed" && onUpdateBook && (
-                <div className="pl-11 mt-2 border-t border-dashed border-muted pt-2">
+                <div className={cn("mt-2 border-t border-dashed border-muted pt-2", indentClass)}>
                   <GuidedWritingToolbar
                     bookId={book.id}
                     bookTitle={book.title}
@@ -593,7 +604,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
         
         if (sub.status === "writing") {
           return (
-            <div className="pl-11 flex items-center gap-2 text-muted-foreground">
+            <div className={cn("flex items-center gap-2 text-muted-foreground", indentClass)}>
               <Loader2 className="w-4 h-4 animate-spin" />
               <span className="text-sm">Writing content...</span>
             </div>
@@ -601,7 +612,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
         }
         
         return (
-          <div className="pl-11 flex flex-col items-start gap-2">
+          <div className={cn("flex flex-col items-start gap-2", indentClass)}>
             <p className="text-muted-foreground italic text-sm">No content yet for this section.</p>
             {isFirstEmpty && onGenerateChapter && (
               <Button variant="hero" size="sm" onClick={() => onGenerateChapter(chapterIdx)} className="gap-1.5">
