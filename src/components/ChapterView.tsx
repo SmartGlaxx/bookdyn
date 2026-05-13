@@ -64,6 +64,9 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   const [editingChapterIdx, setEditingChapterIdx] = useState<number | null>(null);
   const [editChapterTitle, setEditChapterTitle] = useState("");
   const editChapterRef = useRef<HTMLInputElement>(null);
+  // Inline subsection title editing
+  const [editingSubKey, setEditingSubKey] = useState<string | null>(null);
+  const [editSubTitle, setEditSubTitle] = useState("");
   // Manuscript typography suite (canvas-only)
   const [canvasLayout, setCanvasLayout] = useState<CanvasLayout>("novel");
   const [canvasFontSize, setCanvasFontSize] = useState<number>(16);
