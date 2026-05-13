@@ -425,16 +425,59 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
     return (
     <div key={sub.id} className="mb-8 last:mb-0">
       {/* Subsection Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-medium text-sm shrink-0">
-          {subIdx + 1}
-        </div>
+      <div className="flex items-center gap-2 mb-4">
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-lg">{sub.title}</h3>
-          {/* Teasers are now woven into the prose itself — no separate display */}
+          {editingSubKey === sub.id ? (
+            <div className="flex items-center gap-1.5">
+              <Input
+                value={editSubTitle}
+                onChange={(e) => setEditSubTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveSubTitle(chapterIdx, subIdx);
+                  if (e.key === "Escape") setEditingSubKey(null);
+                }}
+                className="font-medium text-lg h-auto py-1"
+                autoFocus
+              />
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => handleSaveSubTitle(chapterIdx, subIdx)}>
+                <Check className="w-3.5 h-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setEditingSubKey(null)}>
+                <X className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          ) : (
+            <h3 className="font-medium text-lg truncate" title={sub.title}>{sub.title}</h3>
+          )}
         </div>
-        {sub.status === "completed" && <CheckCircle2 className="w-5 h-5 text-success shrink-0" />}
-        {sub.status === "writing" && <Loader2 className="w-5 h-5 text-primary shrink-0 animate-spin" />}
+        {sub.status === "writing" && <Loader2 className="w-4 h-4 text-primary shrink-0 animate-spin" />}
+        <span className="shrink-0 text-xs text-muted-foreground tabular-nums px-1.5 py-0.5 rounded bg-muted/60">
+          {subIdx + 1}
+        </span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Section actions">
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => { setEditingSubKey(sub.id); setEditSubTitle(sub.title); }}>
+              <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleRewriteSub(chapterIdx, subIdx)}
+              disabled={!onGenerateChapter}
+            >
+              <RefreshCw className="w-3.5 h-3.5 mr-2" /> Rewrite
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleDeleteSubContent(chapterIdx, subIdx)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Image rendering with template-based layout */}
