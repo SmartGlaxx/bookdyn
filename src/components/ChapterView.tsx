@@ -828,7 +828,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
 
           {mobileTab === "main" && (
             <div
-              className={cn("w-full px-4 mx-auto flex flex-col items-stretch overflow-hidden text-center md:text-left", canvasClass)}
+              className={cn("w-full px-4 mx-auto flex flex-col overflow-hidden", canvasClass)}
               style={{ fontSize: `${canvasFontSize}px`, maxWidth: "42rem" }}
             >
               {selectedChapter === 0 && book.outline?.intro && (
