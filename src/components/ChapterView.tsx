@@ -273,6 +273,32 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
     setEditingChapterIdx(null);
   }, [onUpdateBook, book.outline, book.id, editChapterTitle]);
 
+  const handleSaveSubTitle = useCallback((chapterIdx: number, subIdx: number) => {
+    if (!onUpdateBook || !book.outline || !editSubTitle.trim()) return;
+    const updatedOutline = JSON.parse(JSON.stringify(book.outline));
+    updatedOutline.chapters[chapterIdx].subsections[subIdx].title = editSubTitle.trim();
+    onUpdateBook(book.id, { outline: updatedOutline });
+    setEditingSubKey(null);
+  }, [onUpdateBook, book.outline, book.id, editSubTitle]);
+
+  const handleDeleteSubContent = useCallback((chapterIdx: number, subIdx: number) => {
+    if (!onUpdateBook || !book.outline) return;
+    if (!window.confirm("Clear all content in this section? This cannot be undone.")) return;
+    const updatedOutline = JSON.parse(JSON.stringify(book.outline));
+    updatedOutline.chapters[chapterIdx].subsections[subIdx].content = "";
+    updatedOutline.chapters[chapterIdx].subsections[subIdx].status = "pending";
+    onUpdateBook(book.id, { outline: updatedOutline });
+  }, [onUpdateBook, book.outline, book.id]);
+
+  const handleRewriteSub = useCallback((chapterIdx: number, subIdx: number) => {
+    if (!onUpdateBook || !book.outline) return;
+    const updatedOutline = JSON.parse(JSON.stringify(book.outline));
+    updatedOutline.chapters[chapterIdx].subsections[subIdx].content = "";
+    updatedOutline.chapters[chapterIdx].subsections[subIdx].status = "pending";
+    onUpdateBook(book.id, { outline: updatedOutline });
+    onGenerateChapter?.(chapterIdx);
+  }, [onUpdateBook, book.outline, book.id, onGenerateChapter]);
+
   if (!book.outline || chapters.length === 0) {
     return (
       <Card className="h-full flex items-center justify-center">
