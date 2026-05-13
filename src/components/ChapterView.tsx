@@ -21,8 +21,9 @@ import { SequentialReveal } from "@/components/SequentialReveal";
 import { GuidedWritingToolbar } from "@/components/GuidedWritingToolbar";
 import { CharacterGallery } from "@/components/CharacterGallery";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2, Circle, Loader2, FileText, ChevronDown, Play, Check, X, Users, User, Pencil, PanelLeftClose, PanelLeftOpen, Type, Minus, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2, Circle, Loader2, FileText, ChevronDown, Play, Check, X, Users, User, Pencil, PanelLeftClose, PanelLeftOpen, Type, Minus, Plus, MoreVertical, Trash2, RefreshCw } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 type CanvasLayout = "novel" | "screenplay" | "digital";
 type CanvasSpacing = "compact" | "standard" | "double";
