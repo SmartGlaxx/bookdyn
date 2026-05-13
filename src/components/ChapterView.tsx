@@ -21,8 +21,9 @@ import { SequentialReveal } from "@/components/SequentialReveal";
 import { GuidedWritingToolbar } from "@/components/GuidedWritingToolbar";
 import { CharacterGallery } from "@/components/CharacterGallery";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2, Circle, Loader2, FileText, ChevronDown, Play, Check, X, Users, User, Pencil, PanelLeftClose, PanelLeftOpen, Type, Minus, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, CheckCircle2, Circle, Loader2, FileText, ChevronDown, Play, Check, X, Users, User, Pencil, PanelLeftClose, PanelLeftOpen, Type, Minus, Plus, MoreVertical, Trash2, RefreshCw } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 type CanvasLayout = "novel" | "screenplay" | "digital";
 type CanvasSpacing = "compact" | "standard" | "double";
@@ -63,6 +64,9 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   const [editingChapterIdx, setEditingChapterIdx] = useState<number | null>(null);
   const [editChapterTitle, setEditChapterTitle] = useState("");
   const editChapterRef = useRef<HTMLInputElement>(null);
+  // Inline subsection title editing
+  const [editingSubKey, setEditingSubKey] = useState<string | null>(null);
+  const [editSubTitle, setEditSubTitle] = useState("");
   // Manuscript typography suite (canvas-only)
   const [canvasLayout, setCanvasLayout] = useState<CanvasLayout>("novel");
   const [canvasFontSize, setCanvasFontSize] = useState<number>(16);
@@ -269,6 +273,32 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
     setEditingChapterIdx(null);
   }, [onUpdateBook, book.outline, book.id, editChapterTitle]);
 
+  const handleSaveSubTitle = useCallback((chapterIdx: number, subIdx: number) => {
+    if (!onUpdateBook || !book.outline || !editSubTitle.trim()) return;
+    const updatedOutline = JSON.parse(JSON.stringify(book.outline));
+    updatedOutline.chapters[chapterIdx].subsections[subIdx].title = editSubTitle.trim();
+    onUpdateBook(book.id, { outline: updatedOutline });
+    setEditingSubKey(null);
+  }, [onUpdateBook, book.outline, book.id, editSubTitle]);
+
+  const handleDeleteSubContent = useCallback((chapterIdx: number, subIdx: number) => {
+    if (!onUpdateBook || !book.outline) return;
+    if (!window.confirm("Clear all content in this section? This cannot be undone.")) return;
+    const updatedOutline = JSON.parse(JSON.stringify(book.outline));
+    updatedOutline.chapters[chapterIdx].subsections[subIdx].content = "";
+    updatedOutline.chapters[chapterIdx].subsections[subIdx].status = "pending";
+    onUpdateBook(book.id, { outline: updatedOutline });
+  }, [onUpdateBook, book.outline, book.id]);
+
+  const handleRewriteSub = useCallback((chapterIdx: number, subIdx: number) => {
+    if (!onUpdateBook || !book.outline) return;
+    const updatedOutline = JSON.parse(JSON.stringify(book.outline));
+    updatedOutline.chapters[chapterIdx].subsections[subIdx].content = "";
+    updatedOutline.chapters[chapterIdx].subsections[subIdx].status = "pending";
+    onUpdateBook(book.id, { outline: updatedOutline });
+    onGenerateChapter?.(chapterIdx);
+  }, [onUpdateBook, book.outline, book.id, onGenerateChapter]);
+
   if (!book.outline || chapters.length === 0) {
     return (
       <Card className="h-full flex items-center justify-center">
@@ -395,16 +425,59 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
     return (
     <div key={sub.id} className="mb-8 last:mb-0">
       {/* Subsection Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-medium text-sm shrink-0">
-          {subIdx + 1}
-        </div>
+      <div className="flex items-center gap-2 mb-4">
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-lg">{sub.title}</h3>
-          {/* Teasers are now woven into the prose itself — no separate display */}
+          {editingSubKey === sub.id ? (
+            <div className="flex items-center gap-1.5">
+              <Input
+                value={editSubTitle}
+                onChange={(e) => setEditSubTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveSubTitle(chapterIdx, subIdx);
+                  if (e.key === "Escape") setEditingSubKey(null);
+                }}
+                className="font-medium text-lg h-auto py-1"
+                autoFocus
+              />
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => handleSaveSubTitle(chapterIdx, subIdx)}>
+                <Check className="w-3.5 h-3.5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setEditingSubKey(null)}>
+                <X className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          ) : (
+            <h3 className="font-medium text-lg truncate" title={sub.title}>{sub.title}</h3>
+          )}
         </div>
-        {sub.status === "completed" && <CheckCircle2 className="w-5 h-5 text-success shrink-0" />}
-        {sub.status === "writing" && <Loader2 className="w-5 h-5 text-primary shrink-0 animate-spin" />}
+        {sub.status === "writing" && <Loader2 className="w-4 h-4 text-primary shrink-0 animate-spin" />}
+        <span className="shrink-0 text-xs text-muted-foreground tabular-nums px-1.5 py-0.5 rounded bg-muted/60">
+          {subIdx + 1}
+        </span>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Section actions">
+              <MoreVertical className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => { setEditingSubKey(sub.id); setEditSubTitle(sub.title); }}>
+              <Pencil className="w-3.5 h-3.5 mr-2" /> Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleRewriteSub(chapterIdx, subIdx)}
+              disabled={!onGenerateChapter}
+            >
+              <RefreshCw className="w-3.5 h-3.5 mr-2" /> Rewrite
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleDeleteSubContent(chapterIdx, subIdx)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Image rendering with template-based layout */}
@@ -451,11 +524,11 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
               <TemplateImage imageUrl={sub.imageUrl} alt={`Illustration for ${sub.title}`} layout={layout} />
               {sub.content ? (
                 <>
-                  <div className="prose prose-sm dark:prose-invert max-w-none pl-11 overflow-hidden">
+                  <div className="prose prose-sm dark:prose-invert max-w-none overflow-hidden">
                     {renderParagraphs(sub.content, chapterIdx, subIdx, sub)}
                   </div>
                   {sub.status === "completed" && onUpdateBook && (
-                    <div className="pl-11 mt-2 border-t border-dashed border-muted pt-2">
+                    <div className="mt-2 border-t border-dashed border-muted pt-2">
                       <GuidedWritingToolbar
                         bookId={book.id}
                         bookTitle={book.title}
@@ -477,12 +550,12 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
                   )}
                 </>
               ) : sub.status === "writing" ? (
-                <div className="pl-11 flex items-center gap-2 text-muted-foreground">
+                <div className="flex items-center gap-2 text-muted-foreground">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-sm">Writing content...</span>
                 </div>
               ) : (
-                <div className="pl-11 flex flex-col items-start gap-2">
+                <div className="flex flex-col items-start gap-2">
                   <p className="text-muted-foreground italic text-sm">No content yet for this section.</p>
                   {isFirstEmpty && onGenerateChapter && (
                     <Button variant="hero" size="sm" onClick={() => onGenerateChapter(chapterIdx)} className="gap-1.5">
@@ -511,11 +584,11 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
         if (sub.content) {
           return (
             <>
-              <div className="prose prose-sm dark:prose-invert max-w-none pl-11 overflow-hidden">
+              <div className="prose prose-sm dark:prose-invert max-w-none overflow-hidden">
                 {renderParagraphs(sub.content, chapterIdx, subIdx, sub)}
               </div>
               {sub.status === "completed" && onUpdateBook && (
-                <div className="pl-11 mt-2 border-t border-dashed border-muted pt-2">
+                <div className="mt-2 border-t border-dashed border-muted pt-2">
                   <GuidedWritingToolbar
                     bookId={book.id}
                     bookTitle={book.title}
@@ -593,7 +666,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
         
         if (sub.status === "writing") {
           return (
-            <div className="pl-11 flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" />
               <span className="text-sm">Writing content...</span>
             </div>
@@ -601,7 +674,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
         }
         
         return (
-          <div className="pl-11 flex flex-col items-start gap-2">
+          <div className="flex flex-col items-start gap-2">
             <p className="text-muted-foreground italic text-sm">No content yet for this section.</p>
             {isFirstEmpty && onGenerateChapter && (
               <Button variant="hero" size="sm" onClick={() => onGenerateChapter(chapterIdx)} className="gap-1.5">
@@ -629,23 +702,24 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
         <div className="shrink-0 border-b px-2 py-1.5">
           <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as "chapters" | "characters" | "main")}>
             <TabsList className="w-full h-8">
-              <TabsTrigger value="chapters" className="flex-1 gap-1 text-xs px-1">
+              <TabsTrigger value="chapters" className="flex-1 min-w-0 gap-1 text-xs px-1 truncate overflow-hidden whitespace-nowrap">
                 <BookOpen className="w-3 h-3" />
-                Chapters
+                <span className="truncate">Chapters</span>
               </TabsTrigger>
-              <TabsTrigger value="characters" className="flex-1 gap-1 text-xs px-1" disabled={!hasCharacters}>
+              <TabsTrigger value="characters" className="flex-1 min-w-0 gap-1 text-xs px-1 truncate overflow-hidden whitespace-nowrap" disabled={!hasCharacters}>
                 <Users className="w-3 h-3" />
-                Characters
+                <span className="truncate">Characters</span>
               </TabsTrigger>
-              <TabsTrigger value="main" className="flex-1 gap-1 text-xs px-1">
+              <TabsTrigger value="main" className="flex-1 min-w-0 gap-1 text-xs px-1 truncate overflow-hidden whitespace-nowrap">
                 <FileText className="w-3 h-3" />
-                Main
+                <span className="truncate">Main</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
 
-        {/* Compact mobile chapter header — capped height, prev/title/Display/next */}
+        {/* Compact mobile chapter header — only shown under Main tab */}
+        {mobileTab === "main" && (
         <div className="shrink-0 border-b bg-background/95 backdrop-blur-sm px-2 py-2 flex items-center gap-1.5" style={{ maxHeight: 56 }}>
           <Button
             variant="ghost"
@@ -680,6 +754,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
+        )}
 
         {/* Tab content */}
         <ScrollArea className="flex-1 min-h-0">
@@ -752,7 +827,10 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
           )}
 
           {mobileTab === "main" && (
-            <div className={cn("p-4 overflow-hidden", canvasClass)} style={{ fontSize: `${canvasFontSize}px` }}>
+            <div
+              className={cn("w-full px-4 mx-auto flex flex-col overflow-hidden", canvasClass)}
+              style={{ fontSize: `${canvasFontSize}px`, maxWidth: "42rem" }}
+            >
               {selectedChapter === 0 && book.outline?.intro && (
                 <div className="mb-6 pb-4 border-b border-dashed border-border/60">
                   <div className="text-[11px] uppercase tracking-widest text-muted-foreground mb-2">Cliffhanger Intro</div>
