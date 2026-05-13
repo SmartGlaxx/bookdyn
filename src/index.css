@@ -298,3 +298,62 @@
 #lovable-badge {
   display: none !important;
 }
+
+/* ===== Manuscript Typography Suite (canvas-only) ===== */
+/* Applied to the chapter editor canvas; left navigation panels remain unaffected. */
+.canvas-novel,
+.canvas-novel h1,
+.canvas-novel h2,
+.canvas-novel h3,
+.canvas-novel h4,
+.canvas-novel h5,
+.canvas-novel h6,
+.canvas-novel p,
+.canvas-novel li,
+.canvas-novel blockquote,
+.canvas-novel textarea,
+.canvas-novel input {
+  font-family: "Lora", "Merriweather", Georgia, "Times New Roman", serif;
+}
+
+.canvas-screenplay,
+.canvas-screenplay h1,
+.canvas-screenplay h2,
+.canvas-screenplay h3,
+.canvas-screenplay h4,
+.canvas-screenplay h5,
+.canvas-screenplay h6,
+.canvas-screenplay p,
+.canvas-screenplay li,
+.canvas-screenplay blockquote,
+.canvas-screenplay textarea,
+.canvas-screenplay input {
+  font-family: "Courier Prime", "Courier New", ui-monospace, monospace;
+}
+
+.canvas-digital,
+.canvas-digital h1,
+.canvas-digital h2,
+.canvas-digital h3,
+.canvas-digital h4,
+.canvas-digital h5,
+.canvas-digital h6,
+.canvas-digital p,
+.canvas-digital li,
+.canvas-digital blockquote,
+.canvas-digital textarea,
+.canvas-digital input {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+.canvas-spacing-compact p {
+  line-height: 1.625;
+}
+.canvas-spacing-standard p {
+  line-height: 1.9;
+}
+.canvas-spacing-double p {
+  line-height: 2.1;
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+}
