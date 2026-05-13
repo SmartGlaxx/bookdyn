@@ -58,6 +58,8 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   const [sidebarTab, setSidebarTab] = useState<"chapters" | "characters">("chapters");
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"chapters" | "characters" | "main">("main");
+  const [mobileSelectedCharacterId, setMobileSelectedCharacterId] = useState<string | null>(null);
   const [editingChapterIdx, setEditingChapterIdx] = useState<number | null>(null);
   const [editChapterTitle, setEditChapterTitle] = useState("");
   const editChapterRef = useRef<HTMLInputElement>(null);
