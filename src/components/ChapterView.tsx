@@ -625,7 +625,27 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
       : null;
     return (
       <div className="flex flex-col w-full overflow-x-hidden" style={{ height: "calc(100vh - 64px - 1rem)" }}>
-        {/* Compact mobile chapter header — capped height, tabs, Display, prev/next */}
+        {/* 3-way mobile tab toggle: Chapters | Characters | Main */}
+        <div className="shrink-0 border-b px-2 py-1.5">
+          <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as "chapters" | "characters" | "main")}>
+            <TabsList className="w-full h-8">
+              <TabsTrigger value="chapters" className="flex-1 gap-1 text-xs px-1">
+                <BookOpen className="w-3 h-3" />
+                Chapters
+              </TabsTrigger>
+              <TabsTrigger value="characters" className="flex-1 gap-1 text-xs px-1" disabled={!hasCharacters}>
+                <Users className="w-3 h-3" />
+                Characters
+              </TabsTrigger>
+              <TabsTrigger value="main" className="flex-1 gap-1 text-xs px-1">
+                <FileText className="w-3 h-3" />
+                Main
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {/* Compact mobile chapter header — capped height, prev/title/Display/next */}
         <div className="shrink-0 border-b bg-background/95 backdrop-blur-sm px-2 py-2 flex items-center gap-1.5" style={{ maxHeight: 56 }}>
           <Button
             variant="ghost"
@@ -659,26 +679,6 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
-        </div>
-
-        {/* 3-way mobile tab toggle: Chapters | Characters | Main */}
-        <div className="shrink-0 border-b px-2 py-1.5">
-          <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as "chapters" | "characters" | "main")}>
-            <TabsList className="w-full h-8">
-              <TabsTrigger value="chapters" className="flex-1 gap-1 text-xs px-1">
-                <BookOpen className="w-3 h-3" />
-                Chapters
-              </TabsTrigger>
-              <TabsTrigger value="characters" className="flex-1 gap-1 text-xs px-1" disabled={!hasCharacters}>
-                <Users className="w-3 h-3" />
-                Characters
-              </TabsTrigger>
-              <TabsTrigger value="main" className="flex-1 gap-1 text-xs px-1">
-                <FileText className="w-3 h-3" />
-                Main
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
         </div>
 
         {/* Tab content */}
