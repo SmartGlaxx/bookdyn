@@ -702,23 +702,24 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
         <div className="shrink-0 border-b px-2 py-1.5">
           <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as "chapters" | "characters" | "main")}>
             <TabsList className="w-full h-8">
-              <TabsTrigger value="chapters" className="flex-1 gap-1 text-xs px-1">
+              <TabsTrigger value="chapters" className="flex-1 min-w-0 gap-1 text-xs px-1 truncate overflow-hidden whitespace-nowrap">
                 <BookOpen className="w-3 h-3" />
-                Chapters
+                <span className="truncate">Chapters</span>
               </TabsTrigger>
-              <TabsTrigger value="characters" className="flex-1 gap-1 text-xs px-1" disabled={!hasCharacters}>
+              <TabsTrigger value="characters" className="flex-1 min-w-0 gap-1 text-xs px-1 truncate overflow-hidden whitespace-nowrap" disabled={!hasCharacters}>
                 <Users className="w-3 h-3" />
-                Characters
+                <span className="truncate">Characters</span>
               </TabsTrigger>
-              <TabsTrigger value="main" className="flex-1 gap-1 text-xs px-1">
+              <TabsTrigger value="main" className="flex-1 min-w-0 gap-1 text-xs px-1 truncate overflow-hidden whitespace-nowrap">
                 <FileText className="w-3 h-3" />
-                Main
+                <span className="truncate">Main</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
 
-        {/* Compact mobile chapter header — capped height, prev/title/Display/next */}
+        {/* Compact mobile chapter header — only shown under Main tab */}
+        {mobileTab === "main" && (
         <div className="shrink-0 border-b bg-background/95 backdrop-blur-sm px-2 py-2 flex items-center gap-1.5" style={{ maxHeight: 56 }}>
           <Button
             variant="ghost"
@@ -753,6 +754,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
+        )}
 
         {/* Tab content */}
         <ScrollArea className="flex-1 min-h-0">
@@ -825,7 +827,10 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
           )}
 
           {mobileTab === "main" && (
-            <div className={cn("p-4 overflow-hidden", canvasClass)} style={{ fontSize: `${canvasFontSize}px` }}>
+            <div
+              className={cn("w-full px-4 mx-auto flex flex-col items-stretch overflow-hidden text-center md:text-left", canvasClass)}
+              style={{ fontSize: `${canvasFontSize}px`, maxWidth: "42rem" }}
+            >
               {selectedChapter === 0 && book.outline?.intro && (
                 <div className="mb-6 pb-4 border-b border-dashed border-border/60">
                   <div className="text-[11px] uppercase tracking-widest text-muted-foreground mb-2">Cliffhanger Intro</div>
