@@ -58,6 +58,8 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   const [sidebarTab, setSidebarTab] = useState<"chapters" | "characters">("chapters");
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"chapters" | "characters" | "main">("main");
+  const [mobileSelectedCharacterId, setMobileSelectedCharacterId] = useState<string | null>(null);
   const [editingChapterIdx, setEditingChapterIdx] = useState<number | null>(null);
   const [editChapterTitle, setEditChapterTitle] = useState("");
   const editChapterRef = useRef<HTMLInputElement>(null);
@@ -125,6 +127,86 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
   const selectedCharacter = selectedCharacterId ? mergedCharacters.find(c => c.id === selectedCharacterId) : null;
   const isMobile = useIsMobile();
   const isLandscapeMobile = isMobile && windowHeight < 500;
+
+  // Display Settings popover (typography suite) — shared between mobile and desktop headers.
+  const renderDisplayPopover = (compact = false) => (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size={compact ? "icon" : "sm"}
+          className={cn("font-sans shrink-0", compact ? "h-8 w-8" : "gap-1.5")}
+          title="Display Settings"
+          aria-label="Display Settings"
+        >
+          <Type className="w-3.5 h-3.5" />
+          {!compact && "Display"}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-72 font-sans">
+        <div className="space-y-4">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Layout</div>
+            <div className="grid grid-cols-3 gap-1">
+              {([
+                { id: "novel", label: "Novel" },
+                { id: "screenplay", label: "Script" },
+                { id: "digital", label: "Digital" },
+              ] as { id: CanvasLayout; label: string }[]).map((opt) => (
+                <Button
+                  key={opt.id}
+                  variant={canvasLayout === opt.id ? "default" : "outline"}
+                  size="sm"
+                  className="text-xs h-8 px-2"
+                  onClick={() => setCanvasLayout(opt.id)}
+                >
+                  {opt.label}
+                </Button>
+              ))}
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-1.5">
+              {canvasLayout === "novel" && "Published Novel — elegant serif"}
+              {canvasLayout === "screenplay" && "Screenplay Typewriter — monospace"}
+              {canvasLayout === "digital" && "Digital Essay — clean sans-serif"}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Font Size</div>
+              <div className="text-xs text-muted-foreground tabular-nums">{canvasFontSize}px</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCanvasFontSize((s) => Math.max(14, s - 1))} disabled={canvasFontSize <= 14} aria-label="Decrease font size">
+                <Minus className="w-3.5 h-3.5" />
+              </Button>
+              <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
+                <div className="h-full bg-primary transition-all" style={{ width: `${((canvasFontSize - 14) / (24 - 14)) * 100}%` }} />
+              </div>
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCanvasFontSize((s) => Math.min(24, s + 1))} disabled={canvasFontSize >= 24} aria-label="Increase font size">
+                <Plus className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Line Spacing</div>
+            <div className="grid grid-cols-3 gap-1">
+              {([
+                { id: "compact", label: "Compact" },
+                { id: "standard", label: "Standard" },
+                { id: "double", label: "Double" },
+              ] as { id: CanvasSpacing; label: string }[]).map((opt) => (
+                <Button key={opt.id} variant={canvasSpacing === opt.id ? "default" : "outline"} size="sm" className="text-xs h-8 px-2" onClick={() => setCanvasSpacing(opt.id)}>
+                  {opt.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 
   useEffect(() => {
     if (editingChapterIdx !== null && editChapterRef.current) {
@@ -538,45 +620,152 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
 
   // Mobile view - accordion style
   if (isMobile) {
+    const mobileSelectedCharacter = mobileSelectedCharacterId
+      ? mergedCharacters.find((c) => c.id === mobileSelectedCharacterId)
+      : null;
     return (
-      <ScrollArea className="w-full overflow-x-hidden" style={{ height: "calc(100vh - 64px - 1rem)" }}>
-        <div className="py-2 space-y-2">
-          {chapters.map((chapter, idx) => {
-            const StatusIcon = statusConfig[chapter.status].icon;
-            const isExpanded = expandedChapter === idx;
-            return (
-              <Collapsible key={chapter.id} open={isExpanded} onOpenChange={open => setExpandedChapter(open ? idx : null)}>
-                <Card className={cn("overflow-hidden transition-colors rounded-none border-x-0", isExpanded && "ring-1 ring-primary/20")}>
-                  <CollapsibleTrigger className="w-full">
-                    <div className="p-4 flex items-center gap-3">
-                      <StatusIcon className={cn("w-5 h-5 shrink-0", statusConfig[chapter.status].color, statusConfig[chapter.status].animate && "animate-spin")} />
-                      <div className="flex-1 min-w-0 text-left overflow-hidden">
+      <div className="flex flex-col w-full overflow-x-hidden" style={{ height: "calc(100vh - 64px - 1rem)" }}>
+        {/* Compact mobile chapter header — capped height, tabs, Display, prev/next */}
+        <div className="shrink-0 border-b bg-background/95 backdrop-blur-sm px-2 py-2 flex items-center gap-1.5" style={{ maxHeight: 56 }}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={() => setSelectedChapter(Math.max(0, selectedChapter - 1))}
+            disabled={selectedChapter === 0}
+            aria-label="Previous chapter"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+
+          <div className="flex-1 min-w-0 flex flex-col justify-center overflow-hidden">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground leading-none">
+              Ch {currentChapter.chapterNumber} / {chapters.length}
+            </div>
+            <div className="font-serif text-sm font-semibold truncate" title={currentChapter.title}>
+              {currentChapter.title}
+            </div>
+          </div>
+
+          {renderDisplayPopover(true)}
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={() => setSelectedChapter(Math.min(chapters.length - 1, selectedChapter + 1))}
+            disabled={selectedChapter === chapters.length - 1}
+            aria-label="Next chapter"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* 3-way mobile tab toggle: Chapters | Characters | Main */}
+        <div className="shrink-0 border-b px-2 py-1.5">
+          <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as "chapters" | "characters" | "main")}>
+            <TabsList className="w-full h-8">
+              <TabsTrigger value="chapters" className="flex-1 gap-1 text-xs px-1">
+                <BookOpen className="w-3 h-3" />
+                Chapters
+              </TabsTrigger>
+              <TabsTrigger value="characters" className="flex-1 gap-1 text-xs px-1" disabled={!hasCharacters}>
+                <Users className="w-3 h-3" />
+                Characters
+              </TabsTrigger>
+              <TabsTrigger value="main" className="flex-1 gap-1 text-xs px-1">
+                <FileText className="w-3 h-3" />
+                Main
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {/* Tab content */}
+        <ScrollArea className="flex-1 min-h-0">
+          {mobileTab === "chapters" && (
+            <div className="p-2 space-y-1">
+              {chapters.map((chapter, idx) => {
+                const StatusIcon = statusConfig[chapter.status].icon;
+                const isActive = idx === selectedChapter;
+                return (
+                  <button
+                    key={chapter.id}
+                    onClick={() => { setSelectedChapter(idx); setMobileTab("main"); }}
+                    className={cn("w-full text-left p-3 rounded-lg transition-colors", isActive ? "bg-primary/10" : "hover:bg-muted")}
+                  >
+                    <div className="flex items-start gap-2">
+                      <StatusIcon className={cn("w-4 h-4 mt-0.5 shrink-0", statusConfig[chapter.status].color, statusConfig[chapter.status].animate && "animate-spin")} />
+                      <div className="flex-1 min-w-0">
                         <div className="text-xs text-muted-foreground">Chapter {chapter.chapterNumber}</div>
-                        <div className="font-medium text-sm break-words">{chapter.title}</div>
+                        <div className="font-medium text-sm truncate" title={chapter.title}>{chapter.title}</div>
                         <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <FileText className="w-3 h-3" />
+                          <span className="flex items-center gap-1 truncate">
+                            <FileText className="w-3 h-3 shrink-0" />
                             {getWordCount(chapter).toLocaleString()}
                           </span>
                           <span>·</span>
-                          <span>{chapter.subsections.length} sections</span>
+                          <span className="truncate">{chapter.subsections.length} sections</span>
                         </div>
                       </div>
-                      <ChevronDown className={cn("w-5 h-5 text-muted-foreground transition-transform shrink-0", isExpanded && "rotate-180")} />
                     </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <Separator />
-                    <div className="p-4 md:p-6 overflow-hidden">
-                      {chapter.subsections.map((sub, subIdx) => renderSubsectionContent(sub, subIdx, idx))}
-                    </div>
-                  </CollapsibleContent>
-                </Card>
-              </Collapsible>
-            );
-          })}
-        </div>
-      </ScrollArea>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {mobileTab === "characters" && (
+            <div className="p-2">
+              {mobileSelectedCharacter ? (
+                <div>
+                  <Button variant="ghost" size="sm" className="mb-2 -ml-2" onClick={() => setMobileSelectedCharacterId(null)}>
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    Back
+                  </Button>
+                  <CharacterGallery characters={[mobileSelectedCharacter]} visualStyleGuide={book.outline?.visualStyleGuide} />
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {mergedCharacters.map((character) => (
+                    <button
+                      key={character.id}
+                      onClick={() => setMobileSelectedCharacterId(character.id)}
+                      className="w-full text-left p-3 rounded-lg transition-colors hover:bg-muted flex items-center gap-3"
+                    >
+                      <div className="shrink-0 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
+                        {character.portraitUrl ? (
+                          <img src={character.portraitUrl} alt={character.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">{character.name}</div>
+                        <div className="text-xs text-muted-foreground capitalize">{character.role}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {mobileTab === "main" && (
+            <div className={cn("p-4 overflow-hidden", canvasClass)} style={{ fontSize: `${canvasFontSize}px` }}>
+              {selectedChapter === 0 && book.outline?.intro && (
+                <div className="mb-6 pb-4 border-b border-dashed border-border/60">
+                  <div className="text-[11px] uppercase tracking-widest text-muted-foreground mb-2">Cliffhanger Intro</div>
+                  <div className="font-serif italic text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                    {book.outline.intro}
+                  </div>
+                </div>
+              )}
+              {currentChapter.subsections.map((sub, subIdx) => renderSubsectionContent(sub, subIdx, selectedChapter))}
+            </div>
+          )}
+        </ScrollArea>
+      </div>
     );
   }
 
@@ -771,14 +960,14 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
         renderCharacterDetail()
       ) : (
         <Card className={cn("flex-1 flex flex-col overflow-hidden min-h-0", canvasClass)} style={{ fontSize: `${canvasFontSize}px` }}>
-          <div className="p-4 border-b shrink-0">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" onClick={() => setSelectedChapter(Math.max(0, selectedChapter - 1))} disabled={selectedChapter === 0}>
+          <div className="px-4 py-2 border-b shrink-0" style={{ maxHeight: 64 }}>
+            <div className="flex items-center justify-between gap-2 min-w-0">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setSelectedChapter(Math.max(0, selectedChapter - 1))} disabled={selectedChapter === 0}>
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                <div className="flex-1 min-w-0">
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider leading-none">
                     Chapter {currentChapter.chapterNumber} of {chapters.length}
                   </div>
                   {editingChapterIdx === selectedChapter ? (
@@ -791,128 +980,28 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
                           if (e.key === "Enter") handleSaveChapterTitle(selectedChapter);
                           if (e.key === "Escape") setEditingChapterIdx(null);
                         }}
-                        className="font-serif text-xl font-semibold h-auto py-1 w-64"
+                        className="font-serif text-xl font-semibold h-auto py-1 w-full max-w-md"
                       />
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleSaveChapterTitle(selectedChapter)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => handleSaveChapterTitle(selectedChapter)}>
                         <Check className="w-3.5 h-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingChapterIdx(null)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setEditingChapterIdx(null)}>
                         <X className="w-3.5 h-3.5" />
                       </Button>
                     </div>
                   ) : (
-                    <div 
-                      className="flex items-center gap-2 group cursor-pointer" 
+                    <div
+                      className="flex items-center gap-2 group cursor-pointer min-w-0"
                       onClick={() => { setEditingChapterIdx(selectedChapter); setEditChapterTitle(currentChapter.title); }}
                     >
-                      <h2 className="font-serif text-xl font-semibold">{currentChapter.title}</h2>
-                      <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <h2 className="font-serif text-xl font-semibold truncate" title={currentChapter.title}>{currentChapter.title}</h2>
+                      <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                     </div>
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <Badge variant={currentChapter.status === "completed" ? "success" : "secondary"} className="text-xs">
-                    {statusConfig[currentChapter.status].label}
-                  </Badge>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {completedSubsections}/{totalSubsections} sections · {chapterProgress}%
-                  </div>
-                </div>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" size="sm" className="gap-1.5 font-sans" title="Display Settings">
-                      <Type className="w-3.5 h-3.5" />
-                      Display
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent align="end" className="w-72 font-sans">
-                    <div className="space-y-4">
-                      <div>
-                        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Layout</div>
-                        <div className="grid grid-cols-3 gap-1">
-                          {([
-                            { id: "novel", label: "Novel" },
-                            { id: "screenplay", label: "Script" },
-                            { id: "digital", label: "Digital" },
-                          ] as { id: CanvasLayout; label: string }[]).map((opt) => (
-                            <Button
-                              key={opt.id}
-                              variant={canvasLayout === opt.id ? "default" : "outline"}
-                              size="sm"
-                              className="text-xs h-8 px-2"
-                              onClick={() => setCanvasLayout(opt.id)}
-                            >
-                              {opt.label}
-                            </Button>
-                          ))}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground mt-1.5">
-                          {canvasLayout === "novel" && "Published Novel — elegant serif"}
-                          {canvasLayout === "screenplay" && "Screenplay Typewriter — monospace"}
-                          {canvasLayout === "digital" && "Digital Essay — clean sans-serif"}
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Font Size</div>
-                          <div className="text-xs text-muted-foreground tabular-nums">{canvasFontSize}px</div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setCanvasFontSize((s) => Math.max(14, s - 1))}
-                            disabled={canvasFontSize <= 14}
-                            aria-label="Decrease font size"
-                          >
-                            <Minus className="w-3.5 h-3.5" />
-                          </Button>
-                          <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                            <div
-                              className="h-full bg-primary transition-all"
-                              style={{ width: `${((canvasFontSize - 14) / (24 - 14)) * 100}%` }}
-                            />
-                          </div>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setCanvasFontSize((s) => Math.min(24, s + 1))}
-                            disabled={canvasFontSize >= 24}
-                            aria-label="Increase font size"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Line Spacing</div>
-                        <div className="grid grid-cols-3 gap-1">
-                          {([
-                            { id: "compact", label: "Compact" },
-                            { id: "standard", label: "Standard" },
-                            { id: "double", label: "Double" },
-                          ] as { id: CanvasSpacing; label: string }[]).map((opt) => (
-                            <Button
-                              key={opt.id}
-                              variant={canvasSpacing === opt.id ? "default" : "outline"}
-                              size="sm"
-                              className="text-xs h-8 px-2"
-                              onClick={() => setCanvasSpacing(opt.id)}
-                            >
-                              {opt.label}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
+              <div className="flex items-center gap-2 shrink-0">
+                {renderDisplayPopover(false)}
                 {onGenerateChapter && currentChapter.status !== "completed" && (
                   <Button variant="hero" size="sm" onClick={() => onGenerateChapter(selectedChapter)}>
                     <Play className="w-3.5 h-3.5" />
