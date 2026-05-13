@@ -403,7 +403,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-lg">{sub.title}</h3>
+          <h3 className="font-medium text-lg break-words">{sub.title}</h3>
           {/* Teasers are now woven into the prose itself — no separate display */}
         </div>
         {isMobile ? (
@@ -428,7 +428,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
             return (
               <div className="mb-4">
                 <TemplateImage imageUrl={sub.imageUrl} alt={`Illustration for ${sub.title}`} layout={layout}>
-                  <div className="prose prose-sm dark:prose-invert max-w-none overflow-hidden">
+                  <div className="prose prose-sm dark:prose-invert max-w-none overflow-hidden break-words">
                     {renderParagraphs(sub.content, chapterIdx, subIdx, sub)}
                   </div>
                 </TemplateImage>
@@ -462,7 +462,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
               <TemplateImage imageUrl={sub.imageUrl} alt={`Illustration for ${sub.title}`} layout={layout} />
               {sub.content ? (
                 <>
-                  <div className={cn("prose prose-sm dark:prose-invert max-w-none overflow-hidden", indentClass)}>
+                  <div className={cn("prose prose-sm dark:prose-invert max-w-none overflow-hidden break-words", indentClass)}>
                     {renderParagraphs(sub.content, chapterIdx, subIdx, sub)}
                   </div>
                   {sub.status === "completed" && onUpdateBook && (
@@ -522,7 +522,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
         if (sub.content) {
           return (
             <>
-              <div className={cn("prose prose-sm dark:prose-invert max-w-none overflow-hidden", indentClass)}>
+              <div className={cn("prose prose-sm dark:prose-invert max-w-none overflow-hidden break-words", indentClass)}>
                 {renderParagraphs(sub.content, chapterIdx, subIdx, sub)}
               </div>
               {sub.status === "completed" && onUpdateBook && (
