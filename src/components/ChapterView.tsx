@@ -657,7 +657,7 @@ export function ChapterView({ book, onGenerateChapter, onUpdateBook, automationL
         </div>
 
         {/* Tab content */}
-        <ScrollArea className="flex-1 min-h-0">
+        <ScrollArea type="always" className="flex-1 min-h-0">
           {mobileTab === "chapters" && (
             <div className="p-2 space-y-1">
               {chapters.map((chapter, idx) => {
