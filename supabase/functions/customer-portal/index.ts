@@ -7,6 +7,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const ALLOWED_ORIGINS = [
+  "https://bookdyn.com",
+  "https://bookdyn.lovable.app",
+  "https://app.authoryti.com",
+  "https://id-preview--50948d4c-97c6-4338-a33a-59e9cf03b7c0.lovable.app",
+];
+
+function safeOrigin(req: Request): string {
+  const o = req.headers.get("origin") ?? "";
+  if (ALLOWED_ORIGINS.includes(o)) return o;
+  if (/^https:\/\/[a-z0-9-]+\.lovableproject\.com$/.test(o)) return o;
+  if (/^https:\/\/id-preview--[a-z0-9-]+\.lovable\.app$/.test(o)) return o;
+  return ALLOWED_ORIGINS[0];
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -32,7 +47,7 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: claimsData.claims.email as string, limit: 1 });
     if (customers.data.length === 0) throw new Error("No Stripe customer found");
 
-    const origin = req.headers.get("origin") || "https://localhost:3000";
+    const origin = safeOrigin(req);
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customers.data[0].id,
       return_url: `${origin}/dashboard`,

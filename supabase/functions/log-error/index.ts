@@ -6,6 +6,31 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// In-memory per-IP rate limiter: max 10 entries / minute / IP
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const ipHits = new Map<string, number[]>();
+
+function rateLimited(ip: string): boolean {
+  const now = Date.now();
+  const arr = (ipHits.get(ip) ?? []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  if (arr.length >= RATE_LIMIT_MAX) {
+    ipHits.set(ip, arr);
+    return true;
+  }
+  arr.push(now);
+  ipHits.set(ip, arr);
+  // Opportunistic cleanup to bound memory
+  if (ipHits.size > 10_000) {
+    for (const [k, v] of ipHits) {
+      const fresh = v.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+      if (fresh.length === 0) ipHits.delete(k);
+      else ipHits.set(k, fresh);
+    }
+  }
+  return false;
+}
+
 // Public endpoint: logs frontend uncaught errors. Auth optional.
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -13,6 +38,17 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+      req.headers.get("cf-connecting-ip") ||
+      "unknown";
+    if (rateLimited(ip)) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "rate_limited" }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;

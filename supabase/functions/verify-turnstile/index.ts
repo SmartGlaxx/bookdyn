@@ -23,10 +23,11 @@ serve(async (req) => {
     const secretKey = Deno.env.get("TURNSTILE_SECRET_KEY");
     if (!secretKey) {
       console.error("TURNSTILE_SECRET_KEY not configured");
-      // Fail open in dev, fail closed in production
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      // Fail closed: missing secret must not silently bypass CAPTCHA
+      return new Response(
+        JSON.stringify({ success: false, error: "CAPTCHA not configured" }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const verifyResponse = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
