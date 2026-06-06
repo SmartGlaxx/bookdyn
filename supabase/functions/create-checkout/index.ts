@@ -13,6 +13,21 @@ const PLAN_PRICES: Record<string, string> = {
   elite: "price_1T8T4vBjVtw2b7Oi2KQ4OlAI",
 };
 
+const ALLOWED_ORIGINS = [
+  "https://bookdyn.com",
+  "https://bookdyn.lovable.app",
+  "https://app.authoryti.com",
+  "https://id-preview--50948d4c-97c6-4338-a33a-59e9cf03b7c0.lovable.app",
+];
+
+function safeOrigin(req: Request): string {
+  const o = req.headers.get("origin") ?? "";
+  if (ALLOWED_ORIGINS.includes(o)) return o;
+  if (/^https:\/\/[a-z0-9-]+\.lovableproject\.com$/.test(o)) return o;
+  if (/^https:\/\/id-preview--[a-z0-9-]+\.lovable\.app$/.test(o)) return o;
+  return ALLOWED_ORIGINS[0];
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -59,7 +74,7 @@ serve(async (req) => {
       });
     }
 
-    const origin = req.headers.get("origin") || "https://localhost:3000";
+    const origin = safeOrigin(req);
 
     const sessionParams: any = {
       customer: customerId,
