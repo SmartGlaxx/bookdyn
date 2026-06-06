@@ -7,6 +7,26 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const ALLOWED_ORIGINS = [
+  "https://bookdyn.com",
+  "https://bookdyn.lovable.app",
+  "https://app.authoryti.com",
+  "https://id-preview--50948d4c-97c6-4338-a33a-59e9cf03b7c0.lovable.app",
+];
+
+function isAllowedRedirect(url: string): boolean {
+  try {
+    const u = new URL(url);
+    const origin = `${u.protocol}//${u.host}`;
+    if (ALLOWED_ORIGINS.includes(origin)) return true;
+    if (/^https:\/\/[a-z0-9-]+\.lovableproject\.com$/.test(origin)) return true;
+    if (/^https:\/\/id-preview--[a-z0-9-]+\.lovable\.app$/.test(origin)) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 // Admin user management:
 //  - action: "search" — find users by email substring
 //  - action: "override_link" — generate a one-time recovery (override) link for target user
@@ -61,9 +81,11 @@ Deno.serve(async (req) => {
     if (action === "override_link") {
       const targetEmail = String(body.email ?? "").trim().toLowerCase();
       const reason = body.reason ? String(body.reason).slice(0, 500) : null;
-      const redirectTo = body.redirectTo
-        ? String(body.redirectTo)
-        : `${new URL(req.url).origin}/admin/override-callback`;
+      const rawRedirect = body.redirectTo ? String(body.redirectTo) : "";
+      const defaultRedirect = `${ALLOWED_ORIGINS[0]}/admin/override-callback`;
+      const redirectTo = rawRedirect && isAllowedRedirect(rawRedirect)
+        ? rawRedirect
+        : defaultRedirect;
 
       if (!targetEmail) return json({ error: "Email required" }, 400);
 
