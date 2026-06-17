@@ -439,6 +439,59 @@ export interface PlotLedger {
   dones: PlotDone[];
 }
 
+// ============= MODULE 1: STORY CANVAS =============
+// Author-driven dual-layer card timeline. Lives in books.canvas (jsonb).
+export type StoryArcColor =
+  | "setup" | "rising" | "midpoint" | "climax" | "fall" | "resolution" | "neutral";
+
+export interface StorySummaryBullet {
+  id: string;
+  text: string;
+}
+
+export interface StoryArcCard {
+  id: string;
+  text: string;
+  color: StoryArcColor;
+}
+
+export interface CanvasScene {
+  id: string;
+  title: string;
+  note?: string;
+}
+
+export interface CanvasChapter {
+  id: string;
+  title: string;
+  titleSuggestions?: string[];
+  selectedSuggestionIndex?: number | null;
+  plot: string;
+  scenes: CanvasScene[];
+}
+
+export interface CanvasSetup {
+  title?: string;
+  genre?: string;
+  lengthTarget?: string;
+  tone?: string;
+}
+
+export interface StoryCanvas {
+  setup: CanvasSetup;
+  storySummary: StorySummaryBullet[];
+  storyArc: StoryArcCard[];
+  chapters: CanvasChapter[];
+  updatedAt?: string;
+}
+
+export const EMPTY_CANVAS: StoryCanvas = {
+  setup: {},
+  storySummary: [],
+  storyArc: [],
+  chapters: [],
+};
+
 export interface Book {
   id: string;
   title: string;
@@ -473,6 +526,7 @@ export interface Book {
   // Continuity director
   characterLedger?: CharacterLedger;
   plotLedger?: PlotLedger;
+  canvas?: StoryCanvas;
 }
 
 export interface CreateBookInput {
