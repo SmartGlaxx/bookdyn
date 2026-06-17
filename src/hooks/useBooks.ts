@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Book, CreateBookInput, BookStatus, BookOutline, BookControls, ToneProfile, POV, BookType } from "@/types/book";
+import type { StoryCanvas } from "@/types/book";
 import { toast } from "sonner";
 import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,6 +37,7 @@ const transformDbToBook = (row: any): Book => ({
   frontMatter: row.front_matter || undefined,
   characterLedger: row.character_ledger || { characters: [] },
   plotLedger: row.plot_ledger || { todos: [], dones: [] },
+  canvas: (row.canvas as StoryCanvas | undefined) || undefined,
 });
 
 // Transform Book to database row format
@@ -172,6 +174,7 @@ export const useBooks = () => {
       if (updates.frontMatter !== undefined) dbUpdates.front_matter = updates.frontMatter as unknown as Json;
       if (updates.characterLedger !== undefined) dbUpdates.character_ledger = updates.characterLedger as unknown as Json;
       if (updates.plotLedger !== undefined) dbUpdates.plot_ledger = updates.plotLedger as unknown as Json;
+      if (updates.canvas !== undefined) dbUpdates.canvas = updates.canvas as unknown as Json;
       
       const { data, error } = await supabase
         .from("books")
