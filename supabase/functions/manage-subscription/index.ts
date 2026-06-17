@@ -4,12 +4,13 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const ALLOWED_ORIGINS = [
-  "https://bookdyn.com",
-  "https://bookdyn.lovable.app",
+  "https://authoryti.com",
+  "https://authoryti.lovable.app",
   "https://app.authoryti.com",
   "https://id-preview--50948d4c-97c6-4338-a33a-59e9cf03b7c0.lovable.app",
 ];
@@ -29,9 +30,9 @@ const PLAN_PRICES: Record<string, string> = {
 };
 
 const PRICE_TO_PLAN: Record<string, { plan: string; credits: number }> = {
-  "price_1T8T3zBjVtw2b7OiBecRD1Oa": { plan: "starter", credits: 100 },
-  "price_1T8T4YBjVtw2b7OimimbNZ22": { plan: "pro", credits: 500 },
-  "price_1T8T4vBjVtw2b7Oi2KQ4OlAI": { plan: "elite", credits: 2000 },
+  price_1T8T3zBjVtw2b7OiBecRD1Oa: { plan: "starter", credits: 100 },
+  price_1T8T4YBjVtw2b7OimimbNZ22: { plan: "pro", credits: 500 },
+  price_1T8T4vBjVtw2b7Oi2KQ4OlAI: { plan: "elite", credits: 2000 },
 };
 
 const PLANS_META: Record<string, { amount: number }> = {
@@ -65,7 +66,9 @@ function getNextBillingDate(anchorTs: number): string {
     const targetMon = targetMonth % 12;
     const daysInMonth = new Date(targetYear, targetMon + 1, 0).getDate();
     const day = Math.min(anchorDay, daysInMonth);
-    const candidate = new Date(Date.UTC(targetYear, targetMon, day, anchor.getUTCHours(), anchor.getUTCMinutes(), anchor.getUTCSeconds()));
+    const candidate = new Date(
+      Date.UTC(targetYear, targetMon, day, anchor.getUTCHours(), anchor.getUTCMinutes(), anchor.getUTCSeconds()),
+    );
     if (candidate > now) {
       return candidate.toISOString();
     }
@@ -80,7 +83,7 @@ async function getStripeAndUser(req: Request) {
   const supabaseClient = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    { auth: { persistSession: false } }
+    { auth: { persistSession: false } },
   );
 
   const authHeader = req.headers.get("Authorization");
@@ -95,9 +98,7 @@ async function getStripeAndUser(req: Request) {
   const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
   const customers = await stripe.customers.list({ email: user.email, limit: 10 });
 
-  const matchedCustomer = customers.data.find(
-    (c) => c.metadata?.supabase_user_id === user.id
-  ) || null;
+  const matchedCustomer = customers.data.find((c) => c.metadata?.supabase_user_id === user.id) || null;
 
   return { stripe, user, supabaseClient, customer: matchedCustomer };
 }
@@ -136,7 +137,9 @@ serve(async (req) => {
         const priceId = sub.items.data[0]?.price?.id;
         const planInfo = priceId ? PRICE_TO_PLAN[priceId] : null;
         const pm = sub.default_payment_method as Stripe.PaymentMethod | null;
-        const periodEnd = safeTimestamp((sub as any).current_period_end) || ((sub as any).billing_cycle_anchor ? getNextBillingDate((sub as any).billing_cycle_anchor) : null);
+        const periodEnd =
+          safeTimestamp((sub as any).current_period_end) ||
+          ((sub as any).billing_cycle_anchor ? getNextBillingDate((sub as any).billing_cycle_anchor) : null);
 
         const { data: profile } = await supabaseClient
           .from("profiles")
@@ -156,12 +159,14 @@ serve(async (req) => {
             pending_plan: profile?.pending_plan || null,
             pending_plan_at: profile?.pending_plan_at || null,
           },
-          payment_method: pm ? {
-            brand: pm.card?.brand || "unknown",
-            last4: pm.card?.last4 || "****",
-            exp_month: pm.card?.exp_month,
-            exp_year: pm.card?.exp_year,
-          } : null,
+          payment_method: pm
+            ? {
+                brand: pm.card?.brand || "unknown",
+                last4: pm.card?.last4 || "****",
+                exp_month: pm.card?.exp_month,
+                exp_year: pm.card?.exp_year,
+              }
+            : null,
         };
         break;
       }
@@ -175,10 +180,7 @@ serve(async (req) => {
 
         if (!profile?.pending_plan) throw new Error("No pending downgrade to cancel");
 
-        await supabaseClient
-          .from("profiles")
-          .update({ pending_plan: null, pending_plan_at: null })
-          .eq("id", user.id);
+        await supabaseClient.from("profiles").update({ pending_plan: null, pending_plan_at: null }).eq("id", user.id);
 
         result = { success: true };
         break;
@@ -236,7 +238,7 @@ serve(async (req) => {
         });
 
         result = {
-          invoices: invoices.data.map(inv => ({
+          invoices: invoices.data.map((inv) => ({
             id: inv.id,
             amount_paid: inv.amount_paid,
             currency: inv.currency,
@@ -356,7 +358,9 @@ serve(async (req) => {
             return order.indexOf(newPriceId) > order.indexOf(currentPriceId || "");
           })();
 
-          console.log(`[manage-subscription] Plan change ${sub.id} from ${currentPriceId} to ${newPriceId} (${isUpgrade ? "upgrade" : "downgrade"})`);
+          console.log(
+            `[manage-subscription] Plan change ${sub.id} from ${currentPriceId} to ${newPriceId} (${isUpgrade ? "upgrade" : "downgrade"})`,
+          );
 
           if (isUpgrade) {
             // Upgrade: immediate swap with proration

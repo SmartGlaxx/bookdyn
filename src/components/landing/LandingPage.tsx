@@ -3,9 +3,21 @@ import { Link } from "react-router-dom";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import {
-  BookOpen, Sparkles, PenTool, Zap, Globe, Shield,
-  Brain, Layers, ArrowRight, Star, CheckCircle2,
-  ChevronRight, BookMarked, Users, BarChart3
+  BookOpen,
+  Sparkles,
+  PenTool,
+  Zap,
+  Globe,
+  Shield,
+  Brain,
+  Layers,
+  ArrowRight,
+  Star,
+  CheckCircle2,
+  ChevronRight,
+  BookMarked,
+  Users,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,7 +32,15 @@ const Scene3DFallback = ({ className = "" }: { className?: string }) => (
 );
 
 /* ─── Scroll-animated wrapper ─── */
-const RevealSection = ({ children, className = "", delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) => {
+const RevealSection = ({
+  children,
+  className = "",
+  delay = 0,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+}) => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   return (
@@ -46,27 +66,84 @@ const stats = [
 
 /* ─── Features ─── */
 const features = [
-  { icon: Brain, title: "AI-Powered Writing", description: "Advanced language models craft professional prose, adapting to your chosen tone and style." },
-  { icon: Layers, title: "Multi-Chapter Outlines", description: "Automatically generates structured outlines with chapters, sections, and logical flow." },
-  { icon: Globe, title: "Any Genre, Any Audience", description: "From sci-fi novels to technical guides—configure genre, POV, and target audience." },
-  { icon: Zap, title: "Lightning Fast", description: "Generate complete book outlines in seconds, full chapters in minutes." },
-  { icon: Shield, title: "Content Safety", description: "Built-in content moderation and sanitization ensures safe, professional output." },
-  { icon: Users, title: "Character Gallery", description: "AI-generated character profiles with rich backstories and personality traits." },
+  {
+    icon: Brain,
+    title: "AI-Powered Writing",
+    description: "Advanced language models craft professional prose, adapting to your chosen tone and style.",
+  },
+  {
+    icon: Layers,
+    title: "Multi-Chapter Outlines",
+    description: "Automatically generates structured outlines with chapters, sections, and logical flow.",
+  },
+  {
+    icon: Globe,
+    title: "Any Genre, Any Audience",
+    description: "From sci-fi novels to technical guides—configure genre, POV, and target audience.",
+  },
+  {
+    icon: Zap,
+    title: "Lightning Fast",
+    description: "Generate complete book outlines in seconds, full chapters in minutes.",
+  },
+  {
+    icon: Shield,
+    title: "Content Safety",
+    description: "Built-in content moderation and sanitization ensures safe, professional output.",
+  },
+  {
+    icon: Users,
+    title: "Character Gallery",
+    description: "AI-generated character profiles with rich backstories and personality traits.",
+  },
 ];
 
 /* ─── How it works ─── */
 const steps = [
-  { step: "01", title: "Define Your Vision", description: "Choose your book type, genre, tone, and target audience. Set the creative direction." },
-  { step: "02", title: "AI Generates Outline", description: "Our AI creates a comprehensive chapter-by-chapter outline tailored to your specifications." },
-  { step: "03", title: "Content Generation", description: "Each chapter is written with consistent characters, plot threads, and narrative voice." },
-  { step: "04", title: "Review & Export", description: "Review your book, make adjustments, and export as a professionally formatted PDF." },
+  {
+    step: "01",
+    title: "Define Your Vision",
+    description: "Choose your book type, genre, tone, and target audience. Set the creative direction.",
+  },
+  {
+    step: "02",
+    title: "AI Generates Outline",
+    description: "Our AI creates a comprehensive chapter-by-chapter outline tailored to your specifications.",
+  },
+  {
+    step: "03",
+    title: "Content Generation",
+    description: "Each chapter is written with consistent characters, plot threads, and narrative voice.",
+  },
+  {
+    step: "04",
+    title: "Review & Export",
+    description: "Review your book, make adjustments, and export as a professionally formatted PDF.",
+  },
 ];
 
 /* ─── Testimonials ─── */
 const testimonials = [
-  { name: "Sarah Chen", role: "Self-Published Author", quote: "Bookdyn turned my rough ideas into a complete novel outline in minutes. The AI understood exactly the tone I wanted.", avatar: "SC" },
-  { name: "Marcus Rivera", role: "Content Creator", quote: "I've used it to create three technical guides. The structure and depth of content is genuinely impressive.", avatar: "MR" },
-  { name: "Emily Watson", role: "Writing Coach", quote: "I recommend Bookdyn to all my students. It's the best tool for overcoming writer's block and structuring ideas.", avatar: "EW" },
+  {
+    name: "Sarah Chen",
+    role: "Self-Published Author",
+    quote:
+      "Authoryti turned my rough ideas into a complete novel outline in minutes. The AI understood exactly the tone I wanted.",
+    avatar: "SC",
+  },
+  {
+    name: "Marcus Rivera",
+    role: "Content Creator",
+    quote: "I've used it to create three technical guides. The structure and depth of content is genuinely impressive.",
+    avatar: "MR",
+  },
+  {
+    name: "Emily Watson",
+    role: "Writing Coach",
+    quote:
+      "I recommend Authoryti to all my students. It's the best tool for overcoming writer's block and structuring ideas.",
+    avatar: "EW",
+  },
 ];
 
 interface LandingPageProps {
@@ -85,10 +162,14 @@ const LandingPage = ({ onCreateBook, bookCount }: LandingPageProps) => {
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/8 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4" />
 
         {/* Grid pattern overlay */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: "linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)",
-          backgroundSize: "60px 60px"
-        }} />
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)",
+            backgroundSize: "60px 60px",
+          }}
+        />
 
         <div className="relative z-10 container max-w-7xl mx-auto px-4 py-20 lg:py-0">
           <div className="grid lg:grid-cols-2 gap-12 items-center min-h-screen">
@@ -111,8 +192,8 @@ const LandingPage = ({ onCreateBook, bookCount }: LandingPageProps) => {
               </h1>
 
               <p className="text-lg md:text-xl text-muted-foreground max-w-lg leading-relaxed">
-                Transform your ideas into complete, professionally structured books. 
-                From novels to technical guides—your vision, realized by AI.
+                Transform your ideas into complete, professionally structured books. From novels to technical
+                guides—your vision, realized by AI.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4">
@@ -136,7 +217,10 @@ const LandingPage = ({ onCreateBook, bookCount }: LandingPageProps) => {
               <div className="flex items-center gap-4 pt-4">
                 <div className="flex -space-x-2">
                   {["SC", "MR", "EW", "JK"].map((initials, i) => (
-                    <div key={i} className="w-9 h-9 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-xs font-medium text-primary">
+                    <div
+                      key={i}
+                      className="w-9 h-9 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-xs font-medium text-primary"
+                    >
                       {initials}
                     </div>
                   ))}
@@ -268,8 +352,8 @@ const LandingPage = ({ onCreateBook, bookCount }: LandingPageProps) => {
                 Powered by <span className="text-gradient">Advanced AI</span>
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Our multi-model AI pipeline understands narrative structure, character development, 
-                and genre conventions to produce genuinely compelling content.
+                Our multi-model AI pipeline understands narrative structure, character development, and genre
+                conventions to produce genuinely compelling content.
               </p>
               <div className="space-y-4">
                 {[
@@ -353,8 +437,7 @@ const LandingPage = ({ onCreateBook, bookCount }: LandingPageProps) => {
               Ready to Write Your <span className="text-gradient">Masterpiece</span>?
             </h2>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              Join thousands of writers who are creating complete books with AI. 
-              Start your first book in minutes.
+              Join thousands of writers who are creating complete books with AI. Start your first book in minutes.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               {/* COMMENTED OUT FOR PRE-LAUNCH — uncomment after launch to restore CTA
@@ -384,10 +467,10 @@ const LandingPage = ({ onCreateBook, bookCount }: LandingPageProps) => {
               <div className="p-2 rounded-lg bg-primary/10">
                 <BookOpen className="w-5 h-5 text-primary" />
               </div>
-              <span className="font-serif font-bold text-lg">Bookdyn</span>
+              <span className="font-serif font-bold text-lg">Authoryti</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} Bookdyn. AI-powered book creation.
+              © {new Date().getFullYear()} Authoryti. AI-powered book creation.
             </p>
           </div>
         </div>

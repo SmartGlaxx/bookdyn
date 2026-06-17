@@ -3,8 +3,7 @@ import { CheckCircle2, Sparkles, Users, ArrowRight } from "lucide-react";
 import PublicHeader from "@/components/PublicHeader";
 import PublicFooter from "@/components/PublicFooter";
 
-const WAITLIST_URL =
-  `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/waitlist`;
+const WAITLIST_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/waitlist`;
 
 const BENEFITS = [
   "Locked-in Starter plan at $9/month forever — even as prices increase",
@@ -15,9 +14,7 @@ const BENEFITS = [
 
 export default function WaitlistPage() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<
-    "idle" | "loading" | "success" | "exists" | "error"
-  >("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "exists" | "error">("idle");
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -55,7 +52,10 @@ export default function WaitlistPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <PublicHeader />
 
-      <div className="flex-1 relative overflow-hidden flex items-center justify-center px-4 py-16" style={{ paddingTop: 81 }}>
+      <div
+        className="flex-1 relative overflow-hidden flex items-center justify-center px-4 py-16"
+        style={{ paddingTop: 81 }}
+      >
         {/* Background blobs with golden accent */}
         <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
         <div className="absolute bottom-[-15%] right-[-10%] w-[500px] h-[500px] rounded-full bg-accent/5 blur-[100px] pointer-events-none" />
@@ -71,22 +71,18 @@ export default function WaitlistPage() {
           {/* Heading */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-foreground font-serif">
             Be First.{" "}
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Write Better.
-            </span>
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Write Better.</span>
           </h1>
 
           {/* Subheading */}
           <p className="text-lg sm:text-xl text-muted-foreground max-w-xl leading-relaxed">
             Join the waitlist and lock in founding member pricing —{" "}
-            <span className="text-foreground font-semibold">
-              available only to the first 500 signups.
-            </span>
+            <span className="text-foreground font-semibold">available only to the first 500 signups.</span>
           </p>
 
           <p className="text-sm text-muted-foreground max-w-lg">
-            Bookdyn is an AI-powered book creation engine. We're putting
-            the finishing touches on something writers have been waiting for.
+            Authoryti is an AI-powered book creation engine. We're putting the finishing touches on something writers
+            have been waiting for.
           </p>
 
           {/* Form / Success */}
@@ -96,21 +92,15 @@ export default function WaitlistPage() {
                 <CheckCircle2 className="w-7 h-7 text-success" />
               </div>
               <div className="text-center">
-                <h3 className="text-xl font-semibold text-foreground mb-1">
-                  You're on the list ✦
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  We'll be in touch soon with early access details.
-                </p>
+                <h3 className="text-xl font-semibold text-foreground mb-1">You're on the list ✦</h3>
+                <p className="text-sm text-muted-foreground">We'll be in touch soon with early access details.</p>
               </div>
               {count !== null && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
                   <Users className="w-4 h-4" />
                   <span>
-                    <span className="font-semibold text-foreground">
-                      {count.toLocaleString()}
-                    </span>{" "}
-                    writers now on the waitlist
+                    <span className="font-semibold text-foreground">{count.toLocaleString()}</span> writers now on the
+                    waitlist
                   </span>
                 </div>
               )}
@@ -145,9 +135,7 @@ export default function WaitlistPage() {
                 </p>
               )}
               {status === "error" && (
-                <p className="text-sm text-destructive text-center mt-1">
-                  Something went wrong — please try again.
-                </p>
+                <p className="text-sm text-destructive text-center mt-1">Something went wrong — please try again.</p>
               )}
             </form>
           )}
@@ -157,10 +145,8 @@ export default function WaitlistPage() {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Users className="w-4 h-4" />
               <span>
-                <span className="font-semibold text-foreground">
-                  {count.toLocaleString()}
-                </span>{" "}
-                writers already on the waitlist
+                <span className="font-semibold text-foreground">{count.toLocaleString()}</span> writers already on the
+                waitlist
               </span>
             </div>
           )}
@@ -170,9 +156,7 @@ export default function WaitlistPage() {
 
           {/* Founding member benefits */}
           <div className="w-full max-w-md text-left">
-            <h3 className="text-lg font-semibold text-foreground mb-4 text-center">
-              What founding members get
-            </h3>
+            <h3 className="text-lg font-semibold text-foreground mb-4 text-center">What founding members get</h3>
             <ul className="flex flex-col gap-3">
               {BENEFITS.map((b) => (
                 <li key={b} className="flex items-start gap-3">
@@ -185,12 +169,9 @@ export default function WaitlistPage() {
 
           {/* Urgency note */}
           <p className="text-xs text-muted-foreground max-w-sm leading-relaxed">
-            Founding member pricing locks in your rate forever — even as prices
-            increase after launch.
+            Founding member pricing locks in your rate forever — even as prices increase after launch.
             <br />
-            <span className="font-semibold text-foreground">
-              Only available to the first 500 signups.
-            </span>
+            <span className="font-semibold text-foreground">Only available to the first 500 signups.</span>
           </p>
         </div>
       </div>

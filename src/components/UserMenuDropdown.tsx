@@ -51,7 +51,7 @@ export function UserMenuDropdown({ className }: UserMenuDropdownProps) {
 
   const handleSignOut = async () => {
     await signOut();
-    window.location.href = "https://bookdyn.com?logout=true";
+    window.location.href = "https://authoryti.com?logout=true";
   };
 
   const handleManageBilling = () => {
@@ -65,9 +65,7 @@ export function UserMenuDropdown({ className }: UserMenuDropdownProps) {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className={`rounded-full ${className || ""}`}>
           <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-              {userInitial}
-            </AvatarFallback>
+            <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">{userInitial}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -83,9 +81,7 @@ export function UserMenuDropdown({ className }: UserMenuDropdownProps) {
         <div className="px-2 py-1.5">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-muted-foreground">Plan</span>
-            <span className="text-xs font-semibold text-foreground">
-              {getPlanDisplayName(turbo.plan)}
-            </span>
+            <span className="text-xs font-semibold text-foreground">{getPlanDisplayName(turbo.plan)}</span>
           </div>
 
           {/* Unified Meter */}

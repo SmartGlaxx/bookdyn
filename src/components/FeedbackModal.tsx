@@ -103,9 +103,7 @@ export function FeedbackModal({ open, onOpenChange }: FeedbackModalProps) {
             <MessageSquare className="w-5 h-5 text-primary" />
             Give Feedback
           </DialogTitle>
-          <DialogDescription>
-            Help us improve Bookdyn with your feedback.
-          </DialogDescription>
+          <DialogDescription>Help us improve Authoryti with your feedback.</DialogDescription>
         </DialogHeader>
 
         {checkingCooldown ? (
@@ -136,9 +134,7 @@ export function FeedbackModal({ open, onOpenChange }: FeedbackModalProps) {
                   >
                     <Star
                       className={`w-7 h-7 transition-colors ${
-                        star <= (hoverRating || rating)
-                          ? "fill-amber-400 text-amber-400"
-                          : "text-muted-foreground/30"
+                        star <= (hoverRating || rating) ? "fill-amber-400 text-amber-400" : "text-muted-foreground/30"
                       }`}
                     />
                   </button>
@@ -165,7 +161,9 @@ export function FeedbackModal({ open, onOpenChange }: FeedbackModalProps) {
 
             {/* Message */}
             <div className="space-y-1.5">
-              <Label>Your feedback * <span className="text-muted-foreground text-xs">(min 20 chars)</span></Label>
+              <Label>
+                Your feedback * <span className="text-muted-foreground text-xs">(min 20 chars)</span>
+              </Label>
               <Textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -182,11 +180,7 @@ export function FeedbackModal({ open, onOpenChange }: FeedbackModalProps) {
               <Input value={user?.email || ""} readOnly className="bg-muted/50" />
             </div>
 
-            <Button
-              onClick={handleSubmit}
-              disabled={!isValid || submitting}
-              className="w-full"
-            >
+            <Button onClick={handleSubmit} disabled={!isValid || submitting} className="w-full">
               {submitting ? "Submitting..." : "Submit Feedback"}
             </Button>
           </div>

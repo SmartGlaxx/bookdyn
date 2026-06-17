@@ -1,9 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const ALLOWED_ORIGINS = [
-  "https://bookdyn.com",
-  "https://bookdyn.lovable.app",
-];
+const ALLOWED_ORIGINS = ["https://authoryti.com", "https://authoryti.lovable.app"];
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get("origin") ?? "";
@@ -25,16 +22,11 @@ Deno.serve(async (req) => {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-  );
+  const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   try {
     if (req.method === "GET") {
-      const { count, error } = await supabase
-        .from("waitlist")
-        .select("*", { count: "exact", head: true });
+      const { count, error } = await supabase.from("waitlist").select("*", { count: "exact", head: true });
 
       if (error) throw error;
 
@@ -58,16 +50,10 @@ Deno.serve(async (req) => {
       }
 
       // Check if already exists
-      const { data: existing } = await supabase
-        .from("waitlist")
-        .select("id")
-        .eq("email", email)
-        .maybeSingle();
+      const { data: existing } = await supabase.from("waitlist").select("id").eq("email", email).maybeSingle();
 
       if (existing) {
-        const { count } = await supabase
-          .from("waitlist")
-          .select("*", { count: "exact", head: true });
+        const { count } = await supabase.from("waitlist").select("*", { count: "exact", head: true });
 
         return new Response(
           JSON.stringify({
@@ -75,19 +61,15 @@ Deno.serve(async (req) => {
             message: "You are already on the waitlist.",
             count: count ?? 0,
           }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
 
-      const { error: insertError } = await supabase
-        .from("waitlist")
-        .insert({ email, source });
+      const { error: insertError } = await supabase.from("waitlist").insert({ email, source });
 
       if (insertError) throw insertError;
 
-      const { count } = await supabase
-        .from("waitlist")
-        .select("*", { count: "exact", head: true });
+      const { count } = await supabase.from("waitlist").select("*", { count: "exact", head: true });
 
       return new Response(JSON.stringify({ success: true, count: count ?? 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

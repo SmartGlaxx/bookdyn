@@ -13,7 +13,7 @@ const HeroSection = ({ onCreateBook, bookCount }: HeroSectionProps) => {
   return (
     <section className="relative overflow-hidden min-h-[90vh] flex items-center">
       {/* Background image */}
-      <div 
+      <div
         className="absolute inset-0 z-0"
         style={{
           backgroundImage: `url(${heroBg})`,
@@ -23,7 +23,7 @@ const HeroSection = ({ onCreateBook, bookCount }: HeroSectionProps) => {
       />
       {/* Overlay gradient */}
       <div className="absolute inset-0 z-[1] bg-gradient-to-t from-background via-background/60 to-transparent" />
-      
+
       <div className="relative z-10 max-w-4xl mx-auto text-center px-4 py-20 lg:py-32">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -57,14 +57,14 @@ const HeroSection = ({ onCreateBook, bookCount }: HeroSectionProps) => {
           </div>
 
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold tracking-tight">
-            <span className="text-gradient">Bookdyn</span>
+            <span className="text-gradient">Authoryti</span>
             <br />
             <span className="text-foreground">Book Creation</span>
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Transform your ideas into complete, professionally structured books with AI-powered generation.
-            From novels to technical guides—your vision, autonomously realized.
+            Transform your ideas into complete, professionally structured books with AI-powered generation. From novels
+            to technical guides—your vision, autonomously realized.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">

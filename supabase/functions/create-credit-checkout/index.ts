@@ -4,7 +4,8 @@ import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const CREDITS_PER_DOLLAR = 10;
@@ -12,8 +13,8 @@ const MIN_AMOUNT = 10;
 const MAX_AMOUNT = 1000;
 
 const ALLOWED_ORIGINS = [
-  "https://bookdyn.com",
-  "https://bookdyn.lovable.app",
+  "https://authoryti.com",
+  "https://authoryti.lovable.app",
   "https://app.authoryti.com",
   "https://id-preview--50948d4c-97c6-4338-a33a-59e9cf03b7c0.lovable.app",
 ];
@@ -35,10 +36,7 @@ serve(async (req) => {
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("Stripe not configured");
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-    );
+    const supabaseClient = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No auth header");
@@ -66,9 +64,7 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 10 });
     let customerId: string | undefined;
 
-    const matchedCustomer = customers.data.find(
-      (c) => c.metadata?.supabase_user_id === user.id
-    );
+    const matchedCustomer = customers.data.find((c) => c.metadata?.supabase_user_id === user.id);
 
     if (matchedCustomer) {
       customerId = matchedCustomer.id;
@@ -91,7 +87,7 @@ serve(async (req) => {
             currency: "usd",
             unit_amount: dollarAmount * 100, // cents
             product_data: {
-              name: `${credits} Bookdyn Credits`,
+              name: `${credits} Authoryti Credits`,
               description: `${credits.toLocaleString()} credits (≈${(credits * 1000).toLocaleString()} words)`,
             },
           },

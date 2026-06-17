@@ -5,8 +5,8 @@
 // verify_jwt = false; we validate Bearer + apikey in code.
 
 const ALLOWED_ORIGINS = [
-  "https://bookdyn.com",
-  "https://bookdyn.lovable.app",
+  "https://authoryti.com",
+  "https://authoryti.lovable.app",
   "https://app.authoryti.com",
   "https://id-preview--50948d4c-97c6-4338-a33a-59e9cf03b7c0.lovable.app",
   "http://localhost:5173",
@@ -15,15 +15,12 @@ const ALLOWED_ORIGINS = [
 function cors(req: Request) {
   const origin = req.headers.get("origin") ?? "";
   const allow =
-    ALLOWED_ORIGINS.includes(origin) || /\.lovable\.(app|dev|project)/.test(origin)
-      ? origin
-      : ALLOWED_ORIGINS[0];
+    ALLOWED_ORIGINS.includes(origin) || /\.lovable\.(app|dev|project)/.test(origin) ? origin : ALLOWED_ORIGINS[0];
   return {
     "Access-Control-Allow-Origin": allow,
-    "Access-Control-Allow-Headers":
-      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Vary": "Origin",
+    Vary: "Origin",
   };
 }
 
@@ -118,7 +115,7 @@ async function callGateway(key: string, prompt: string): Promise<string> {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${key}`,
+      Authorization: `Bearer ${key}`,
     },
     body: JSON.stringify({
       model: "google/gemini-2.5-flash",
@@ -154,7 +151,9 @@ function parseStringArray(text: string, key: string): string[] {
       try {
         const arr = JSON.parse(m[0]);
         if (Array.isArray(arr)) return arr.filter((x) => typeof x === "string");
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
   }
   return [];

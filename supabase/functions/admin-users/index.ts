@@ -3,13 +3,12 @@ import { isAdminEmail } from "../_shared/admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const ALLOWED_ORIGINS = [
-  "https://bookdyn.com",
-  "https://bookdyn.lovable.app",
+  "https://authoryti.com",
+  "https://authoryti.lovable.app",
   "https://app.authoryti.com",
   "https://id-preview--50948d4c-97c6-4338-a33a-59e9cf03b7c0.lovable.app",
 ];
@@ -47,8 +46,7 @@ Deno.serve(async (req) => {
 
     const userClient = createClient(supabaseUrl, anonKey);
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsErr } = await userClient.auth
-      .getClaims(token);
+    const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
     const adminEmail = claimsData?.claims?.email as string | undefined;
     const adminUserId = claimsData?.claims?.sub as string | undefined;
     if (claimsErr || !adminUserId || !isAdminEmail(adminEmail)) {
@@ -60,7 +58,9 @@ Deno.serve(async (req) => {
     const action = body.action;
 
     if (action === "search") {
-      const q = String(body.query ?? "").trim().toLowerCase();
+      const q = String(body.query ?? "")
+        .trim()
+        .toLowerCase();
       // List recent users (admin API) and filter by email substring.
       const perPage = 200;
       const { data, error } = await admin.auth.admin.listUsers({
@@ -79,13 +79,13 @@ Deno.serve(async (req) => {
     }
 
     if (action === "override_link") {
-      const targetEmail = String(body.email ?? "").trim().toLowerCase();
+      const targetEmail = String(body.email ?? "")
+        .trim()
+        .toLowerCase();
       const reason = body.reason ? String(body.reason).slice(0, 500) : null;
       const rawRedirect = body.redirectTo ? String(body.redirectTo) : "";
       const defaultRedirect = `${ALLOWED_ORIGINS[0]}/admin/override-callback`;
-      const redirectTo = rawRedirect && isAllowedRedirect(rawRedirect)
-        ? rawRedirect
-        : defaultRedirect;
+      const redirectTo = rawRedirect && isAllowedRedirect(rawRedirect) ? rawRedirect : defaultRedirect;
 
       if (!targetEmail) return json({ error: "Email required" }, 400);
 
@@ -95,18 +95,15 @@ Deno.serve(async (req) => {
         perPage: 200,
       });
       if (listErr) throw listErr;
-      const target = list.users.find((u) =>
-        (u.email ?? "").toLowerCase() === targetEmail
-      );
+      const target = list.users.find((u) => (u.email ?? "").toLowerCase() === targetEmail);
       if (!target) return json({ error: "User not found" }, 404);
 
       // Generate a recovery link (works for existing users; signs them in to set a session).
-      const { data: linkData, error: linkErr } = await admin.auth.admin
-        .generateLink({
-          type: "magiclink",
-          email: targetEmail,
-          options: { redirectTo },
-        });
+      const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+        type: "magiclink",
+        email: targetEmail,
+        options: { redirectTo },
+      });
       if (linkErr) throw linkErr;
 
       // Audit log

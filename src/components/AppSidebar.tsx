@@ -46,7 +46,7 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
   const handleSignOut = async () => {
     setOpen(false);
     await signOut();
-    window.location.href = "https://bookdyn.com?logout=true";
+    window.location.href = "https://authoryti.com?logout=true";
   };
 
   const handleManageBilling = () => {
@@ -62,9 +62,7 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className={`rounded-full ${className || ""}`}>
             <Avatar className="h-8 w-8">
-              <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
-                {userInitial}
-              </AvatarFallback>
+              <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">{userInitial}</AvatarFallback>
             </Avatar>
           </Button>
         </SheetTrigger>
@@ -117,38 +115,38 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
                   Writing Activity
                 </div>
                 <div className="pl-3 border-l border-border space-y-2">
-                <div className="flex items-center justify-between text-sm md:text-xs">
-                  <TooltipProvider delayDuration={300}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="flex items-center gap-1 cursor-help">
-                          <Flame className="w-3.5 h-3.5 text-orange-500" />
-                          Streak
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="max-w-[200px] text-xs">
-                        Consecutive active days. Grows daily with usage; decreases if you miss days.
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <span className="font-semibold">{turbo.streakDays} days</span>
-                </div>
-                <div className="flex items-center justify-between text-sm md:text-xs mt-1">
-                  <TooltipProvider delayDuration={300}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="flex items-center gap-1 cursor-help">
-                          <PenTool className="w-3.5 h-3.5 text-primary" />
-                          Words Written
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="max-w-[200px] text-xs">
-                        Total words generated across all your books.
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <span className="font-semibold">{(turbo.totalWordsWritten / 1000).toFixed(1)}K</span>
-                </div>
+                  <div className="flex items-center justify-between text-sm md:text-xs">
+                    <TooltipProvider delayDuration={300}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="flex items-center gap-1 cursor-help">
+                            <Flame className="w-3.5 h-3.5 text-orange-500" />
+                            Streak
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="max-w-[200px] text-xs">
+                          Consecutive active days. Grows daily with usage; decreases if you miss days.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <span className="font-semibold">{turbo.streakDays} days</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm md:text-xs mt-1">
+                    <TooltipProvider delayDuration={300}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="flex items-center gap-1 cursor-help">
+                            <PenTool className="w-3.5 h-3.5 text-primary" />
+                            Words Written
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="max-w-[200px] text-xs">
+                          Total words generated across all your books.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <span className="font-semibold">{(turbo.totalWordsWritten / 1000).toFixed(1)}K</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -174,7 +172,10 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
                 Billing & Credits
               </button>
               <button
-                onClick={() => { setFeedbackOpen(true); setOpen(false); }}
+                onClick={() => {
+                  setFeedbackOpen(true);
+                  setOpen(false);
+                }}
                 className="w-full flex items-center gap-3 text-left text-sm text-foreground font-medium transition-colors"
                 style={{ padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
               >
@@ -184,7 +185,10 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
               {user?.email === "mailsmartcodes@gmail.com" && (
                 <>
                   <button
-                    onClick={() => { navigate("/admin/feedback"); setOpen(false); }}
+                    onClick={() => {
+                      navigate("/admin/feedback");
+                      setOpen(false);
+                    }}
                     className="w-full flex items-center gap-3 text-left text-sm text-foreground font-medium transition-colors"
                     style={{ padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
                   >
@@ -192,7 +196,10 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
                     Feedback Dashboard
                   </button>
                   <button
-                    onClick={() => { navigate("/admin/errors"); setOpen(false); }}
+                    onClick={() => {
+                      navigate("/admin/errors");
+                      setOpen(false);
+                    }}
                     className="w-full flex items-center gap-3 text-left text-sm text-foreground font-medium transition-colors"
                     style={{ padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
                   >
@@ -200,7 +207,10 @@ export function AppSidebar({ className, children }: AppSidebarProps) {
                     Error Logs
                   </button>
                   <button
-                    onClick={() => { navigate("/admin/users"); setOpen(false); }}
+                    onClick={() => {
+                      navigate("/admin/users");
+                      setOpen(false);
+                    }}
                     className="w-full flex items-center gap-3 text-left text-sm text-foreground font-medium transition-colors"
                     style={{ padding: "14px 0", borderBottom: "1px solid hsl(var(--border))" }}
                   >

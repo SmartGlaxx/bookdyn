@@ -4,24 +4,24 @@ const FOOTER_COLS = [
   {
     heading: "Product",
     links: [
-      { label: "Features", href: "https://bookdyn.com/features" },
-      { label: "Pricing", href: "https://bookdyn.com/pricing" },
-      { label: "Blog", href: "https://bookdyn.com/blog" },
-      { label: "Docs", href: "https://bookdyn.com/docs" },
+      { label: "Features", href: "https://authoryti.com/features" },
+      { label: "Pricing", href: "https://authoryti.com/pricing" },
+      { label: "Blog", href: "https://authoryti.com/blog" },
+      { label: "Docs", href: "https://authoryti.com/docs" },
     ],
   },
   {
     heading: "Company",
     links: [
-      { label: "About", href: "https://bookdyn.com/about" },
-      { label: "Contact", href: "https://bookdyn.com/contact" },
+      { label: "About", href: "https://authoryti.com/about" },
+      { label: "Contact", href: "https://authoryti.com/contact" },
     ],
   },
   {
     heading: "Legal",
     links: [
-      { label: "Privacy", href: "https://bookdyn.com/privacy" },
-      { label: "Terms", href: "https://bookdyn.com/terms" },
+      { label: "Privacy", href: "https://authoryti.com/privacy" },
+      { label: "Terms", href: "https://authoryti.com/terms" },
     ],
   },
 ];
@@ -69,7 +69,7 @@ const PublicFooter = () => {
                   color: "hsl(var(--foreground))",
                 }}
               >
-              Bookdyn
+                Authoryti
               </h1>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
@@ -124,7 +124,7 @@ const PublicFooter = () => {
         <div className="h-px w-full bg-border mb-8" />
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <p className="text-xs text-muted-foreground">© {year} Bookdyn, Inc. All rights reserved.</p>
+          <p className="text-xs text-muted-foreground">© {year} Authoryti, Inc. All rights reserved.</p>
 
           <div className="flex items-center gap-2">
             <span

@@ -15,7 +15,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
     <nav className="sticky top-0 z-50 glass border-b border-border" style={{ height: 64 }}>
       <div className="container max-w-6xl mx-auto px-4 h-full flex items-center">
         <div className="flex items-center justify-between w-full">
-          <a href="https://bookdyn.com" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <a href="https://authoryti.com" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div
               style={{
                 padding: 8,
@@ -34,7 +34,7 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
                 letterSpacing: "-0.02em",
               }}
             >
-              Bookdyn
+              Authoryti
             </h1>
           </a>
 
@@ -69,7 +69,6 @@ const Navigation = ({ onCreateBook }: NavigationProps) => {
                   </TooltipContent>
                 </Tooltip>
               )}
-
             </TooltipProvider>
 
             <Button variant="hero" size="sm" onClick={onCreateBook} className="hidden sm:inline-flex">
