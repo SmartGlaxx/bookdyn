@@ -79,6 +79,7 @@ export type Database = {
           audience: string
           back_cover_summary: string | null
           book_type: string
+          canvas: Json
           character_ledger: Json
           concepts: string[] | null
           controls: Json
@@ -113,6 +114,7 @@ export type Database = {
           audience: string
           back_cover_summary?: string | null
           book_type: string
+          canvas?: Json
           character_ledger?: Json
           concepts?: string[] | null
           controls: Json
@@ -147,6 +149,7 @@ export type Database = {
           audience?: string
           back_cover_summary?: string | null
           book_type?: string
+          canvas?: Json
           character_ledger?: Json
           concepts?: string[] | null
           controls?: Json
