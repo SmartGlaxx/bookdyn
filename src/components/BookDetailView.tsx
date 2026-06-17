@@ -19,6 +19,8 @@ import { ApprovalGate } from "@/components/ApprovalGate";
 import { AppSidebar } from "@/components/AppSidebar";
 import { TestimonialModal } from "@/components/TestimonialModal";
 import { BookSearchPanel } from "@/components/BookSearchPanel";
+import { CanvasPage } from "@/components/canvas/CanvasPage";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { exportBookToPdf } from "@/lib/exportPdf";
 import { exportBookToEpub } from "@/lib/exportEpub";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -34,6 +36,10 @@ interface BookDetailViewProps {
 const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   const { user } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
+  // Canvas vs Manuscript view. Default Canvas for books without an outline yet.
+  const [activeView, setActiveView] = useState<"canvas" | "manuscript">(
+    book.outline && book.outline.chapters.length > 0 ? "manuscript" : "canvas"
+  );
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState(book.title);
   const [isEditingSubtitle, setIsEditingSubtitle] = useState(false);
@@ -452,6 +458,19 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
       </header>
 
       <main className="flex-1 container max-w-7xl mx-auto px-0 md:px-4" style={{ paddingTop: "0.5rem", paddingBottom: "0.5rem" }}>
+        <div className="px-4 md:px-0 mb-3">
+          <Tabs value={activeView} onValueChange={(v) => setActiveView(v as "canvas" | "manuscript")}>
+            <TabsList>
+              <TabsTrigger value="canvas">Canvas</TabsTrigger>
+              <TabsTrigger value="manuscript">Manuscript</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {activeView === "canvas" ? (
+          <CanvasPage book={book} />
+        ) : (
+          <>
         <AnimatePresence>
           {showSearch && hasOutline && (
             <div className="mb-3 px-4 md:px-0">
@@ -510,6 +529,8 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
             onNavigateHandled={() => setSearchNavigateChapter(null)}
           />
         </div>
+          </>
+        )}
       </main>
 
       <RegenerateBookDialog
