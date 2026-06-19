@@ -211,6 +211,8 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent
         className="max-w-4xl w-[95vw] max-h-[92vh] overflow-y-auto p-0 gap-0"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur px-6 pt-5 pb-3 border-b border-border">
           <div className="flex items-center justify-between gap-3">
