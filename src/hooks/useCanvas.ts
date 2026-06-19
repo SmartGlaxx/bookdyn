@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   StoryCanvas, CanvasSetup, StorySummaryBullet, StoryArcCard,
   CanvasChapter, CanvasScene, StoryArcColor, EMPTY_CANVAS,
+  CharacterArcCard, WorldElementCard,
 } from "@/types/book";
 
 const newId = () =>
@@ -16,6 +17,8 @@ function ensureShape(c?: StoryCanvas | null): StoryCanvas {
     setup: c.setup ?? {},
     storySummary: Array.isArray(c.storySummary) ? c.storySummary : [],
     storyArc: Array.isArray(c.storyArc) ? c.storyArc : [],
+    characterArcs: Array.isArray(c.characterArcs) ? c.characterArcs : [],
+    worldElements: Array.isArray(c.worldElements) ? c.worldElements : [],
     chapters: Array.isArray(c.chapters) ? c.chapters : [],
     aiAssistUsed: typeof c.aiAssistUsed === "number" ? c.aiAssistUsed : 0,
     updatedAt: c.updatedAt,
@@ -163,6 +166,40 @@ export function useCanvas(bookId: string, initial?: StoryCanvas | null) {
   const incrementAiAssist = () =>
     update((c) => ({ ...c, aiAssistUsed: Math.min(3, (c.aiAssistUsed ?? 0) + 1) }));
 
+  // ---- character arcs ----
+  const addCharacterArc = (seed?: Partial<CharacterArcCard>) =>
+    update((c) => ({
+      ...c,
+      characterArcs: [
+        ...c.characterArcs,
+        { id: newId(), name: seed?.name ?? "", arcLabel: seed?.arcLabel ?? "", description: seed?.description ?? "" },
+      ],
+    }));
+  const updateCharacterArc = (id: string, patch: Partial<CharacterArcCard>) =>
+    update((c) => ({
+      ...c,
+      characterArcs: c.characterArcs.map((a) => (a.id === id ? { ...a, ...patch } : a)),
+    }));
+  const removeCharacterArc = (id: string) =>
+    update((c) => ({ ...c, characterArcs: c.characterArcs.filter((a) => a.id !== id) }));
+
+  // ---- world elements ----
+  const addWorldElement = (seed?: Partial<WorldElementCard>) =>
+    update((c) => ({
+      ...c,
+      worldElements: [
+        ...c.worldElements,
+        { id: newId(), label: seed?.label ?? "", kind: seed?.kind ?? "", description: seed?.description ?? "" },
+      ],
+    }));
+  const updateWorldElement = (id: string, patch: Partial<WorldElementCard>) =>
+    update((c) => ({
+      ...c,
+      worldElements: c.worldElements.map((w) => (w.id === id ? { ...w, ...patch } : w)),
+    }));
+  const removeWorldElement = (id: string) =>
+    update((c) => ({ ...c, worldElements: c.worldElements.filter((w) => w.id !== id) }));
+
   const api = useMemo(() => ({
     canvas, saving,
     setSetup,
@@ -171,6 +208,8 @@ export function useCanvas(bookId: string, initial?: StoryCanvas | null) {
     seedChaptersFromArc, setChapters, addChapter, updateChapter, removeChapter,
     setScenes, addScene, updateScene, removeScene,
     incrementAiAssist,
+    addCharacterArc, updateCharacterArc, removeCharacterArc,
+    addWorldElement, updateWorldElement, removeWorldElement,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [canvas, saving]);
 

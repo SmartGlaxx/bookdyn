@@ -470,6 +470,25 @@ export interface CanvasChapter {
   scenes: CanvasScene[];
 }
 
+export interface CharacterArcCard {
+  id: string;
+  name: string;
+  /** Short 2–3 word label (e.g. "Hidden guilt"). */
+  arcLabel: string;
+  /** User-written paragraph describing the arc. */
+  description: string;
+}
+
+export interface WorldElementCard {
+  id: string;
+  /** Short 2–3 word label (e.g. "Desert outpost", "Sacred grove"). */
+  label: string;
+  /** "location" | "culture" | "rule" — free-form tag. */
+  kind?: string;
+  /** User-written paragraph describing this world element. */
+  description: string;
+}
+
 export interface CanvasSetup {
   title?: string;
   genre?: string;
@@ -485,6 +504,8 @@ export interface StoryCanvas {
   setup: CanvasSetup;
   storySummary: StorySummaryBullet[];
   storyArc: StoryArcCard[];
+  characterArcs: CharacterArcCard[];
+  worldElements: WorldElementCard[];
   chapters: CanvasChapter[];
   /** Number of AI guiding-question requests used (cap of 3 per book). */
   aiAssistUsed?: number;
@@ -495,6 +516,8 @@ export const EMPTY_CANVAS: StoryCanvas = {
   setup: {},
   storySummary: [],
   storyArc: [],
+  characterArcs: [],
+  worldElements: [],
   chapters: [],
   aiAssistUsed: 0,
 };
