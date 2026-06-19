@@ -7,7 +7,7 @@ import { StoryArcLane } from "./StoryArcLane";
 import { ChapterMatrix } from "./ChapterMatrix";
 import { ChapterDetailDrawer } from "./ChapterDetailDrawer";
 import { Button } from "@/components/ui/button";
-import { Wand2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const newId = () =>
   (typeof crypto !== "undefined" && "randomUUID" in crypto)
@@ -23,16 +23,7 @@ export function CanvasPage({ book }: Props) {
   const [openChapterId, setOpenChapterId] = useState<string | null>(null);
   const openChapter = c.canvas.chapters.find((ch) => ch.id === openChapterId) ?? null;
 
-  const convertSummaryToArc = () => {
-    if (c.canvas.storySummary.length === 0) return;
-    const colors = ["setup", "rising", "rising", "rising", "midpoint", "rising", "climax", "fall", "fall", "resolution"] as const;
-    const next = c.canvas.storySummary.map((b, i) => ({
-      id: newId(),
-      text: b.text,
-      color: (colors[i] ?? "neutral") as never,
-    }));
-    c.setArc(next as never);
-  };
+  const aiUsed = c.canvas.aiAssistUsed ?? 0;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-5">
@@ -47,11 +38,6 @@ export function CanvasPage({ book }: Props) {
               <Loader2 className="w-3 h-3 animate-spin" /> Saving…
             </span>
           )}
-          {c.canvas.storySummary.length > 0 && c.canvas.storyArc.length === 0 && (
-            <Button variant="outline" size="sm" onClick={convertSummaryToArc}>
-              <Wand2 className="w-4 h-4 mr-1" /> Summary → Arc cards
-            </Button>
-          )}
         </div>
       </div>
 
@@ -64,7 +50,8 @@ export function CanvasPage({ book }: Props) {
         onAdd={c.addSummaryBullet}
         onUpdate={c.updateSummaryBullet}
         onRemove={c.removeSummaryBullet}
-        onReplaceAll={c.setSummary}
+        aiAssistUsed={aiUsed}
+        onAiAssistUsed={c.incrementAiAssist}
       />
 
       <StoryArcLane
@@ -85,6 +72,12 @@ export function CanvasPage({ book }: Props) {
         onRemove={c.removeChapter}
         onSeedFromArc={c.seedChaptersFromArc}
         onOpenChapter={setOpenChapterId}
+        setupTitle={c.canvas.setup.title}
+        setupGenre={c.canvas.setup.genre}
+        setupTone={c.canvas.setup.tone}
+        setupEra={c.canvas.setup.historicalEra}
+        aiAssistUsed={aiUsed}
+        onAiAssistUsed={c.incrementAiAssist}
       />
 
       <ChapterDetailDrawer
@@ -95,7 +88,18 @@ export function CanvasPage({ book }: Props) {
         onAddScene={() => openChapter && c.addScene(openChapter.id)}
         onUpdateScene={(sid, patch) => openChapter && c.updateScene(openChapter.id, sid, patch)}
         onRemoveScene={(sid) => openChapter && c.removeScene(openChapter.id, sid)}
+        bookId={book.id}
+        setupTitle={c.canvas.setup.title}
+        setupGenre={c.canvas.setup.genre}
+        setupTone={c.canvas.setup.tone}
+        setupEra={c.canvas.setup.historicalEra}
+        bullets={c.canvas.storySummary.map((b) => b.text)}
+        aiAssistUsed={aiUsed}
+        onAiAssistUsed={c.incrementAiAssist}
       />
+
+      {/* Keep `newId` referenced to avoid unused-import noise if we re-add helpers later */}
+      <span data-canvas-version={newId().slice(0, 0)} className="hidden" />
     </div>
   );
 }
