@@ -106,6 +106,11 @@ Deno.serve(async (req) => {
     body.category === "plot" ? "plot direction"
     : body.category === "character" ? "character arc"
     : "worldbuilding";
+  const wantsPhrases = body.category === "character" || body.category === "world";
+  const phraseHint =
+    body.category === "character"
+      ? `Also propose 4–8 short 2–3 word arc labels (e.g. "Hidden guilt", "Rising courage", "Broken loyalty"). Labels only — no sentences, no full character names.`
+      : `Also propose 4–8 short 2–3 word world-element labels (e.g. "Desert outpost", "Sacred grove", "Salt market"). Labels only — no sentences.`;
 
   const prompt = [
     `You are a Socratic writing coach helping an author plan their book. You do NOT propose plot, characters, prose, titles, or any story content. You ONLY ask short, open-ended questions that spark the author's own thinking.`,
@@ -125,8 +130,11 @@ Deno.serve(async (req) => {
     ctx.scenes?.length ? `\nScene titles: ${ctx.scenes.join(" \u00b7 ")}` : "",
     ``,
     `Generate EXACTLY 3 short, open-ended ${categoryLabel} questions. Each question MUST reference the title, genre, or one of the author's bullets/titles by name or number. Each question is one sentence, under 25 words. No preamble, no answers, no story content.`,
+    wantsPhrases ? `\n${phraseHint}` : "",
     ``,
-    `Return ONLY valid JSON: {"questions":["...","...","..."]}`,
+    wantsPhrases
+      ? `Return ONLY valid JSON: {"questions":["...","...","..."],"phrases":["...","..."]}`
+      : `Return ONLY valid JSON: {"questions":["...","...","..."]}`,
   ].filter(Boolean).join("\n");
 
   try {
@@ -136,6 +144,12 @@ Deno.serve(async (req) => {
       .filter(Boolean)
       .slice(0, 3);
     if (questions.length < 1) throw new Error("AI did not return questions");
+    const phrases = wantsPhrases
+      ? parseStringArray(text, "phrases")
+          .map((p) => p.trim())
+          .filter((p) => p.length > 0 && p.split(/\s+/).length <= 4)
+          .slice(0, 8)
+      : [];
 
     if (body.bookId && userClient && usedFromDb !== null) {
       const { data: row } = await userClient
@@ -147,10 +161,10 @@ Deno.serve(async (req) => {
       const nextUsed = Math.min(3, (typeof current.aiAssistUsed === "number" ? current.aiAssistUsed : 0) + 1);
       const nextCanvas = { ...current, aiAssistUsed: nextUsed, updatedAt: new Date().toISOString() };
       await userClient.from("books").update({ canvas: nextCanvas }).eq("id", body.bookId);
-      return json({ questions, remaining: 3 - nextUsed }, 200, headers);
+      return json({ questions, phrases, remaining: 3 - nextUsed }, 200, headers);
     }
 
-    return json({ questions, remaining: null }, 200, headers);
+    return json({ questions, phrases, remaining: null }, 200, headers);
   } catch (err) {
     console.error("suggest-canvas error", err);
     const msg = err instanceof Error ? err.message : "AI request failed";

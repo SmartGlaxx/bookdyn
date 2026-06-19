@@ -32,6 +32,10 @@ interface Props {
   /** Compact button variant for inline placement. */
   size?: "sm" | "default";
   label?: string;
+  /** If set, only this category is available — hides the picker. */
+  onlyCategory?: Category;
+  /** Invoked when the user clicks a suggested 2–3 word phrase chip. */
+  onInsertPhrase?: (phrase: string, category: Category) => void;
 }
 
 const CATEGORY_META: { value: Category; label: string; icon: typeof Lightbulb; hint: string }[] = [
@@ -40,10 +44,13 @@ const CATEGORY_META: { value: Category; label: string; icon: typeof Lightbulb; h
   { value: "world", label: "Worldbuilding", icon: Globe, hint: "Setting, rules, cultural texture" },
 ];
 
-export function AskAIGuide({ used, bookId, getContext, onUsed, size = "sm", label }: Props) {
+export function AskAIGuide({
+  used, bookId, getContext, onUsed, size = "sm", label, onlyCategory, onInsertPhrase,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState<Category | null>(null);
   const [questions, setQuestions] = useState<string[] | null>(null);
+  const [phrases, setPhrases] = useState<string[] | null>(null);
   const [activeCat, setActiveCat] = useState<Category | null>(null);
 
   const remaining = Math.max(0, 3 - (used || 0));
@@ -54,6 +61,7 @@ export function AskAIGuide({ used, bookId, getContext, onUsed, size = "sm", labe
     setLoading(category);
     setActiveCat(category);
     setQuestions(null);
+    setPhrases(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const ctx = getContext();
@@ -65,8 +73,10 @@ export function AskAIGuide({ used, bookId, getContext, onUsed, size = "sm", labe
       });
       if (error) throw error;
       const qs = (data as { questions?: string[] })?.questions ?? [];
+      const phs = (data as { phrases?: string[] })?.phrases ?? [];
       if (!qs.length) throw new Error("No questions returned");
       setQuestions(qs);
+      setPhrases(phs);
       onUsed();
     } catch (err) {
       console.error(err);
@@ -78,7 +88,7 @@ export function AskAIGuide({ used, bookId, getContext, onUsed, size = "sm", labe
   };
 
   return (
-    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setQuestions(null); setActiveCat(null); } }}>
+    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setQuestions(null); setPhrases(null); setActiveCat(null); } }}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -104,7 +114,7 @@ export function AskAIGuide({ used, bookId, getContext, onUsed, size = "sm", labe
               <span className="text-[11px]">{remaining} of 3 left for this book.</span>
             </p>
             <div className="grid gap-1.5">
-              {CATEGORY_META.map(({ value, label: catLabel, icon: Icon, hint }) => (
+              {CATEGORY_META.filter((m) => !onlyCategory || m.value === onlyCategory).map(({ value, label: catLabel, icon: Icon, hint }) => (
                 <button
                   key={value}
                   onClick={() => ask(value)}
@@ -140,6 +150,34 @@ export function AskAIGuide({ used, bookId, getContext, onUsed, size = "sm", labe
                 </li>
               ))}
             </ol>
+            {phrases && phrases.length > 0 && activeCat && activeCat !== "plot" && (
+              <div className="mt-3 pt-3 border-t border-border">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1.5">
+                  Micro-phrases (2–3 words)
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {phrases.slice(0, 8).map((p, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        onInsertPhrase?.(p, activeCat);
+                        if (onInsertPhrase) setOpen(false);
+                      }}
+                      disabled={!onInsertPhrase}
+                      className="text-[11px] px-2 py-1 rounded-full border border-border hover:bg-muted/50 disabled:opacity-60"
+                      title={onInsertPhrase ? "Insert as card label" : "Reference only"}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+                {onInsertPhrase && (
+                  <p className="text-[10px] text-muted-foreground mt-1.5">
+                    Click a phrase to start a card — you write the rest.
+                  </p>
+                )}
+              </div>
+            )}
             <Button variant="ghost" size="sm" className="w-full mt-3" onClick={() => setOpen(false)}>
               Close
             </Button>
