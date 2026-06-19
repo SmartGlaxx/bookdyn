@@ -6,13 +6,7 @@ import { StorySummaryList } from "./StorySummaryList";
 import { StoryArcLane } from "./StoryArcLane";
 import { ChapterMatrix } from "./ChapterMatrix";
 import { ChapterDetailDrawer } from "./ChapterDetailDrawer";
-import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-
-const newId = () =>
-  (typeof crypto !== "undefined" && "randomUUID" in crypto)
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2);
 
 interface Props {
   book: Book;
@@ -98,8 +92,6 @@ export function CanvasPage({ book }: Props) {
         onAiAssistUsed={c.incrementAiAssist}
       />
 
-      {/* Keep `newId` referenced to avoid unused-import noise if we re-add helpers later */}
-      <span data-canvas-version={newId().slice(0, 0)} className="hidden" />
     </div>
   );
 }
