@@ -12,7 +12,7 @@ import {
   CreateBookInput, BookType, TemporalEra, BOOK_TYPE_INFO, ENABLED_BOOK_TYPES,
   BOOK_TYPE_AUDIENCES, AUDIENCE_OPTIONS, getDefaultControls, getDefaultFrontMatter,
   TONE_OPTIONS, TEMPORAL_ERA_OPTIONS, StoryCanvas, StoryArcCard, StoryArcColor,
-  CanvasChapter, ToneProfile, ToneLevel, EMPTY_CANVAS,
+  CanvasChapter, ToneProfile, ToneLevel, EMPTY_CANVAS, CharacterArcCard, WorldElementCard,
 } from "@/types/book";
 import { ARC_COLOR_CLASS, ARC_COLORS } from "@/hooks/useCanvas";
 import {
@@ -28,6 +28,8 @@ import {
 } from "@dnd-kit/sortable";
 import { SortableCard } from "./SortableCard";
 import { AskAIGuide } from "./AskAIGuide";
+import { CharacterArcsPanel } from "./CharacterArcsPanel";
+import { WorldbuildingPanel } from "./WorldbuildingPanel";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -36,12 +38,14 @@ const newId = () =>
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2) + Date.now().toString(36);
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3 | 4 | 5 | 6;
 const STEP_LABELS: Record<Step, string> = {
   1: "Book Setup",
   2: "Story Summary",
   3: "Story Arc",
-  4: "Chapter Matrix",
+  4: "Characters",
+  5: "World",
+  6: "Chapter Matrix",
 };
 
 const DEFAULT_ARC_COLORS: StoryArcColor[] = [
@@ -85,6 +89,10 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
   const [chaptersInit, setChaptersInit] = useState(false);
   const [openChapterId, setOpenChapterId] = useState<string | null>(null);
 
+  // Steps 4 & 5 — characters and world (optional but encouraged)
+  const [characterArcs, setCharacterArcs] = useState<CharacterArcCard[]>([]);
+  const [worldElements, setWorldElements] = useState<WorldElementCard[]>([]);
+
   // AI counter (client mirror — server-enforced once book exists)
   const [aiUsed, setAiUsed] = useState(0);
 
@@ -93,7 +101,9 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
     1: title.trim().length > 0 && genre.trim().length > 0,
     2: filledBullets.length >= 10,
     3: arc.length >= 10,
-    4: chapters.length > 0 && chapters.every((c) => c.title.trim().length > 0),
+    4: true, // optional
+    5: true, // optional
+    6: chapters.length > 0 && chapters.every((c) => c.title.trim().length > 0),
   };
 
   const goNext = () => {
@@ -108,7 +118,7 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
       );
       setArcInit(true);
     }
-    if (step === 3 && !chaptersInit) {
+    if (step === 5 && !chaptersInit) {
       setChapters(
         arc.map((a, i) => ({
           id: newId(),
@@ -119,13 +129,13 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
       );
       setChaptersInit(true);
     }
-    setStep((s) => (Math.min(4, (s as number) + 1) as Step));
+    setStep((s) => (Math.min(6, (s as number) + 1) as Step));
   };
 
   const goBack = () => setStep((s) => (Math.max(1, (s as number) - 1) as Step));
 
   const finalize = async () => {
-    if (!canAdvance[4]) return;
+    if (!canAdvance[6]) return;
 
     const canvas: StoryCanvas = {
       ...EMPTY_CANVAS,
@@ -139,6 +149,8 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
       },
       storySummary: filledBullets.map((b) => ({ id: b.id, text: b.text.trim() })),
       storyArc: arc,
+      characterArcs,
+      worldElements,
       chapters,
       aiAssistUsed: aiUsed,
       updatedAt: new Date().toISOString(),
@@ -251,6 +263,40 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
             />
           )}
           {step === 4 && (
+            <CharacterArcsPanel
+              setup={{ title, genre, tone, historicalEra: era }}
+              bullets={filledBullets.map((b) => b.text.trim())}
+              arcs={characterArcs}
+              onAdd={(seed) => setCharacterArcs((prev) => [...prev, {
+                id: newId(),
+                name: seed?.name ?? "",
+                arcLabel: seed?.arcLabel ?? "",
+                description: seed?.description ?? "",
+              }])}
+              onUpdate={(id, patch) => setCharacterArcs((prev) => prev.map((a) => a.id === id ? { ...a, ...patch } : a))}
+              onRemove={(id) => setCharacterArcs((prev) => prev.filter((a) => a.id !== id))}
+              aiAssistUsed={aiUsed}
+              onAiAssistUsed={() => setAiUsed((n) => Math.min(3, n + 1))}
+            />
+          )}
+          {step === 5 && (
+            <WorldbuildingPanel
+              setup={{ title, genre, tone, historicalEra: era }}
+              bullets={filledBullets.map((b) => b.text.trim())}
+              elements={worldElements}
+              onAdd={(seed) => setWorldElements((prev) => [...prev, {
+                id: newId(),
+                label: seed?.label ?? "",
+                kind: seed?.kind ?? "",
+                description: seed?.description ?? "",
+              }])}
+              onUpdate={(id, patch) => setWorldElements((prev) => prev.map((w) => w.id === id ? { ...w, ...patch } : w))}
+              onRemove={(id) => setWorldElements((prev) => prev.filter((w) => w.id !== id))}
+              aiAssistUsed={aiUsed}
+              onAiAssistUsed={() => setAiUsed((n) => Math.min(3, n + 1))}
+            />
+          )}
+          {step === 6 && (
             <Step4
               chapters={chapters}
               setChapters={setChapters}
@@ -274,14 +320,16 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
           <div className="text-xs text-muted-foreground hidden sm:block">
             {step === 2 && `${filledBullets.length} / 10 bullets filled`}
             {step === 3 && `${arc.length} arc cards`}
-            {step === 4 && `${chapters.length} chapters · ${chapters.filter((c) => c.title.trim()).length} titled`}
+            {step === 4 && `${characterArcs.length} character${characterArcs.length === 1 ? "" : "s"} (optional)`}
+            {step === 5 && `${worldElements.length} world element${worldElements.length === 1 ? "" : "s"} (optional)`}
+            {step === 6 && `${chapters.length} chapters · ${chapters.filter((c) => c.title.trim()).length} titled`}
           </div>
-          {step < 4 ? (
+          {step < 6 ? (
             <Button onClick={goNext} disabled={!canAdvance[step]} variant="hero">
               Next <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={finalize} disabled={!canAdvance[4] || isCreating} variant="hero">
+            <Button onClick={finalize} disabled={!canAdvance[6] || isCreating} variant="hero">
               {isCreating ? (
                 <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Creating…</>
               ) : (
@@ -298,7 +346,7 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
 function Stepper({ step }: { step: Step }) {
   return (
     <ol className="flex items-center gap-2 mt-3 text-[11px]">
-      {([1, 2, 3, 4] as Step[]).map((s) => (
+      {([1, 2, 3, 4, 5, 6] as Step[]).map((s) => (
         <li key={s} className="flex items-center gap-2">
           <span
             className={cn(
@@ -313,7 +361,7 @@ function Stepper({ step }: { step: Step }) {
           <span className={cn("hidden sm:inline", s === step ? "text-foreground" : "text-muted-foreground")}>
             {STEP_LABELS[s]}
           </span>
-          {s < 4 && <span className="text-muted-foreground/40">›</span>}
+          {s < 6 && <span className="text-muted-foreground/40">›</span>}
         </li>
       ))}
     </ol>
