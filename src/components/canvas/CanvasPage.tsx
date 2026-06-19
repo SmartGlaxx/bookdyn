@@ -6,6 +6,8 @@ import { StorySummaryList } from "./StorySummaryList";
 import { StoryArcLane } from "./StoryArcLane";
 import { ChapterMatrix } from "./ChapterMatrix";
 import { ChapterDetailDrawer } from "./ChapterDetailDrawer";
+import { CharacterArcsPanel } from "./CharacterArcsPanel";
+import { WorldbuildingPanel } from "./WorldbuildingPanel";
 import { Loader2 } from "lucide-react";
 
 interface Props {
@@ -54,6 +56,30 @@ export function CanvasPage({ book }: Props) {
         onAdd={() => c.addArcCard()}
         onUpdate={c.updateArcCard}
         onRemove={c.removeArcCard}
+      />
+
+      <CharacterArcsPanel
+        bookId={book.id}
+        setup={c.canvas.setup}
+        bullets={c.canvas.storySummary.map((b) => b.text)}
+        arcs={c.canvas.characterArcs}
+        onAdd={c.addCharacterArc}
+        onUpdate={c.updateCharacterArc}
+        onRemove={c.removeCharacterArc}
+        aiAssistUsed={aiUsed}
+        onAiAssistUsed={c.incrementAiAssist}
+      />
+
+      <WorldbuildingPanel
+        bookId={book.id}
+        setup={c.canvas.setup}
+        bullets={c.canvas.storySummary.map((b) => b.text)}
+        elements={c.canvas.worldElements}
+        onAdd={c.addWorldElement}
+        onUpdate={c.updateWorldElement}
+        onRemove={c.removeWorldElement}
+        aiAssistUsed={aiUsed}
+        onAiAssistUsed={c.incrementAiAssist}
       />
 
       <ChapterMatrix
