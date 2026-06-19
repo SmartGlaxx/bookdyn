@@ -17,6 +17,7 @@ function ensureShape(c?: StoryCanvas | null): StoryCanvas {
     storySummary: Array.isArray(c.storySummary) ? c.storySummary : [],
     storyArc: Array.isArray(c.storyArc) ? c.storyArc : [],
     chapters: Array.isArray(c.chapters) ? c.chapters : [],
+    aiAssistUsed: typeof c.aiAssistUsed === "number" ? c.aiAssistUsed : 0,
     updatedAt: c.updatedAt,
   };
 }
@@ -159,6 +160,9 @@ export function useCanvas(bookId: string, initial?: StoryCanvas | null) {
       ),
     }));
 
+  const incrementAiAssist = () =>
+    update((c) => ({ ...c, aiAssistUsed: Math.min(3, (c.aiAssistUsed ?? 0) + 1) }));
+
   const api = useMemo(() => ({
     canvas, saving,
     setSetup,
@@ -166,6 +170,7 @@ export function useCanvas(bookId: string, initial?: StoryCanvas | null) {
     setArc, addArcCard, updateArcCard, removeArcCard,
     seedChaptersFromArc, setChapters, addChapter, updateChapter, removeChapter,
     setScenes, addScene, updateScene, removeScene,
+    incrementAiAssist,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [canvas, saving]);
 
