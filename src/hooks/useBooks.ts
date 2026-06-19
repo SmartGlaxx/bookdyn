@@ -120,6 +120,9 @@ export const useBooks = () => {
         series_id: input.seriesId ?? null,
         parent_book_id: input.parentBookId ?? null,
         front_matter: input.frontMatter ? (JSON.parse(JSON.stringify(input.frontMatter)) as Json) : null,
+        ...(input.canvas
+          ? { canvas: JSON.parse(JSON.stringify(input.canvas)) as Json }
+          : {}),
       };
 
       const { data, error } = await supabase
