@@ -1,143 +1,112 @@
-# Module 1 — Dual-Layer Card Timeline
+# Module 1 — Canvas IS the Book Setup (replace the old wizard)
 
-End-to-end build of the new creativity-canvas core: an author-driven Story Arc, a Chapter Matrix derived from it, and per-chapter Scene cards with a pinned plot. Everything is movable, color-coded, and the AI's role is to suggest — never to auto-fill.
-
-This replaces the current auto-outline → auto-chapter flow for the new canvas. Existing automated generation paths stay intact behind the scenes but the primary UI surface becomes the card timeline.
+You're right: the Canvas is supposed to be **the** book-creation experience, not a tab that appears after a book exists. The current `CreateBookEngine` (6-step Type/Details/Voice/Controls/Advanced/Front Matter wizard with AI automation) gets deleted. Clicking "New Book" opens the Canvas Setup flow directly. AI is restricted to **a single Socratic helper** that asks questions, never writes content, and stops after 3 uses per book.
 
 ---
 
-## What the user gets
-
-1. **Book Setup (lightweight)** — title, genre, target length, tone. No 10k-word generation kicked off.
-2. **Story Summary (10 bullets)** — user writes (or asks AI to draft) 10 short bullets describing the whole story.
-3. **Story Arc cards** — each bullet becomes a draggable, color-coded card on a horizontal timeline lane. User can reorder, recolor, edit text, add or remove cards.
-4. **Chapter Matrix** — generated from the arc: a row of chapter cards. Each card has:
-   - Manual title field (user-owned)
-   - 3 AI title suggestions as radio chips ("Use this") — purely optional
-   - A "scenes" stack underneath (initially empty)
-5. **Per-chapter Scene cards** — inside each chapter the user adds scene sub-cards (drag to reorder). A pinned Plot box (100–120 words) sits above the scenes and travels with the chapter.
-6. **Persistence** — everything saves to the book row as structured JSON; loads back exactly.
-
-No section text is generated in this module. This is the planning canvas only. Generation continues to read from this structure in later modules.
-
----
-
-## UX shape
+## What you'll see
 
 ```text
-┌─ Book Setup ───────────────────────────────────────────────┐
-│ Title  Genre  Length  Tone                                 │
-└────────────────────────────────────────────────────────────┘
+New Book ─▶ Step 1: Book Setup
+              Title · Genre · Tone · Historical Time Period · AI Creativity (0–3)
 
-┌─ Story Summary (10 bullets) ───────────────────────────────┐
-│ 1. ____  2. ____  …  [Draft with AI]                       │
-└────────────────────────────────────────────────────────────┘
+           Step 2: Story Summary (manual)
+              10 numbered bullet inputs (min 10, no max)
+              "Next" disabled until 10 non-empty bullets exist
+              [Ask AI a guiding question] button (shared 3-use counter)
 
-┌─ Story Arc ────────────────────────────────────────────────┐
-│  [card] [card] [card] [card] …  ← drag to reorder          │
-│  colors: setup/rising/climax/fall/resolution (user-pick)   │
-└────────────────────────────────────────────────────────────┘
+           Step 3: Global Timeline Board
+              Each bullet → draggable color-coded Story Arc card
+              Default colors: 1 Setup · 2-3 Inciting · 4-6 Rising · 7 Climax · 8-9 Fall · 10 Resolution
+              User reorders, recolors, edits text. Must click "Approve order".
 
-┌─ Chapter Matrix ───────────────────────────────────────────┐
-│  Ch 1  Ch 2  Ch 3  …   [+ Add Chapter]                     │
-│  each: [title input] [○ suggestion A ○ B ○ C]              │
-│  click a chapter → opens Chapter Detail                    │
-└────────────────────────────────────────────────────────────┘
+           Step 4: Chapter Matrix
+              User types chapter titles manually. "+ Add chapter".
+              Per chapter: [Ask AI a guiding question] (same shared counter)
+              No auto-generated titles. No radios of AI titles.
 
-┌─ Chapter Detail (drawer / page) ───────────────────────────┐
-│ Title …                                                    │
-│ ┌ Plot (pinned, 100–120 words) ────────────────────────┐   │
-│ │ …                                                    │   │
-│ └──────────────────────────────────────────────────────┘   │
-│ Scenes:  [scene] [scene] [scene]  [+ Add scene]            │
-│           ← drag to reorder                                │
-└────────────────────────────────────────────────────────────┘
+           Step 5: Scene Cards (optional, click any chapter)
+              100–120 word Plot box (manual, word counter)
+              Draggable scene sub-cards
+              [Ask AI a guiding question] (shared counter)
+
+           [Create Book]  → writes books row with full `canvas` jsonb
+                         → opens the book straight into the Canvas view
 ```
 
 ---
 
-## Data model
+## AI assist rule (your spec, locked in code)
 
-One new jsonb column on `books` so we don't disturb existing generation fields:
+One helper component, `AskAIGuide`, used in every Canvas surface. Behavior:
 
-- `canvas jsonb default '{}'::jsonb` — holds the entire Module-1 state.
+- Three categories the user picks from: **Plot Ideas**, **Character Arcs**, **Worldbuilding**.
+- Calls the `suggest-canvas` edge function with mode `"guiding_questions"`.
+- Edge function returns **3 short questions only**, always referencing book title, genre, and the user's existing bullets/titles/scene context. Never returns story content.
+- A counter `canvas.aiAssistUsed` (0–3) persists on the book. Once it hits 3, every Ask AI button across the Canvas is disabled with the message "AI guidance used (3/3) — the rest is yours."
+- Server-side guard in `suggest-canvas`: refuses any request when `aiAssistUsed >= 3`, and refuses the legacy modes (`story_summary`, `chapter_titles`, `story_arc_colors`) entirely — those are removed.
 
-Shape:
+System prompt enforces: "Reply with exactly 3 short, open-ended questions. Never propose plot, characters, prose, or titles. Reference the user's title, genre, and existing bullets."
 
-```text
+---
+
+## Data shape (no new column, extends existing `books.canvas`)
+
+```ts
 canvas = {
-  setup: { title, genre, length_target, tone },
-  story_summary: [ { id, text } x 10 ],   // free-form, ordered
-  story_arc: [ { id, text, color, order } ],
-  chapters: [
-    {
-      id, order,
-      title,                        // user-owned manual title
-      title_suggestions: [s1,s2,s3],// AI-generated, optional
-      plot: "",                     // pinned 100–120 word plot
-      scenes: [ { id, order, title, note } ]
-    }
-  ],
-  updated_at
+  setup: { title, genre, tone, historicalEra, aiCreativity },  // tone/era enums kept simple
+  storySummary: [ { id, text } ],            // min 10 to leave step 2
+  storyArc:     [ { id, text, color } ],     // 1-to-1 from bullets, user can reorder/recolor
+  chapters:     [ { id, title, plot, scenes:[{id,title,note}] } ],
+  aiAssistUsed: 0,                           // 0..3
+  updatedAt
 }
 ```
 
-Saved on debounce as the user edits. No schema migration beyond adding the column.
+Existing books without a `canvas` get an empty-state inside the Canvas view ("This book pre-dates the Canvas. Start a new book to use it, or fill the Canvas manually."). No backfill.
 
 ---
 
-## Backend
+## Files to add
 
-- **Migration**: add `canvas jsonb default '{}'` on `public.books`. No new tables, no policy changes (existing book RLS already covers it).
-- **Edge function `suggest-canvas`** (new, `verify_jwt = false`, Bearer + apikey validated in code):
-  - Input: `{ mode: "story_summary" | "chapter_titles" | "story_arc_colors", bookId, payload }`
-  - Uses Lovable AI gateway (no key) by default; DeepSeek fallback later.
-  - `story_summary`: returns 10 short bullets from setup.
-  - `chapter_titles`: for a given chapter index returns 3 candidate titles based on surrounding arc cards.
-  - Output is JSON only; nothing is written to the DB — the client decides what to keep.
+- `src/components/canvas/CanvasSetupWizard.tsx` — the new 5-step modal/page that replaces `CreateBookEngine`. Owns local draft state until "Create Book", then inserts the row.
+- `src/components/canvas/AskAIGuide.tsx` — shared "Ask AI a guiding question" popover (category picker + 3 questions display + uses-left counter).
+- `src/components/canvas/GlobalTimelineBoard.tsx` — step 3 board (reuses `StoryArcLane` internals but with the approve-and-continue gate).
+- `src/components/canvas/SceneCardsPanel.tsx` — step 5 inline panel (or reuses `ChapterDetailDrawer` minus its AI buttons).
 
-The existing `generate-outline`, `generate-content`, etc. are not touched in this module.
+## Files to change
 
----
+- `src/components/CreateBookEngine.tsx` — **delete**.
+- All call sites of `<CreateBookEngine />` (dashboard "New Book" button, anywhere else) → open `<CanvasSetupWizard />` instead.
+- `src/components/BookDetailView.tsx` — drop the Canvas/Manuscript tabs. Canvas becomes the default view of an opened book; a small "Manuscript" link inside the Canvas opens the chapter writing surface when the user is ready to draft prose.
+- `src/components/canvas/StorySummaryList.tsx` — replace "Draft with AI" button with `<AskAIGuide />`. Enforce min-10 visually (numbered slots 1–10 always shown).
+- `src/components/canvas/CanvasPage.tsx` — remove "Summary → Arc cards" auto button; arc is always derived 1-to-1 at step-2-to-3 transition. Keep editing afterward.
+- `src/components/canvas/ChapterMatrix.tsx` — remove AI title suggestions / radios. Add `<AskAIGuide />` per chapter.
+- `src/components/canvas/ChapterDetailDrawer.tsx` — remove any AI plot-direction auto-generation; add manual plot word counter (target 100–120). Add `<AskAIGuide />`.
+- `src/hooks/useCanvas.ts` — add `incrementAiAssist()` helper; expose `aiAssistUsed`. Add a `createCanvasBook(initialCanvas)` helper used by the wizard's final step (single insert into `books`).
+- `src/types/book.ts` — drop wizard-only enums no longer used (`AutomationLevel`, `DepthLevel`, etc.) **only if** nothing else imports them; otherwise leave the types alone and just stop using them in UI. Add `aiAssistUsed: number` to `StoryCanvas`. Add `historicalEra` + `aiCreativity` to `CanvasSetup`.
+- `supabase/functions/suggest-canvas/index.ts` — remove old modes; add `guiding_questions` mode. Validate `aiAssistUsed < 3` by re-reading `books.canvas` server-side (so the cap can't be bypassed from the client). Returns `{ questions: string[3] }` only.
 
-## Frontend
+## Files NOT touched
 
-New components under `src/components/canvas/`:
-
-- `CanvasPage.tsx` — top-level layout, loads/saves `canvas` jsonb.
-- `BookSetupCard.tsx` — title/genre/length/tone form.
-- `StorySummaryList.tsx` — 10 editable bullets + "Draft with AI" button.
-- `StoryArcLane.tsx` — horizontal draggable cards, color picker per card.
-- `ChapterMatrix.tsx` — row of chapter cards, manual title + 3 suggestion radios + "Add chapter".
-- `ChapterDetailDrawer.tsx` — pinned plot textarea + scenes list with drag-reorder.
-- `SortableCard.tsx` — shared dnd primitive.
-
-Library: use `@dnd-kit/core` + `@dnd-kit/sortable` (small, already common; add via `bun add`).
-
-State: a single `useCanvas(bookId)` hook that owns the `canvas` object, exposes mutation helpers, and debounces saves (500 ms) via the existing supabase client.
-
-Integration:
-- Add a new route or sub-view inside `BookDetailView` (a tab next to Main/Chapters/Characters called **Canvas**) that renders `CanvasPage`. Existing tabs stay as-is — generation flows continue to work.
-- For now the Canvas tab is the default for new books; existing books keep their old default tab.
+- `generate-content`, `generate-outline`, `generate-intro`, manuscript writing UI, billing, profiles, RLS, migrations. The Canvas is a planning artifact; chapter prose generation stays wherever it lives today and is reached via the small "Manuscript" link from inside the Canvas.
 
 ---
 
-## Out of scope for this module
+## Out of scope (next modules)
 
-- Scene-level text generation (Module 3).
-- Continuity audit against the pinned plot (Module 4).
-- Fork chapter sandbox, Outtakes, sprints, heatmap, theme selector, typography suite, retractable sidebar.
-- Migrating existing books' outline data into `canvas` (a one-way "Import outline → canvas" button can come later).
+- Scene-level text generation, continuity audit, fork chapters, sprints, heatmap, theme/typography suite.
+- Backfilling old books' outline data into `canvas`.
+- Replacing the manuscript writing surface itself.
 
 ---
 
-## Build order (single pass)
+## Build order
 
-1. Migration: add `canvas` column.
-2. `useCanvas` hook + types.
-3. `BookSetupCard` + `StorySummaryList` (+ `suggest-canvas` edge fn for the AI draft).
-4. `StoryArcLane` with dnd-kit and color picker.
-5. `ChapterMatrix` with manual title + AI suggestions.
-6. `ChapterDetailDrawer` with pinned plot + scenes.
-7. Wire as **Canvas** tab inside `BookDetailView`; make it default for new books.
-8. Smoke-test save/load round-trip and drag reorder.
+1. Types + `useCanvas` extensions (`aiAssistUsed`, era/creativity).
+2. `suggest-canvas` rewrite (only `guiding_questions`, server-side cap).
+3. `AskAIGuide` shared component.
+4. `CanvasSetupWizard` (steps 1–4 first, step 5 reuses drawer).
+5. Wire dashboard "New Book" → wizard; delete `CreateBookEngine`.
+6. Simplify `BookDetailView` (Canvas is default, Manuscript becomes a link).
+7. Smoke test: create a book end-to-end, verify all 10 bullets required, drag arc, add chapters manually, AI counter caps at 3, reload restores everything.
