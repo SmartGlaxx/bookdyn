@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import BookCard from "@/components/BookCard";
-import CreateBookEngine from "@/components/CreateBookEngine";
+import { CanvasSetupWizard } from "@/components/canvas/CanvasSetupWizard";
 import { useBooks } from "@/hooks/useBooks";
 import { Book, CreateBookInput, BOOK_CATEGORIES, BOOK_TYPE_INFO, BookCategory, BookType } from "@/types/book";
 import { Loader2 } from "lucide-react";
@@ -36,7 +36,7 @@ const Index = () => {
   const sentinelWipRef = useRef<HTMLDivElement | null>(null);
   const sentinelCompletedRef = useRef<HTMLDivElement | null>(null);
 
-  const { books, isLoading, addBook, deleteBook, updateBook } = useBooks();
+  const { books, isLoading, addBook, deleteBook, updateBook, isCreating } = useBooks();
   const dashboardBookType = (routeBookType ?? slug) as BookType | undefined;
   const isBookTypeRoute = !!dashboardBookType && Object.prototype.hasOwnProperty.call(BOOK_TYPE_INFO, dashboardBookType);
 
@@ -602,7 +602,14 @@ const Index = () => {
       </main>
 
       <AnimatePresence>
-        {showEngine && <CreateBookEngine onClose={() => setShowEngine(false)} onCreate={handleCreateBook} />}
+        {showEngine && (
+          <CanvasSetupWizard
+            open={showEngine}
+            onClose={() => setShowEngine(false)}
+            onCreate={handleCreateBook}
+            isCreating={isCreating}
+          />
+        )}
       </AnimatePresence>
     </div>
   );
