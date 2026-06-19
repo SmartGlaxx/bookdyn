@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
   DragEndEvent,
@@ -8,10 +7,8 @@ import { CanvasChapter, StoryArcCard } from "@/types/book";
 import { SortableCard } from "./SortableCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Plus, Trash2, Sparkles, Loader2, ChevronRight } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { Plus, Trash2, ChevronRight } from "lucide-react";
+import { AskAIGuide } from "./AskAIGuide";
 
 interface Props {
   bookId: string;
@@ -23,16 +20,23 @@ interface Props {
   onRemove: (id: string) => void;
   onSeedFromArc: () => void;
   onOpenChapter: (id: string) => void;
+  /** Setup snapshot (title, genre, tone, era) for AI guiding-question context. */
+  setupTitle?: string;
+  setupGenre?: string;
+  setupTone?: string;
+  setupEra?: string;
+  aiAssistUsed: number;
+  onAiAssistUsed: () => void;
 }
 
 export function ChapterMatrix({
   bookId, arc, chapters, onReorder, onAdd, onUpdate, onRemove, onSeedFromArc, onOpenChapter,
+  setupTitle, setupGenre, setupTone, setupEra, aiAssistUsed, onAiAssistUsed,
 }: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
-  const [suggestingFor, setSuggestingFor] = useState<string | null>(null);
 
   const handleEnd = (e: DragEndEvent) => {
     const { active, over } = e;
@@ -43,44 +47,12 @@ export function ChapterMatrix({
     onReorder(arrayMove(chapters, oldI, newI));
   };
 
-  const suggestTitles = async (ch: CanvasChapter, idx: number) => {
-    if (suggestingFor) return;
-    setSuggestingFor(ch.id);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data, error } = await supabase.functions.invoke("suggest-canvas", {
-        body: {
-          mode: "chapter_titles",
-          bookId,
-          payload: {
-            arc: arc.map((a) => ({ text: a.text, color: a.color })),
-            chapterIndex: idx,
-            currentTitle: ch.title,
-            plot: ch.plot,
-          },
-        },
-        headers: session?.access_token
-          ? { Authorization: `Bearer ${session.access_token}` }
-          : undefined,
-      });
-      if (error) throw error;
-      const titles = (data as { titles?: string[] })?.titles ?? [];
-      if (!titles.length) throw new Error("No titles returned");
-      onUpdate(ch.id, { titleSuggestions: titles.slice(0, 3), selectedSuggestionIndex: null });
-    } catch (err) {
-      console.error(err);
-      toast.error(err instanceof Error ? err.message : "Failed to fetch suggestions");
-    } finally {
-      setSuggestingFor(null);
-    }
-  };
-
   return (
     <section className="rounded-2xl border border-border bg-card/40 p-5">
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <div>
           <h2 className="font-serif font-semibold text-lg">Chapter Matrix</h2>
-          <p className="text-xs text-muted-foreground">Manual titles. AI only suggests — you decide.</p>
+          <p className="text-xs text-muted-foreground">Type your chapter titles. No AI-generated titles — this is your book.</p>
         </div>
         <div className="flex gap-2">
           {chapters.length === 0 && arc.length > 0 && (
@@ -88,6 +60,19 @@ export function ChapterMatrix({
               Seed from arc
             </Button>
           )}
+          <AskAIGuide
+            used={aiAssistUsed}
+            bookId={bookId}
+            onUsed={onAiAssistUsed}
+            getContext={() => ({
+              title: setupTitle,
+              genre: setupGenre,
+              tone: setupTone,
+              historicalEra: setupEra,
+              bullets: arc.map((a) => a.text).filter(Boolean),
+              chapterTitles: chapters.map((c) => c.title).filter(Boolean),
+            })}
+          />
           <Button variant="outline" size="sm" onClick={onAdd}>
             <Plus className="w-4 h-4 mr-1" /> Add chapter
           </Button>
@@ -111,56 +96,17 @@ export function ChapterMatrix({
                       className="h-8 text-sm font-medium"
                     />
 
-                    {ch.titleSuggestions && ch.titleSuggestions.length > 0 && (
-                      <div className="mt-2">
-                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Suggestions</div>
-                        <RadioGroup
-                          value={ch.selectedSuggestionIndex?.toString() ?? ""}
-                          onValueChange={(v) => {
-                            const i = parseInt(v, 10);
-                            const t = ch.titleSuggestions?.[i];
-                            if (t) onUpdate(ch.id, { title: t, selectedSuggestionIndex: i });
-                          }}
-                          className="gap-1"
-                        >
-                          {ch.titleSuggestions.map((t, i) => (
-                            <label
-                              key={i}
-                              className="flex items-start gap-2 text-xs cursor-pointer hover:bg-muted/40 rounded-md px-1.5 py-1"
-                            >
-                              <RadioGroupItem value={i.toString()} className="mt-0.5" />
-                              <span className="leading-tight">{t}</span>
-                            </label>
-                          ))}
-                        </RadioGroup>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between mt-3 gap-1">
-                      <Button
-                        variant="ghost" size="sm" className="h-7 px-2 text-xs"
-                        onClick={() => suggestTitles(ch, idx)}
-                        disabled={suggestingFor === ch.id}
-                      >
-                        {suggestingFor === ch.id ? (
-                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                        ) : (
-                          <Sparkles className="w-3 h-3 mr-1" />
-                        )}
-                        Suggest titles
+                    <div className="flex items-center justify-end mt-3 gap-1">
+                      <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => onOpenChapter(ch.id)}>
+                        Open <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
                       </Button>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onOpenChapter(ch.id)} aria-label="Open chapter">
-                          <ChevronRight className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost" size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                          onClick={() => onRemove(ch.id)}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
+                      <Button
+                        variant="ghost" size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                        onClick={() => onRemove(ch.id)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
                     </div>
 
                     {ch.scenes.length > 0 && (

@@ -1,10 +1,9 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { StorySummaryBullet, CanvasSetup } from "@/types/book";
-import { Sparkles, Loader2, Plus, Trash2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { Plus, Trash2 } from "lucide-react";
+import { AskAIGuide } from "./AskAIGuide";
+import { cn } from "@/lib/utils";
 
 interface Props {
   bookId: string;
@@ -13,52 +12,40 @@ interface Props {
   onAdd: () => void;
   onUpdate: (id: string, text: string) => void;
   onRemove: (id: string) => void;
-  onReplaceAll: (next: StorySummaryBullet[]) => void;
+  /** AI assist counter (0–3) and increment callback. */
+  aiAssistUsed: number;
+  onAiAssistUsed: () => void;
 }
 
-const newId = () =>
-  (typeof crypto !== "undefined" && "randomUUID" in crypto)
-    ? crypto.randomUUID()
-    : Math.random().toString(36).slice(2);
-
-export function StorySummaryList({ bookId, setup, bullets, onAdd, onUpdate, onRemove, onReplaceAll }: Props) {
-  const [drafting, setDrafting] = useState(false);
-
-  const draftWithAi = async () => {
-    if (drafting) return;
-    setDrafting(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data, error } = await supabase.functions.invoke("suggest-canvas", {
-        body: { mode: "story_summary", bookId, payload: { setup } },
-        headers: session?.access_token
-          ? { Authorization: `Bearer ${session.access_token}` }
-          : undefined,
-      });
-      if (error) throw error;
-      const arr = (data as { bullets?: string[] })?.bullets ?? [];
-      if (!arr.length) throw new Error("No bullets returned");
-      onReplaceAll(arr.slice(0, 10).map((text) => ({ id: newId(), text })));
-      toast.success("Draft summary ready — edit freely");
-    } catch (err) {
-      console.error(err);
-      toast.error(err instanceof Error ? err.message : "Failed to draft summary");
-    } finally {
-      setDrafting(false);
-    }
-  };
+export function StorySummaryList({
+  bookId, setup, bullets, onAdd, onUpdate, onRemove, aiAssistUsed, onAiAssistUsed,
+}: Props) {
+  const filled = bullets.filter((b) => b.text.trim().length > 0).length;
 
   return (
     <section className="rounded-2xl border border-border bg-card/40 p-5">
       <div className="flex items-center justify-between mb-4 gap-2">
         <div>
           <h2 className="font-serif font-semibold text-lg">Story Summary</h2>
-          <p className="text-xs text-muted-foreground">Ten short bullets that describe the whole story. Edit, add, remove freely.</p>
+          <p className="text-xs text-muted-foreground">
+            Write at least 10 short bullets describing the whole story — opening to resolution. This is your work.
+          </p>
+          <p className={cn("text-[11px] mt-1", filled >= 10 ? "text-emerald-400" : "text-muted-foreground")}>
+            {filled} / 10 minimum
+          </p>
         </div>
-        <Button variant="outline" size="sm" onClick={draftWithAi} disabled={drafting}>
-          {drafting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          <span className="hidden sm:inline ml-1">Draft with AI</span>
-        </Button>
+        <AskAIGuide
+          used={aiAssistUsed}
+          bookId={bookId}
+          onUsed={onAiAssistUsed}
+          getContext={() => ({
+            title: setup.title,
+            genre: setup.genre,
+            tone: setup.tone,
+            historicalEra: setup.historicalEra,
+            bullets: bullets.map((b) => b.text).filter(Boolean),
+          })}
+        />
       </div>
 
       <ol className="space-y-2">

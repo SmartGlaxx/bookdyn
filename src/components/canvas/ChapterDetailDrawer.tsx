@@ -11,6 +11,7 @@ import { CanvasChapter, CanvasScene } from "@/types/book";
 import { SortableCard } from "./SortableCard";
 import { Plus, Trash2, Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AskAIGuide } from "./AskAIGuide";
 
 interface Props {
   chapter: CanvasChapter | null;
@@ -20,10 +21,20 @@ interface Props {
   onAddScene: () => void;
   onUpdateScene: (sceneId: string, patch: Partial<CanvasScene>) => void;
   onRemoveScene: (sceneId: string) => void;
+  bookId?: string;
+  setupTitle?: string;
+  setupGenre?: string;
+  setupTone?: string;
+  setupEra?: string;
+  bullets?: string[];
+  aiAssistUsed: number;
+  onAiAssistUsed: () => void;
 }
 
 export function ChapterDetailDrawer({
   chapter, onClose, onUpdate, onSetScenes, onAddScene, onUpdateScene, onRemoveScene,
+  bookId, setupTitle, setupGenre, setupTone, setupEra, bullets,
+  aiAssistUsed, onAiAssistUsed,
 }: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -49,7 +60,25 @@ export function ChapterDetailDrawer({
         {chapter && (
           <>
             <SheetHeader>
-              <SheetTitle className="font-serif">Chapter detail</SheetTitle>
+              <SheetTitle className="font-serif flex items-center justify-between gap-2">
+                <span>Chapter detail</span>
+                <AskAIGuide
+                  used={aiAssistUsed}
+                  bookId={bookId}
+                  onUsed={onAiAssistUsed}
+                  label="Ask AI"
+                  getContext={() => ({
+                    title: setupTitle,
+                    genre: setupGenre,
+                    tone: setupTone,
+                    historicalEra: setupEra,
+                    bullets,
+                    focusChapterTitle: chapter.title,
+                    chapterPlot: chapter.plot,
+                    scenes: chapter.scenes.map((s) => s.title).filter(Boolean),
+                  })}
+                />
+              </SheetTitle>
             </SheetHeader>
 
             <div className="mt-4 space-y-5">
