@@ -36,10 +36,9 @@ interface BookDetailViewProps {
 const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   const { user } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
-  // Canvas vs Manuscript view. Default Canvas for books without an outline yet.
-  const [activeView, setActiveView] = useState<"canvas" | "manuscript">(
-    book.outline && book.outline.chapters.length > 0 ? "manuscript" : "canvas"
-  );
+  // Canvas is the default home of an opened book. Manuscript is the prose surface,
+  // reached when the author is ready to draft chapter text.
+  const [activeView, setActiveView] = useState<"canvas" | "manuscript">("canvas");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState(book.title);
   const [isEditingSubtitle, setIsEditingSubtitle] = useState(false);
@@ -458,13 +457,20 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
       </header>
 
       <main className="flex-1 container max-w-7xl mx-auto px-0 md:px-4" style={{ paddingTop: "0.5rem", paddingBottom: "0.5rem" }}>
-        <div className="px-4 md:px-0 mb-3">
+        <div className="px-4 md:px-0 mb-3 flex items-center justify-between gap-3">
           <Tabs value={activeView} onValueChange={(v) => setActiveView(v as "canvas" | "manuscript")}>
             <TabsList>
               <TabsTrigger value="canvas">Canvas</TabsTrigger>
-              <TabsTrigger value="manuscript">Manuscript</TabsTrigger>
+              <TabsTrigger value="manuscript" disabled={!hasOutline} title={hasOutline ? "" : "Manuscript opens once you start writing chapter prose"}>
+                Manuscript
+              </TabsTrigger>
             </TabsList>
           </Tabs>
+          {activeView === "canvas" && (
+            <span className="text-[11px] text-muted-foreground hidden sm:inline">
+              This is your planning space. The Manuscript opens when you're ready to draft prose.
+            </span>
+          )}
         </div>
 
         {activeView === "canvas" ? (

@@ -1,13 +1,16 @@
-// suggest-canvas — AI suggestions for the Story Canvas (Module 1).
-// Modes:
-//   - story_summary: returns ~10 short bullets from book setup
-//   - chapter_titles: returns 3 candidate titles for a chapter
-// verify_jwt = false; we validate Bearer + apikey in code.
+// suggest-canvas — Socratic AI helper for the Story Canvas (Module 1).
+// The ONLY supported mode is `guiding_questions`: returns 3 short questions
+// referencing the user's title, genre, and existing bullets. Never returns
+// story/plot/title/prose content. Hard server-side cap: 3 requests per book.
+// verify_jwt = false; auth headers validated in code; ownership enforced.
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const ALLOWED_ORIGINS = [
   "https://authoryti.com",
   "https://authoryti.lovable.app",
   "https://app.authoryti.com",
+  "https://bookdyn.lovable.app",
   "https://id-preview--50948d4c-97c6-4338-a33a-59e9cf03b7c0.lovable.app",
   "http://localhost:5173",
 ];
@@ -15,7 +18,9 @@ const ALLOWED_ORIGINS = [
 function cors(req: Request) {
   const origin = req.headers.get("origin") ?? "";
   const allow =
-    ALLOWED_ORIGINS.includes(origin) || /\.lovable\.(app|dev|project)/.test(origin) ? origin : ALLOWED_ORIGINS[0];
+    ALLOWED_ORIGINS.includes(origin) || /\.lovable\.(app|dev|project)/.test(origin)
+      ? origin
+      : ALLOWED_ORIGINS[0];
   return {
     "Access-Control-Allow-Origin": allow,
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -24,22 +29,32 @@ function cors(req: Request) {
   };
 }
 
+type Category = "plot" | "character" | "world";
+
 interface Body {
-  mode: "story_summary" | "chapter_titles";
-  bookId: string;
-  payload: Record<string, unknown>;
+  mode: "guiding_questions";
+  bookId?: string;
+  category: Category;
+  context?: {
+    title?: string;
+    genre?: string;
+    tone?: string;
+    historicalEra?: string;
+    bullets?: string[];
+    chapterTitles?: string[];
+    chapterPlot?: string;
+    scenes?: string[];
+    focusChapterTitle?: string;
+  };
 }
 
 Deno.serve(async (req) => {
   const headers = cors(req);
   if (req.method === "OPTIONS") return new Response(null, { headers });
 
-  // Basic header presence check (Lovable client always sends both)
   const auth = req.headers.get("authorization");
   const apikey = req.headers.get("apikey");
-  if (!auth || !apikey) {
-    return json({ error: "Missing auth" }, 401, headers);
-  }
+  if (!auth || !apikey) return json({ error: "Missing auth" }, 401, headers);
 
   let body: Body;
   try {
@@ -48,54 +63,94 @@ Deno.serve(async (req) => {
     return json({ error: "Invalid JSON" }, 400, headers);
   }
 
-  if (!body?.mode || !body?.bookId) {
-    return json({ error: "Missing mode or bookId" }, 400, headers);
+  if (body?.mode !== "guiding_questions") {
+    return json({ error: "Only mode=guiding_questions is supported" }, 400, headers);
+  }
+  if (!body.category || !["plot", "character", "world"].includes(body.category)) {
+    return json({ error: "Invalid category" }, 400, headers);
+  }
+
+  // Server-side cap: re-read books.canvas.aiAssistUsed under the caller's auth
+  // (RLS ensures they own the book). Skip when bookId is missing (wizard pre-create).
+  const SUPA_URL = Deno.env.get("SUPABASE_URL");
+  const SUPA_ANON = Deno.env.get("SUPABASE_ANON_KEY");
+  const userClient = SUPA_URL && SUPA_ANON
+    ? createClient(SUPA_URL, SUPA_ANON, { global: { headers: { Authorization: auth } } })
+    : null;
+
+  let usedFromDb: number | null = null;
+  if (body.bookId && userClient) {
+    const { data, error } = await userClient
+      .from("books")
+      .select("canvas")
+      .eq("id", body.bookId)
+      .maybeSingle();
+    if (error) return json({ error: "Forbidden or not found" }, 403, headers);
+    const canvas = (data?.canvas ?? {}) as { aiAssistUsed?: number };
+    usedFromDb = typeof canvas.aiAssistUsed === "number" ? canvas.aiAssistUsed : 0;
+    if (usedFromDb >= 3) {
+      return json(
+        { error: "AI guidance limit reached (3/3 used for this book).", remaining: 0 },
+        429,
+        headers,
+      );
+    }
   }
 
   const key = Deno.env.get("LOVABLE_API_KEY");
   if (!key) return json({ error: "AI gateway unavailable" }, 503, headers);
 
+  const ctx = body.context ?? {};
+  const bullets = (ctx.bullets ?? []).slice(0, 12);
+  const categoryLabel =
+    body.category === "plot" ? "plot direction"
+    : body.category === "character" ? "character arc"
+    : "worldbuilding";
+
+  const prompt = [
+    `You are a Socratic writing coach helping an author plan their book. You do NOT propose plot, characters, prose, titles, or any story content. You ONLY ask short, open-ended questions that spark the author's own thinking.`,
+    ``,
+    `Book Title: ${ctx.title || "(untitled)"}`,
+    `Genre: ${ctx.genre || "(unspecified)"}`,
+    ctx.tone ? `Tone: ${ctx.tone}` : "",
+    ctx.historicalEra ? `Setting / Era: ${ctx.historicalEra}` : "",
+    ctx.focusChapterTitle ? `Chapter in focus: ${ctx.focusChapterTitle}` : "",
+    bullets.length
+      ? `\nAuthor's existing story bullets:\n${bullets.map((b, i) => `${i + 1}. ${b}`).join("\n")}`
+      : "",
+    ctx.chapterTitles?.length
+      ? `\nChapter titles so far:\n${ctx.chapterTitles.map((t, i) => `${i + 1}. ${t}`).join("\n")}`
+      : "",
+    ctx.chapterPlot ? `\nChapter plot draft: ${ctx.chapterPlot}` : "",
+    ctx.scenes?.length ? `\nScene titles: ${ctx.scenes.join(" \u00b7 ")}` : "",
+    ``,
+    `Generate EXACTLY 3 short, open-ended ${categoryLabel} questions. Each question MUST reference the title, genre, or one of the author's bullets/titles by name or number. Each question is one sentence, under 25 words. No preamble, no answers, no story content.`,
+    ``,
+    `Return ONLY valid JSON: {"questions":["...","...","..."]}`,
+  ].filter(Boolean).join("\n");
+
   try {
-    if (body.mode === "story_summary") {
-      const setup = (body.payload as { setup?: Record<string, string> })?.setup ?? {};
-      const prompt = `You are helping an author plan a book. Based on this setup, draft EXACTLY 10 short bullet points that sketch the whole story arc, from opening to resolution. Each bullet is one concise sentence. Plain prose. No markdown, no numbering, no quotes.
+    const text = await callGateway(key, prompt);
+    const questions = parseStringArray(text, "questions")
+      .map((q) => q.trim())
+      .filter(Boolean)
+      .slice(0, 3);
+    if (questions.length < 1) throw new Error("AI did not return questions");
 
-Title: ${setup.title || "(untitled)"}
-Genre: ${setup.genre || "(unspecified)"}
-Length target: ${setup.lengthTarget || "(unspecified)"}
-Tone: ${setup.tone || "(unspecified)"}
-
-Return ONLY a JSON object: {"bullets": ["...", ..., "..."]} with exactly 10 entries.`;
-
-      const text = await callGateway(key, prompt);
-      const bullets = parseStringArray(text, "bullets").slice(0, 10);
-      return json({ bullets }, 200, headers);
+    if (body.bookId && userClient && usedFromDb !== null) {
+      const { data: row } = await userClient
+        .from("books")
+        .select("canvas")
+        .eq("id", body.bookId)
+        .maybeSingle();
+      const current = (row?.canvas ?? {}) as Record<string, unknown>;
+      const nextUsed = Math.min(3, (typeof current.aiAssistUsed === "number" ? current.aiAssistUsed : 0) + 1);
+      const nextCanvas = { ...current, aiAssistUsed: nextUsed, updatedAt: new Date().toISOString() };
+      await userClient.from("books").update({ canvas: nextCanvas }).eq("id", body.bookId);
+      return json({ questions, remaining: 3 - nextUsed }, 200, headers);
     }
 
-    if (body.mode === "chapter_titles") {
-      const p = body.payload as {
-        arc?: { text: string; color: string }[];
-        chapterIndex?: number;
-        currentTitle?: string;
-        plot?: string;
-      };
-      const arcText = (p.arc ?? []).map((a, i) => `${i + 1}. [${a.color}] ${a.text}`).join("\n");
-      const prompt = `You are helping an author title a chapter. Propose THREE distinct, evocative chapter title options. No subtitles. Max 6 words each. No quotes, no numbering, no markdown.
-
-Story arc beats:
-${arcText || "(none)"}
-
-Chapter index: ${(p.chapterIndex ?? 0) + 1}
-Current working title: ${p.currentTitle || "(none)"}
-Chapter plot: ${p.plot || "(none)"}
-
-Return ONLY: {"titles": ["...", "...", "..."]}`;
-      const text = await callGateway(key, prompt);
-      const titles = parseStringArray(text, "titles").slice(0, 3);
-      return json({ titles }, 200, headers);
-    }
-
-    return json({ error: "Unknown mode" }, 400, headers);
+    return json({ questions, remaining: null }, 200, headers);
   } catch (err) {
     console.error("suggest-canvas error", err);
     const msg = err instanceof Error ? err.message : "AI request failed";
@@ -120,10 +175,10 @@ async function callGateway(key: string, prompt: string): Promise<string> {
     body: JSON.stringify({
       model: "google/gemini-2.5-flash",
       messages: [
-        { role: "system", content: "Respond ONLY with valid JSON. No prose, no code fences." },
+        { role: "system", content: "You only ask short open-ended questions. You never write story content. Respond ONLY with valid JSON." },
         { role: "user", content: prompt },
       ],
-      temperature: 0.8,
+      temperature: 0.7,
     }),
   });
   if (res.status === 429) throw new Error("AI rate limited — try again soon");
@@ -138,22 +193,18 @@ async function callGateway(key: string, prompt: string): Promise<string> {
 
 function parseStringArray(text: string, key: string): string[] {
   if (!text) return [];
-  // Strip code fences if present
   const cleaned = text.replace(/```json\s*|```/g, "").trim();
   try {
     const obj = JSON.parse(cleaned);
     const arr = obj?.[key];
     if (Array.isArray(arr)) return arr.filter((x) => typeof x === "string");
   } catch {
-    // try regex extract
     const m = cleaned.match(/\[[\s\S]*\]/);
     if (m) {
       try {
         const arr = JSON.parse(m[0]);
         if (Array.isArray(arr)) return arr.filter((x) => typeof x === "string");
-      } catch {
-        /* ignore */
-      }
+      } catch { /* ignore */ }
     }
   }
   return [];

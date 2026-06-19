@@ -445,7 +445,7 @@ Layout: Two-column grid (on desktop)
 - \`/dev-docs\` — This technical blueprint
 
 ### Key Components:
-- **CreateBookEngine**: 5-step book creation form with dynamic filtering and validation
+- **CanvasSetupWizard**: 4-step author-driven setup (Book Setup → 10-bullet Story Summary → Story Arc → Chapter Matrix). AI is limited to a Socratic helper capped at 3 questions per book.
 - **BookDetailView**: Book reading/generation interface with chapter navigation sidebar
 - **BookSettings**: Edit book metadata and generation controls post-creation
 - **ChapterView**: Read chapters with sidebar navigation and section highlighting

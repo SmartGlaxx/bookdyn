@@ -475,6 +475,10 @@ export interface CanvasSetup {
   genre?: string;
   lengthTarget?: string;
   tone?: string;
+  historicalEra?: TemporalEra;
+  /** 0–3: how much creative liberty the AI guide may take when asking questions. */
+  aiCreativity?: number;
+  bookType?: BookType;
 }
 
 export interface StoryCanvas {
@@ -482,6 +486,8 @@ export interface StoryCanvas {
   storySummary: StorySummaryBullet[];
   storyArc: StoryArcCard[];
   chapters: CanvasChapter[];
+  /** Number of AI guiding-question requests used (cap of 3 per book). */
+  aiAssistUsed?: number;
   updatedAt?: string;
 }
 
@@ -490,6 +496,7 @@ export const EMPTY_CANVAS: StoryCanvas = {
   storySummary: [],
   storyArc: [],
   chapters: [],
+  aiAssistUsed: 0,
 };
 
 export interface Book {
@@ -543,6 +550,8 @@ export interface CreateBookInput {
   seriesId?: string;
   parentBookId?: string;
   frontMatter?: { selection: FrontMatterSelection };
+  /** Optional Story Canvas seeded at creation time (Module 1 wizard). */
+  canvas?: StoryCanvas;
 }
 
 // ============= BOOK TYPE CATEGORIES =============
