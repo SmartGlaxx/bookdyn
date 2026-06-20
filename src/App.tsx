@@ -22,6 +22,7 @@ import Waitlist from "./pages/Waitlist";
 import Onboarding from "./pages/Onboarding";
 import BookDetail from "./pages/BookDetail";
 import NewBookPage from "./pages/NewBookPage";
+import ComingSoon from "./pages/ComingSoon";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { BookOpen } from "lucide-react";
 import { BOOK_TYPE_INFO } from "@/types/book";
@@ -138,6 +139,12 @@ const App = () => (
               path="/dashboard/new-book"
               element={<ProtectedRoute><NewBookPage /></ProtectedRoute>}
             />
+            <Route path="/dashboard/content" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
+            <Route path="/dashboard/characters" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
+            <Route path="/dashboard/world" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
+            <Route path="/dashboard/analytics" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
+            <Route path="/dashboard/notes" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
+            <Route path="/coming-soon" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
             <Route
               path="/dashboard/:slug"
               element={<ProtectedRoute><DashboardRoute /></ProtectedRoute>}
