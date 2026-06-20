@@ -6,8 +6,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, X } from "lucide-react";
+import { Trash2, X, Plus, Minus, BookOpen, Link2, List, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy,
+  arrayMove, useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const newId = () =>
   (typeof crypto !== "undefined" && "randomUUID" in crypto)
