@@ -633,6 +633,8 @@ export function ChapterMatrixSimulator(props: Props) {
                   <FreeChapterCard
                     key={ch.id}
                     index={i}
+                    accent={chapterAccentAt(i)}
+                    isDragging={draggingId === ch.id}
                     chapter={ch}
                     chLinks={links.filter((l) => l.chapterId === ch.id)}
                     interOut={interLinks.filter((l) => l.fromChapterId === ch.id).length}
@@ -640,7 +642,9 @@ export function ChapterMatrixSimulator(props: Props) {
                     onClickCard={onChapterClick}
                     onClickLink={(lid) => setDetail({ kind: "link", id: lid })}
                     onTitleChange={updateChapterTitle}
-                    onRemoveChapter={removeChapter}
+                    onRequestDelete={(id) => setConfirmDelete(id)}
+                    onView={(id) => setCardDetail({ chapterId: id, mode: "view" })}
+                    onEdit={(id) => setCardDetail({ chapterId: id, mode: "edit" })}
                     onStartDrag={beginCardDrag}
                     onStartInterLink={(id) => { setSelected(null); setLinkSource(id === linkSource ? null : id); }}
                     isLinkSource={linkSource === ch.id}
@@ -658,10 +662,17 @@ export function ChapterMatrixSimulator(props: Props) {
           </div>
 
           {/* SVG overlay — over the scroll container, in wrap coordinates */}
-          <svg className="absolute top-0 left-0 w-full h-full pointer-events-none z-[2]">
+          <svg className="absolute top-0 left-0 w-full h-full pointer-events-none z-[20]">
             {/* element→chapter links */}
             {linePaths.map((p) => (
               <g key={p.link.id}>
+                {/* Wide invisible hit-target so the link is selectable even when it overlaps a card */}
+                <path
+                  d={p.d} fill="none" stroke="transparent" strokeWidth={16}
+                  className="cursor-pointer pointer-events-stroke"
+                  onClick={() => setDetail({ kind: "link", id: p.link.id })}
+                  data-curve
+                />
                 <path
                   d={p.d} fill="none" stroke={p.color} strokeWidth={2.5}
                   className="cursor-pointer hover:[stroke-width:4] pointer-events-stroke"
@@ -702,6 +713,12 @@ export function ChapterMatrixSimulator(props: Props) {
             {/* chapter→chapter grey links */}
             {interPaths.map((p) => (
               <g key={p.link.id}>
+                <path
+                  d={p.d} fill="none" stroke="transparent" strokeWidth={16}
+                  className="cursor-pointer pointer-events-stroke"
+                  onClick={() => setDetail({ kind: "inter", id: p.link.id })}
+                  data-curve
+                />
                 <path
                   d={p.d} fill="none" stroke={INTER_COLOR} strokeWidth={2}
                   strokeDasharray="6 4"
