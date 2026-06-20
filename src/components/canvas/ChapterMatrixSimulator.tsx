@@ -232,7 +232,7 @@ export function ChapterMatrixSimulator(props: Props) {
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       const d = curveDragRef.current;
-      const wrap = wrapRef.current;
+      const wrap = matrixRef.current;
       if (!d || !wrap) return;
       const wrapRect = wrap.getBoundingClientRect();
       const x = e.clientX - wrapRect.left;
@@ -520,7 +520,7 @@ export function ChapterMatrixSimulator(props: Props) {
         </aside>
 
         {/* Matrix */}
-        <div className="flex-1 relative overflow-hidden">
+        <div className="flex-1 relative overflow-hidden" ref={matrixRef}>
           {/* Hint */}
           <div
             className={cn(
@@ -648,8 +648,8 @@ export function ChapterMatrixSimulator(props: Props) {
           {/* Note popup */}
           {popup && (
             <NotePopup
-              x={popup.x - (wrapRef.current?.getBoundingClientRect().left ?? 0)}
-              y={popup.y - (wrapRef.current?.getBoundingClientRect().top ?? 0)}
+              x={popup.x - (matrixRef.current?.getBoundingClientRect().left ?? 0)}
+              y={popup.y - (matrixRef.current?.getBoundingClientRect().top ?? 0)}
               header={
                 popup.kind === "element" ? (
                   <>Link <span className="text-[10px] px-1.5 py-0.5 rounded text-white mr-1" style={{ background: COLORS[popup.el.category] }}>{popup.el.category}</span>{popup.el.name}</>
