@@ -916,7 +916,7 @@ function CategoryDropdown({
 }: {
   cat: LinkCategory;
   title: string;
-  Icon: React.ComponentType<{ className?: string }>;
+  Icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   items: ElementLite[];
   defaultOpen: boolean;
   onToggle: (open: boolean) => void;
