@@ -11,6 +11,9 @@ import {
   Maximize2, Minimize2, GripVertical, ArrowRightLeft, AtSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 const newId = () =>
   (typeof crypto !== "undefined" && "randomUUID" in crypto)
@@ -137,9 +140,11 @@ export function ChapterMatrixSimulator(props: Props) {
   // ---- Refs ----
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const matrixRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const elNodes = useRef<Map<string, HTMLDivElement | null>>(new Map());
   const chNodes = useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const catAnchorNodes = useRef<Map<LinkCategory, HTMLDivElement | null>>(new Map());
 
   // ---- Selection / link state ----
   const [selected, setSelected] = useState<{ id: string; category: LinkCategory } | null>(null);
@@ -155,10 +160,13 @@ export function ChapterMatrixSimulator(props: Props) {
     | { kind: "inter"; id: string }
     | null
   >(null);
-  const [, forceTick] = useState(0);
+  const [tick, forceTick] = useState(0);
   const redraw = useCallback(() => forceTick((n) => n + 1), []);
 
-  useLayoutEffect(() => { redraw(); }, [chapters, links, interLinks, allElements, zoom, redraw]);
+  // Which category is visible in the sidebar (dropdown switches them)
+  const [activeCat, setActiveCat] = useState<LinkCategory>("plot");
+
+  useLayoutEffect(() => { redraw(); }, [chapters, links, interLinks, allElements, zoom, fullscreen, activeCat, redraw]);
   useEffect(() => {
     const onResize = () => redraw();
     window.addEventListener("resize", onResize);
@@ -228,7 +236,7 @@ export function ChapterMatrixSimulator(props: Props) {
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       const d = curveDragRef.current;
-      const wrap = wrapRef.current;
+      const wrap = matrixRef.current;
       if (!d || !wrap) return;
       const wrapRect = wrap.getBoundingClientRect();
       const x = e.clientX - wrapRect.left;
@@ -258,7 +266,7 @@ export function ChapterMatrixSimulator(props: Props) {
 
   // ---- Compute paths ----
   const linePaths = useMemo(() => {
-    const wrap = wrapRef.current;
+    const wrap = matrixRef.current;
     if (!wrap) return [] as Array<{
       d: string; color: string; mx: number; my: number; baseMx: number; baseMy: number; link: ChapterLink;
     }>;
@@ -269,8 +277,12 @@ export function ChapterMatrixSimulator(props: Props) {
     links.forEach((link) => {
       const elNode = elNodes.current.get(link.elementId);
       const chNode = chNodes.current.get(link.chapterId);
-      if (!elNode || !chNode) return;
-      const er = elNode.getBoundingClientRect();
+      if (!chNode) return;
+      // Fall back to the category anchor in the sidebar when the element row is
+      // not currently visible (e.g. a different category is selected in the dropdown).
+      const sourceNode = elNode ?? catAnchorNodes.current.get(link.category) ?? null;
+      if (!sourceNode) return;
+      const er = sourceNode.getBoundingClientRect();
       const cr = chNode.getBoundingClientRect();
       const x1 = er.right - wrapRect.left;
       const y1 = er.top + er.height / 2 - wrapRect.top;
@@ -291,10 +303,10 @@ export function ChapterMatrixSimulator(props: Props) {
     });
     return out;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [links, chapters, allElements, popup, detail, zoom]);
+  }, [links, chapters, allElements, popup, detail, zoom, tick, fullscreen]);
 
   const interPaths = useMemo(() => {
-    const wrap = wrapRef.current;
+    const wrap = matrixRef.current;
     if (!wrap) return [] as Array<{
       d: string; mx: number; my: number; baseMx: number; baseMy: number; link: InterChapterLink;
     }>;
@@ -323,7 +335,7 @@ export function ChapterMatrixSimulator(props: Props) {
     });
     return out;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interLinks, chapters, popup, detail, zoom]);
+  }, [interLinks, chapters, popup, detail, zoom, tick, fullscreen]);
 
   // ---- Actions ----
   const flashError = (msg: string) => {
@@ -484,30 +496,52 @@ export function ChapterMatrixSimulator(props: Props) {
         ref={wrapRef}
       >
         {/* Sidebar */}
-        <aside className="w-[260px] min-w-[260px] h-full bg-[#161a21] border-r border-[#232833] p-4 overflow-y-auto z-[3]">
+        <aside className="w-[260px] min-w-[260px] h-full bg-[#161a21] border-r border-[#232833] p-4 z-[3] flex flex-col min-h-0">
           <div className="flex items-center gap-1.5 mb-1">
             <MousePointer2 className="w-3.5 h-3.5 text-[#8a93a3]" />
             <h2 className="text-sm m-0 tracking-wider">Story Elements</h2>
           </div>
-          <p className="text-[11px] text-[#8a93a3] mb-3.5">Click an element, then click a chapter to link it.</p>
+          <p className="text-[11px] text-[#8a93a3] mb-2">Click an element, then click a chapter to link it.</p>
 
-          <Group title="Plot" cat="plot" items={groups.plot}
-            selectedId={selected?.id ?? null}
-            onSelect={selectElement}
-            registerRef={(id, node) => elNodes.current.set(id, node)}
-          />
-          <Group title="Characters" cat="character" items={groups.character}
-            selectedId={selected?.id ?? null}
-            onSelect={selectElement}
-            registerRef={(id, node) => elNodes.current.set(id, node)}
-          />
-          <Group title="World" cat="world" items={groups.world}
-            selectedId={selected?.id ?? null}
-            onSelect={selectElement}
-            registerRef={(id, node) => elNodes.current.set(id, node)}
-          />
+          {/* Category dropdown */}
+          <div className="flex items-center gap-2 mb-3">
+            <div
+              ref={(n) => catAnchorNodes.current.set(activeCat, n)}
+              className={cn("w-2.5 h-2.5 rounded-full shrink-0", DOT_CLASS[activeCat])}
+            />
+            <Select value={activeCat} onValueChange={(v) => setActiveCat(v as LinkCategory)}>
+              <SelectTrigger className="h-8 text-xs bg-[#1d222c] border-[#2a3140] text-[#cfd4df]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-[#161a21] border-[#2a3140] text-[#cfd4df]">
+                <SelectItem value="plot">Plot ({groups.plot.length})</SelectItem>
+                <SelectItem value="character">Characters ({groups.character.length})</SelectItem>
+                <SelectItem value="world">World ({groups.world.length})</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <div className="mt-4 pt-3 border-t border-[#232833] text-[10px] text-[#5d6577] leading-relaxed space-y-1">
+          {/* Hidden anchors for inactive categories so links to those elements still point at the sidebar */}
+          <div className="absolute opacity-0 pointer-events-none -z-10">
+            {(["plot", "character", "world"] as LinkCategory[])
+              .filter((c) => c !== activeCat)
+              .map((c) => (
+                <div key={c} ref={(n) => catAnchorNodes.current.set(c, n)} style={{ width: 1, height: 1 }} />
+              ))}
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto -mr-1 pr-1">
+            <Group
+              title={activeCat === "plot" ? "Plot" : activeCat === "character" ? "Characters" : "World"}
+              cat={activeCat}
+              items={groups[activeCat]}
+              selectedId={selected?.id ?? null}
+              onSelect={selectElement}
+              registerRef={(id, node) => elNodes.current.set(id, node)}
+            />
+          </div>
+
+          <div className="mt-3 pt-3 border-t border-[#232833] text-[10px] text-[#5d6577] leading-relaxed space-y-1">
             <p className="flex items-center gap-1.5"><span className="w-2 h-0.5 bg-[#ef4444] inline-block" /> Plot link</p>
             <p className="flex items-center gap-1.5"><span className="w-2 h-0.5 bg-[#3b82f6] inline-block" /> Character link</p>
             <p className="flex items-center gap-1.5"><span className="w-2 h-0.5 bg-[#22c55e] inline-block" /> World link</p>
@@ -516,7 +550,7 @@ export function ChapterMatrixSimulator(props: Props) {
         </aside>
 
         {/* Matrix */}
-        <div className="flex-1 relative overflow-hidden">
+        <div className="flex-1 relative overflow-hidden" ref={matrixRef}>
           {/* Hint */}
           <div
             className={cn(
@@ -644,8 +678,8 @@ export function ChapterMatrixSimulator(props: Props) {
           {/* Note popup */}
           {popup && (
             <NotePopup
-              x={popup.x - (wrapRef.current?.getBoundingClientRect().left ?? 0)}
-              y={popup.y - (wrapRef.current?.getBoundingClientRect().top ?? 0)}
+              x={popup.x - (matrixRef.current?.getBoundingClientRect().left ?? 0)}
+              y={popup.y - (matrixRef.current?.getBoundingClientRect().top ?? 0)}
               header={
                 popup.kind === "element" ? (
                   <>Link <span className="text-[10px] px-1.5 py-0.5 rounded text-white mr-1" style={{ background: COLORS[popup.el.category] }}>{popup.el.category}</span>{popup.el.name}</>
