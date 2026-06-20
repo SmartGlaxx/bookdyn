@@ -17,7 +17,7 @@ import {
 import { ARC_COLOR_CLASS, ARC_COLORS } from "@/hooks/useCanvas";
 import {
   ArrowLeft, ArrowRight, Check, Plus, Trash2, Loader2, Pin,
-  GripVertical,
+  GripVertical, Sparkles, ChevronRight,
 } from "lucide-react";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent,
@@ -218,15 +218,15 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
 
   return (
     open ? (
-    <div className="space-y-4" role="region" aria-label="Create a new book">
-      <header className="flex items-center gap-3">
+    <div className="space-y-6" role="region" aria-label="Create a new book">
+      <header className="flex items-center gap-4 pb-5 border-b border-border">
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+          className="inline-flex items-center justify-center w-9 h-9 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
           aria-label="Back to dashboard"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
         <Stepper step={step} />
       </header>
@@ -304,9 +304,9 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
           )}
       </section>
 
-      <footer className="border-t border-border pt-4 pb-2 mt-8">
+      <footer className="border-t border-border pt-5 mt-8">
         <div className="flex items-center justify-between gap-2">
-          <Button variant="ghost" onClick={goBack} disabled={step === 1}>
+          <Button variant="outline" onClick={goBack} disabled={step === 1} className="rounded-full">
             <ArrowLeft className="w-4 h-4 mr-1" /> Back
           </Button>
           <div className="text-xs text-muted-foreground hidden sm:block">
@@ -317,11 +317,11 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
             {step === 6 && `${chapters.length} chapters · ${chapterLinks.length} link${chapterLinks.length === 1 ? "" : "s"}`}
           </div>
           {step < 6 ? (
-            <Button onClick={goNext} disabled={!canAdvance[step]} variant="hero">
+            <Button onClick={goNext} disabled={!canAdvance[step]} variant="hero" className="rounded-full px-6">
               Next <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={finalize} disabled={!canAdvance[6] || isCreating} variant="hero">
+            <Button onClick={finalize} disabled={!canAdvance[6] || isCreating} variant="hero" className="rounded-full px-6">
               {isCreating ? (
                 <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Creating…</>
               ) : (
@@ -338,25 +338,32 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
 
 function Stepper({ step }: { step: Step }) {
   return (
-    <ol className="flex items-center gap-2 mt-3 text-[11px]">
-      {([1, 2, 3, 4, 5, 6] as Step[]).map((s) => (
-        <li key={s} className="flex items-center gap-2">
-          <span
-            className={cn(
-              "w-5 h-5 rounded-full flex items-center justify-center font-medium",
-              s === step ? "bg-amber-glow text-background"
-                : s < step ? "bg-emerald-500/30 text-emerald-200"
-                : "bg-muted text-muted-foreground",
-            )}
-          >
-            {s < step ? <Check className="w-3 h-3" /> : s}
-          </span>
-          <span className={cn("hidden sm:inline", s === step ? "text-foreground" : "text-muted-foreground")}>
-            {STEP_LABELS[s]}
-          </span>
-          {s < 6 && <span className="text-muted-foreground/40">›</span>}
-        </li>
-      ))}
+    <ol className="flex items-center gap-2 text-sm overflow-x-auto">
+      {([1, 2, 3, 4, 5, 6] as Step[]).map((s, idx) => {
+        const isCurrent = s === step;
+        const isDone = s < step;
+        return (
+          <li key={s} className="flex items-center gap-2 shrink-0">
+            <span
+              className={cn(
+                "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
+                isCurrent && "bg-primary text-primary-foreground",
+                isDone && "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40",
+                !isCurrent && !isDone && "bg-muted/60 text-muted-foreground",
+              )}
+            >
+              {isDone ? <Check className="w-3.5 h-3.5" /> : s}
+            </span>
+            <span className={cn(
+              "hidden md:inline text-sm",
+              isCurrent ? "text-foreground font-semibold" : "text-muted-foreground",
+            )}>
+              {STEP_LABELS[s]}
+            </span>
+            {idx < 5 && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/40 mx-1" />}
+          </li>
+        );
+      })}
     </ol>
   );
 }
@@ -371,22 +378,28 @@ function Step1(props: {
   aiCreativity: number; setAiCreativity: (v: number) => void;
 }) {
   return (
-    <div className="space-y-5">
-      <p className="text-sm text-muted-foreground">
-        A few essentials. You can edit any of these later from inside the book.
-      </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-serif font-bold text-2xl flex items-center gap-2">
+          Book Setup <Sparkles className="w-5 h-5 text-primary" />
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Set the foundation for your book. You can edit any of these details later.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
         <Field label="Title *">
           <Input
             value={props.title}
             onChange={(e) => props.setTitle(e.target.value)}
             placeholder="Working title"
             autoFocus
+            className="h-11"
           />
         </Field>
         <Field label="Book Type *">
           <Select value={props.bookType} onValueChange={(v) => props.setBookType(v as BookType)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
             <SelectContent>
               {ENABLED_BOOK_TYPES.map((bt) => {
                 const info = BOOK_TYPE_INFO[bt];
@@ -404,11 +417,12 @@ function Step1(props: {
             value={props.genre}
             onChange={(e) => props.setGenre(e.target.value)}
             placeholder="Literary, thriller, romance…"
+            className="h-11"
           />
         </Field>
         <Field label="Tone">
           <Select value={props.tone} onValueChange={(v) => props.setTone(v as ToneLevel)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
             <SelectContent>
               {TONE_OPTIONS.map((t) => (
                 <SelectItem key={t.value} value={t.value}>
@@ -420,7 +434,7 @@ function Step1(props: {
         </Field>
         <Field label="Historical Time Period">
           <Select value={props.era} onValueChange={(v) => props.setEra(v as TemporalEra)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
             <SelectContent>
               {TEMPORAL_ERA_OPTIONS.map((o) => (
                 <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
@@ -437,7 +451,7 @@ function Step1(props: {
               value={[props.aiCreativity]}
               onValueChange={(v) => props.setAiCreativity(v[0])}
             />
-            <p className="text-[10px] text-muted-foreground mt-1">
+            <p className="text-[11px] text-muted-foreground mt-2">
               Affects how playful the AI's guiding questions are. AI never writes story content.
             </p>
           </div>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Navigation from "@/components/Navigation";
+import { AppShell } from "@/components/shell/AppShell";
 import { CanvasSetupWizard } from "@/components/canvas/CanvasSetupWizard";
 import { useBooks } from "@/hooks/useBooks";
 import { CreateBookInput } from "@/types/book";
@@ -29,16 +29,13 @@ export default function NewBookPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation onCreateBook={() => navigate("/dashboard/new-book")} />
-      <main className="container max-w-6xl mx-auto px-4 pt-2 pb-6">
-        <CanvasSetupWizard
-          open
-          onClose={() => navigate("/dashboard")}
-          onCreate={handleCreate}
-          isCreating={isCreating || submitting}
-        />
-      </main>
-    </div>
+    <AppShell projectLabel="New Book Project">
+      <CanvasSetupWizard
+        open
+        onClose={() => navigate("/dashboard")}
+        onCreate={handleCreate}
+        isCreating={isCreating || submitting}
+      />
+    </AppShell>
   );
 }

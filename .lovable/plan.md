@@ -1,112 +1,91 @@
-# Module 1 — Canvas IS the Book Setup (replace the old wizard)
+## Goal
 
-You're right: the Canvas is supposed to be **the** book-creation experience, not a tab that appears after a book exists. The current `CreateBookEngine` (6-step Type/Details/Voice/Controls/Advanced/Front Matter wizard with AI automation) gets deleted. Clicking "New Book" opens the Canvas Setup flow directly. AI is restricted to **a single Socratic helper** that asks questions, never writes content, and stops after 3 uses per book.
+Rebuild the app shell to match the four uploaded mockups exactly, then re-skin the New Book wizard steps to mirror the screenshots pixel-for-pixel. The sidebar must be **dynamic** — items change based on the current page.
 
----
+## 1. New app shell (`AppShell`)
 
-## What you'll see
+A single layout wrapping every authenticated route.
 
 ```text
-New Book ─▶ Step 1: Book Setup
-              Title · Genre · Tone · Historical Time Period · AI Creativity (0–3)
-
-           Step 2: Story Summary (manual)
-              10 numbered bullet inputs (min 10, no max)
-              "Next" disabled until 10 non-empty bullets exist
-              [Ask AI a guiding question] button (shared 3-use counter)
-
-           Step 3: Global Timeline Board
-              Each bullet → draggable color-coded Story Arc card
-              Default colors: 1 Setup · 2-3 Inciting · 4-6 Rising · 7 Climax · 8-9 Fall · 10 Resolution
-              User reorders, recolors, edits text. Must click "Approve order".
-
-           Step 4: Chapter Matrix
-              User types chapter titles manually. "+ Add chapter".
-              Per chapter: [Ask AI a guiding question] (same shared counter)
-              No auto-generated titles. No radios of AI titles.
-
-           Step 5: Scene Cards (optional, click any chapter)
-              100–120 word Plot box (manual, word counter)
-              Draggable scene sub-cards
-              [Ask AI a guiding question] (shared counter)
-
-           [Create Book]  → writes books row with full `canvas` jsonb
-                         → opens the book straight into the Canvas view
+┌─────────────────────────────────────────────────────────────┐
+│  [📖 Authoryti]  [New Book Project ▼]    [🔥 2] [+ New Book] [M] [?] │  ← top header (64px, dark)
+├──────────┬──────────────────────────────────────────────────┤
+│ 📖 Over  │                                                  │
+│ 📄 Cont  │                                                  │
+│ 👥 Char  │    page content inside large rounded card        │
+│ 🌐 World │    (border, ~24px margins from edges)            │
+│ 📈 Anal  │                                                  │
+│ 📝 Notes │                                                  │
+│ ─────    │                                                  │
+│ ⚙ Set    │                                                  │
+└──────────┴──────────────────────────────────────────────────┘
 ```
 
----
+- Left rail: ~96px, icon + label stacked, active item amber-tinted with rounded background (matches mockup).
+- Top header: 64px, logo left, "New Book Project" project switcher dropdown, streak chip, "+ New Book" pill (amber), avatar, help icon.
+- Main: dark bg, page renders inside a large `rounded-2xl border border-border` card with internal padding.
 
-## AI assist rule (your spec, locked in code)
+Files:
+- New `src/components/shell/AppShell.tsx` — layout with `<Outlet />`.
+- New `src/components/shell/AppHeader.tsx` — top header, reuses streak / new-book / avatar dropdown from the existing `Navigation`.
+- New `src/components/shell/AppSidebar.tsx` — dynamic sidebar (see below).
+- New `src/components/shell/PageCard.tsx` — wrapper for the bordered card.
 
-One helper component, `AskAIGuide`, used in every Canvas surface. Behavior:
+## 2. Dynamic sidebar
 
-- Three categories the user picks from: **Plot Ideas**, **Character Arcs**, **Worldbuilding**.
-- Calls the `suggest-canvas` edge function with mode `"guiding_questions"`.
-- Edge function returns **3 short questions only**, always referencing book title, genre, and the user's existing bullets/titles/scene context. Never returns story content.
-- A counter `canvas.aiAssistUsed` (0–3) persists on the book. Once it hits 3, every Ask AI button across the Canvas is disabled with the message "AI guidance used (3/3) — the rest is yours."
-- Server-side guard in `suggest-canvas`: refuses any request when `aiAssistUsed >= 3`, and refuses the legacy modes (`story_summary`, `chapter_titles`, `story_arc_colors`) entirely — those are removed.
+`AppSidebar` decides items from `useLocation()` + route context:
 
-System prompt enforces: "Reply with exactly 3 short, open-ended questions. Never propose plot, characters, prose, or titles. Reference the user's title, genre, and existing bullets."
+| Route family | Items |
+|---|---|
+| `/dashboard` (library) | Overview · Content · Characters · World · Analytics · Notes · Settings |
+| `/dashboard/new-book` | Overview · Content · Characters · World · Analytics · Notes · Settings (same as mockup) |
+| `/dashboard/:bookId` (book detail) | Overview · Chapters · Characters · World · Continuity · Cover · Export · Book Settings |
+| `/admin/*` | Users · Feedback · Errors · Settings |
+| `/onboarding`, `/auth`, `/waitlist` | no shell (keep current public layout) |
 
----
+Items linking to routes that don't exist yet render a `ComingSoonPage` (`<h1>Coming Soon</h1>` + subtitle) under a new route like `/dashboard/content`, `/dashboard/analytics`, `/dashboard/notes`.
 
-## Data shape (no new column, extends existing `books.canvas`)
+## 3. Migrate existing top-nav items
 
-```ts
-canvas = {
-  setup: { title, genre, tone, historicalEra, aiCreativity },  // tone/era enums kept simple
-  storySummary: [ { id, text } ],            // min 10 to leave step 2
-  storyArc:     [ { id, text, color } ],     // 1-to-1 from bullets, user can reorder/recolor
-  chapters:     [ { id, title, plot, scenes:[{id,title,note}] } ],
-  aiAssistUsed: 0,                           // 0..3
-  updatedAt
-}
-```
+The current `Navigation` dropdown contains: profile, billing/subscription, sign out, plus the streak meter and "+ New Book" CTA. Mapping:
 
-Existing books without a `canvas` get an empty-state inside the Canvas view ("This book pre-dates the Canvas. Start a new book to use it, or fill the Canvas manually."). No backfill.
+- Streak chip → top-header right cluster.
+- "+ New Book" → top-header amber pill (already in mockup).
+- Avatar dropdown (M) → keep `UserMenuDropdown` content (profile, manage subscription, admin links if admin, sign out).
+- Help (?) → opens existing help / docs link (or a "Coming soon" tooltip for now).
+- Project switcher ("New Book Project ▼") → dropdown listing the user's books, navigates to `/dashboard/:id`; the currently-open book is the active label.
 
----
+`Navigation.tsx` is then deleted (or kept only for public pages if needed); all `<Navigation />` usages in pages are removed because the shell renders the header now.
 
-## Files to add
+## 4. Re-skin the New Book wizard
 
-- `src/components/canvas/CanvasSetupWizard.tsx` — the new 5-step modal/page that replaces `CreateBookEngine`. Owns local draft state until "Create Book", then inserts the row.
-- `src/components/canvas/AskAIGuide.tsx` — shared "Ask AI a guiding question" popover (category picker + 3 questions display + uses-left counter).
-- `src/components/canvas/GlobalTimelineBoard.tsx` — step 3 board (reuses `StoryArcLane` internals but with the approve-and-continue gate).
-- `src/components/canvas/SceneCardsPanel.tsx` — step 5 inline panel (or reuses `ChapterDetailDrawer` minus its AI buttons).
+Rebuild `CanvasSetupWizard.tsx` to match the 4 screenshots exactly:
 
-## Files to change
+- **Stepper** (top of card): back arrow · numbered pill chips with labels (`Book Setup`, `Story Summary`, `Story Arc`, `Characters`, `World`, `Chapter Matrix`), green check for completed, amber filled for current, muted for upcoming, `›` separators.
+- **Step 1 Book Setup**: 2-column grid (Title / Book Type, Genre / Tone, Historical Time Period / AI Creativity), serif "Book Setup ✨" heading, muted subtitle, amber-bordered focused input.
+- **Step 3 Story Arc**: "Global Timeline Board ✨" heading, "Ask AI a guiding question 3/3" pill on the right, horizontal scrolling row of `BEAT n` cards with colored borders/labels (blue=Setup, green=Rising, purple=Midpoint, etc.) and a category select at the bottom of each card. Scroll indicator + arrow chip on the right.
+- **Step 4 Characters**: "Character Arcs" heading with people icon, "+ Add character" button top-right, grid of character cards each with name input, AI-suggest sparkles button, trash button, `PERSONALITY TRAITS (n)` row with "Add trait ▾", italic empty hint.
+- **Step 6 Chapter Matrix**: header row with title + star, right cluster of pills (`10 Chapters`, `0 Links Created`, `View as List`); left panel "STORY ELEMENTS" with Plot Points / Characters / World groups (each with `+` add button); right panel "Drag a plot point, character, or location here to create a new chapter" drop hint above a grid of numbered chapter cards (colored number badge, title, description, `LINKED ELEMENTS` section, pencil + ⋯ buttons, last cell is the dashed `+ Add Chapter` tile). Drop the SVG link-drawing simulator from the current build in favor of the drag-into-card pattern shown in the mockup.
+- **Footer**: Back · `n chapters · 0 links created` · `Create Book →` (purple gradient pill on the last step, amber on others).
 
-- `src/components/CreateBookEngine.tsx` — **delete**.
-- All call sites of `<CreateBookEngine />` (dashboard "New Book" button, anywhere else) → open `<CanvasSetupWizard />` instead.
-- `src/components/BookDetailView.tsx` — drop the Canvas/Manuscript tabs. Canvas becomes the default view of an opened book; a small "Manuscript" link inside the Canvas opens the chapter writing surface when the user is ready to draft prose.
-- `src/components/canvas/StorySummaryList.tsx` — replace "Draft with AI" button with `<AskAIGuide />`. Enforce min-10 visually (numbered slots 1–10 always shown).
-- `src/components/canvas/CanvasPage.tsx` — remove "Summary → Arc cards" auto button; arc is always derived 1-to-1 at step-2-to-3 transition. Keep editing afterward.
-- `src/components/canvas/ChapterMatrix.tsx` — remove AI title suggestions / radios. Add `<AskAIGuide />` per chapter.
-- `src/components/canvas/ChapterDetailDrawer.tsx` — remove any AI plot-direction auto-generation; add manual plot word counter (target 100–120). Add `<AskAIGuide />`.
-- `src/hooks/useCanvas.ts` — add `incrementAiAssist()` helper; expose `aiAssistUsed`. Add a `createCanvasBook(initialCanvas)` helper used by the wizard's final step (single insert into `books`).
-- `src/types/book.ts` — drop wizard-only enums no longer used (`AutomationLevel`, `DepthLevel`, etc.) **only if** nothing else imports them; otherwise leave the types alone and just stop using them in UI. Add `aiAssistUsed: number` to `StoryCanvas`. Add `historicalEra` + `aiCreativity` to `CanvasSetup`.
-- `supabase/functions/suggest-canvas/index.ts` — remove old modes; add `guiding_questions` mode. Validate `aiAssistUsed < 3` by re-reading `books.canvas` server-side (so the cap can't be bypassed from the client). Returns `{ questions: string[3] }` only.
+## 5. Routing
 
-## Files NOT touched
+- Wrap all `/dashboard/*` and `/admin/*` routes inside a single `<Route element={<AppShell />}>` in `App.tsx`.
+- Public routes (`/`, `/auth`, `/onboarding`, `/waitlist`, `/check-email`, `/reset-password`) stay outside the shell.
+- Add stub routes: `/dashboard/content`, `/dashboard/analytics`, `/dashboard/notes` → `ComingSoonPage`.
 
-- `generate-content`, `generate-outline`, `generate-intro`, manuscript writing UI, billing, profiles, RLS, migrations. The Canvas is a planning artifact; chapter prose generation stays wherever it lives today and is reached via the small "Manuscript" link from inside the Canvas.
+## Technical notes
 
----
+- Use semantic tokens only (`bg-card`, `border-border`, `bg-muted`, `text-foreground`, etc.). Amber accent already exists as `amber-glow` / `accent`; reuse.
+- Keep `dark` class on `<html>` (already set in `main.tsx`).
+- The shell is a single component, not the shadcn `Sidebar` primitive — the mockup's rail is a custom narrow icon+label rail, not a collapsible drawer, so a thin custom component is simpler and matches exactly.
+- All existing functional code (book creation, canvas state, AI calls) is preserved; only the chrome and step layouts change.
+- Files touched (estimate): 4 new shell files, 1 new `ComingSoonPage`, `App.tsx`, `CanvasSetupWizard.tsx` (heavy rewrite of step layouts), `NewBookPage.tsx` (remove `Navigation`), and remove `<Navigation />` from `Index.tsx`, `BookDetail.tsx`, admin pages.
 
-## Out of scope (next modules)
+## What I will NOT change
 
-- Scene-level text generation, continuity audit, fork chapters, sprints, heatmap, theme/typography suite.
-- Backfilling old books' outline data into `canvas`.
-- Replacing the manuscript writing surface itself.
+- Book generation logic, Supabase calls, edge functions, canvas data model.
+- Public landing / auth / onboarding pages.
+- The 4 wizard steps not shown in mockups (Story Summary, World) keep their current layout, just re-themed to sit inside the new card.
 
----
-
-## Build order
-
-1. Types + `useCanvas` extensions (`aiAssistUsed`, era/creativity).
-2. `suggest-canvas` rewrite (only `guiding_questions`, server-side cap).
-3. `AskAIGuide` shared component.
-4. `CanvasSetupWizard` (steps 1–4 first, step 5 reuses drawer).
-5. Wire dashboard "New Book" → wizard; delete `CreateBookEngine`.
-6. Simplify `BookDetailView` (Canvas is default, Manuscript becomes a link).
-7. Smoke test: create a book end-to-end, verify all 10 bullets required, drag arc, add chapters manually, AI counter caps at 3, reload restores everything.
+Approve to start.
