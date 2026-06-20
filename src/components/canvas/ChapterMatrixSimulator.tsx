@@ -1168,7 +1168,7 @@ function NotePopup({
         value={note}
         onChange={onInput}
         placeholder={placeholder ?? "Describe this link… type @ to reference another element"}
-        className="min-h-[60px] bg-[#0f1115] text-[#e8eaed] border-[#2a3140] text-xs"
+        className="min-h-[140px] bg-[#0f1115] text-[#e8eaed] border-[#2a3140] text-[13px] leading-relaxed resize-y"
       />
       <div className="text-[10px] text-[#8a93a3] mt-1 flex items-center gap-1">
         <AtSign className="w-3 h-3" />
