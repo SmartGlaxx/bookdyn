@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useRef, useEffect, useMemo } from "react";
-import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Pencil, Check, X, RefreshCw, FileText, Zap, ChevronDown, Search, BookOpen, Sparkles, Loader2, PenTool, Users, Globe } from "lucide-react";
+import { ArrowLeft, Play, Pause, Square, Download, Settings, BookText, Pencil, Check, X, RefreshCw, FileText, Zap, ChevronDown, Search, BookOpen, Sparkles, Loader2, PenTool, Users, Globe, ListOrdered, Map as MapIcon } from "lucide-react";
 import { AutomationLevel } from "@/types/book";
 import { Input } from "@/components/ui/input";
 import BookSettings from "@/components/BookSettings";
@@ -22,7 +22,6 @@ import { CanvasPage } from "@/components/canvas/CanvasPage";
 import { AppShell } from "@/components/shell/AppShell";
 import type { RailItem } from "@/components/shell/LeftRail";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { exportBookToPdf } from "@/lib/exportPdf";
 import { exportBookToEpub } from "@/lib/exportEpub";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -38,9 +37,8 @@ interface BookDetailViewProps {
 const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
   const { user } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
-  // Canvas is the default home of an opened book. Manuscript is the prose surface,
-  // reached when the author is ready to draft chapter text.
-  const [activeView, setActiveView] = useState<"canvas" | "manuscript">("canvas");
+  // "book" = manuscript / prose reading view. "canvas" = planning sections.
+  const [activeView, setActiveView] = useState<"canvas" | "book">("book");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState(book.title);
   const [isEditingSubtitle, setIsEditingSubtitle] = useState(false);
@@ -223,17 +221,41 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
     return <BookSettings book={book} onBack={() => setShowSettings(false)} />;
   }
 
+  const goCanvasSection = (id: string) => {
+    setActiveView("canvas");
+    // Wait a tick for canvas to render, then scroll.
+    setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
+
+  const openManuscriptAtChapter = (idx: number) => {
+    setActiveView("book");
+    setSearchNavigateChapter(idx);
+  };
+
   // Build sidebar items wired to in-page actions for this book.
+  const chapterChildren: RailItem[] = (book.outline?.chapters || []).map((ch, idx) => ({
+    label: `Ch ${idx + 1}`,
+    icon: FileText,
+    onClick: () => openManuscriptAtChapter(idx),
+  }));
+
   const sidebarItems: RailItem[] = [
-    { label: "Overview",   icon: BookOpen,  onClick: () => setActiveView("canvas"),     active: activeView === "canvas" },
-    { label: "Manuscript", icon: PenTool,   onClick: () => hasOutline && setActiveView("manuscript"), active: activeView === "manuscript", disabled: !hasOutline },
-    { label: "Characters", icon: Users,     onClick: () => setActiveView("canvas") },
-    { label: "World",      icon: Globe,     onClick: () => setActiveView("canvas") },
-    ...(hasOutline ? [{ label: "Find", icon: Search, onClick: () => setShowSearch(s => !s), active: showSearch }] : []),
+    { label: "Book",       icon: BookOpen,     onClick: () => setActiveView("book"), active: activeView === "book" },
+    { label: "Chapters",   icon: ListOrdered,  onClick: () => setActiveView("book"), defaultOpen: false,
+      children: chapterChildren.length ? chapterChildren : undefined,
+      disabled: !hasOutline,
+    },
+    { label: "Story Plot", icon: FileText,     onClick: () => goCanvasSection("canvas-story-plot") },
+    { label: "Characters", icon: Users,        onClick: () => goCanvasSection("canvas-characters") },
+    { label: "World",      icon: Globe,        onClick: () => goCanvasSection("canvas-world") },
+    { label: "Outline",    icon: MapIcon,      onClick: () => goCanvasSection("canvas-chapter-matrix") },
+    ...(hasOutline ? [{ label: "Find", icon: Search, onClick: () => { setActiveView("book"); setShowSearch(s => !s); }, active: showSearch }] : []),
     ...((isComplete || book.outline) && !isGenerating && !isAwaitingApproval
       ? [{ label: "Regenerate", icon: RefreshCw, onClick: () => setShowRegenDialog(true) }]
       : []),
-    { label: "Settings",   icon: Settings,  onClick: () => setShowSettings(true) },
+    { label: "Settings",   icon: Settings,     onClick: () => setShowSettings(true) },
   ];
 
   return (
@@ -373,22 +395,6 @@ const BookDetailView = ({ book, onBack }: BookDetailViewProps) => {
               </DropdownMenu>
             )}
           </div>
-        </div>
-
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <Tabs value={activeView} onValueChange={(v) => setActiveView(v as "canvas" | "manuscript")}>
-            <TabsList>
-              <TabsTrigger value="canvas">Canvas</TabsTrigger>
-              <TabsTrigger value="manuscript" disabled={!hasOutline} title={hasOutline ? "" : "Manuscript opens once you start writing chapter prose"}>
-                Manuscript
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-          {activeView === "canvas" && (
-            <span className="text-[11px] text-muted-foreground hidden sm:inline">
-              This is your planning space. The Manuscript opens when you're ready to draft prose.
-            </span>
-          )}
         </div>
 
         {activeView === "canvas" ? (

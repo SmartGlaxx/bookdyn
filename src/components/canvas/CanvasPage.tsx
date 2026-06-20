@@ -39,6 +39,7 @@ export function CanvasPage({ book }: Props) {
 
       <BookSetupCard value={c.canvas.setup} onChange={c.setSetup} />
 
+      <div id="canvas-story-plot" />
       <StorySummaryList
         bookId={book.id}
         setup={c.canvas.setup}
@@ -58,6 +59,7 @@ export function CanvasPage({ book }: Props) {
         onRemove={c.removeArcCard}
       />
 
+      <div id="canvas-characters" />
       <CharacterArcsPanel
         bookId={book.id}
         setup={c.canvas.setup}
@@ -71,6 +73,7 @@ export function CanvasPage({ book }: Props) {
         onRemoveTrait={c.removeCharacterTrait}
       />
 
+      <div id="canvas-world" />
       <WorldbuildingPanel
         bookId={book.id}
         setup={c.canvas.setup}
@@ -81,6 +84,7 @@ export function CanvasPage({ book }: Props) {
         onRemove={c.removeWorldElement}
       />
 
+      <div id="canvas-chapter-matrix" />
       <ChapterMatrix
         bookId={book.id}
         arc={c.canvas.storyArc}
