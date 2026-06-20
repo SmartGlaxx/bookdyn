@@ -1039,8 +1039,10 @@ function CategoryDropdown({
                     )}
                     style={isSel ? { borderColor: COLORS[cat], boxShadow: `inset 0 0 0 1px ${COLORS[cat]}` } : undefined}
                   >
-                    <span className="truncate mr-2">{el.name}</span>
-                    <span className="text-[10px] text-[#8a93a3] shrink-0">{cat}</span>
+                    <span className="flex items-center gap-1.5 min-w-0">
+                      <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: COLORS[cat] } as React.CSSProperties} />
+                      <span className="truncate">{el.name}</span>
+                    </span>
                   </div>
                 );
               })}
