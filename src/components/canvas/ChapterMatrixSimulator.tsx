@@ -806,6 +806,71 @@ function Group({
   );
 }
 
+function CategoryDropdown({
+  cat, title, items, defaultOpen, onToggle, selectedId, onSelect, registerRef, registerAnchorRef,
+}: {
+  cat: LinkCategory;
+  title: string;
+  items: ElementLite[];
+  defaultOpen: boolean;
+  onToggle: (open: boolean) => void;
+  selectedId: string | null;
+  onSelect: (el: ElementLite) => void;
+  registerRef: (id: string, node: HTMLDivElement | null) => void;
+  registerAnchorRef: (node: HTMLDivElement | null) => void;
+}) {
+  const open = defaultOpen;
+  return (
+    <div className="rounded-md border border-[#2a3140] bg-[#1a1f29] overflow-hidden">
+      <button
+        type="button"
+        onClick={() => onToggle(!open)}
+        className="w-full flex items-center gap-2 px-2.5 py-2 hover:bg-[#1f2532] text-left"
+      >
+        <div
+          ref={registerAnchorRef}
+          className={cn("w-2.5 h-2.5 rounded-full shrink-0", DOT_CLASS[cat])}
+        />
+        <span className="text-[12px] font-medium text-[#cfd4df]">{title}</span>
+        <span className="ml-auto text-[10px] text-[#5d6577]">{items.length}</span>
+        <ChevronDown
+          className={cn("w-3.5 h-3.5 text-[#8a93a3] transition-transform", open && "rotate-180")}
+        />
+      </button>
+      {open && (
+        <div className="px-2 pb-2">
+          {items.length === 0 ? (
+            <p className="text-[11px] text-[#5d6577] italic px-1 py-1">None added.</p>
+          ) : (
+            <div className={cn(items.length > 5 && "max-h-[200px] overflow-y-auto pr-1 -mr-1")}>
+              {items.map((el) => {
+                const isSel = selectedId === el.id;
+                return (
+                  <div
+                    key={el.id}
+                    ref={(n) => registerRef(el.id, n)}
+                    data-id={el.id}
+                    onClick={() => onSelect(el)}
+                    className={cn(
+                      "px-2.5 py-2 mb-1 rounded-md bg-[#1d222c] hover:bg-[#252b38] cursor-pointer text-[13px]",
+                      "border flex justify-between items-center transition-colors",
+                      isSel ? "border-current" : "border-transparent",
+                    )}
+                    style={isSel ? { borderColor: COLORS[cat], boxShadow: `inset 0 0 0 1px ${COLORS[cat]}` } : undefined}
+                  >
+                    <span className="truncate mr-2">{el.name}</span>
+                    <span className="text-[10px] text-[#8a93a3] shrink-0">{cat}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---- Free-positioned chapter card ----
 const CAT_BADGE_BG: Record<LinkCategory, string> = {
   plot: "bg-[#ef4444]/15 text-[#ef4444] border-[#ef4444]/40",
