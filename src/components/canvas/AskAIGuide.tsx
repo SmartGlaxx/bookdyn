@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { HelpCircle, Loader2, Lightbulb, Users, Globe } from "lucide-react";
@@ -87,6 +87,14 @@ export function AskAIGuide({
     }
   };
 
+  // When restricted to one category, auto-call on open — no picker shown.
+  useEffect(() => {
+    if (open && onlyCategory && !questions && !loading && !disabled) {
+      ask(onlyCategory);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, onlyCategory]);
+
   return (
     <Popover open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setQuestions(null); setPhrases(null); setActiveCat(null); } }}>
       <PopoverTrigger asChild>
@@ -106,6 +114,10 @@ export function AskAIGuide({
           <p className="text-xs text-muted-foreground">
             AI guidance used (3/3) — the rest is yours. The Canvas is meant to be your work.
           </p>
+        ) : onlyCategory && !questions ? (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" /> Asking…
+          </div>
         ) : !questions ? (
           <>
             <p className="text-xs text-muted-foreground mb-2">

@@ -31,7 +31,7 @@ function cors(req: Request) {
 
 type Category = "plot" | "character" | "world";
 
-interface Body {
+interface GuidingBody {
   mode: "guiding_questions";
   bookId?: string;
   category: Category;
@@ -48,6 +48,27 @@ interface Body {
   };
 }
 
+interface NameBody {
+  mode: "name_suggestions";
+  kind: "character" | "location";
+  title?: string;
+  genre?: string;
+  // character fields
+  gender?: string;
+  age?: string;
+  nationality?: string;
+  personality?: string;
+  convey?: string;
+  // location fields
+  region?: string;
+  climate?: string;
+  culture?: string;
+  size?: string;
+  vibe?: string;
+}
+
+type Body = GuidingBody | NameBody;
+
 Deno.serve(async (req) => {
   const headers = cors(req);
   if (req.method === "OPTIONS") return new Response(null, { headers });
@@ -63,9 +84,54 @@ Deno.serve(async (req) => {
     return json({ error: "Invalid JSON" }, 400, headers);
   }
 
-  if (body?.mode !== "guiding_questions") {
-    return json({ error: "Only mode=guiding_questions is supported" }, 400, headers);
+  if (body?.mode !== "guiding_questions" && body?.mode !== "name_suggestions") {
+    return json({ error: "Unsupported mode" }, 400, headers);
   }
+
+  const key = Deno.env.get("LOVABLE_API_KEY");
+  if (!key) return json({ error: "AI gateway unavailable" }, 503, headers);
+
+  // ===== name_suggestions: not capped, no DB writes =====
+  if (body.mode === "name_suggestions") {
+    if (body.kind !== "character" && body.kind !== "location") {
+      return json({ error: "Invalid kind" }, 400, headers);
+    }
+    const prompt =
+      body.kind === "character"
+        ? [
+            `You are a naming assistant. Suggest 12 distinctive ${body.nationality || "culturally appropriate"} character names.`,
+            `Book: ${body.title || "(untitled)"} (${body.genre || "unspecified genre"}).`,
+            body.gender ? `Gender: ${body.gender}.` : "",
+            body.age ? `Age: ${body.age}.` : "",
+            body.personality ? `Personality: ${body.personality}.` : "",
+            body.convey ? `Name should convey: ${body.convey}.` : "",
+            `Mix common and uncommon. Return ONLY JSON: {"names":["Name1","Name2", ...]} — full names only, no commentary.`,
+          ].filter(Boolean).join("\n")
+        : [
+            `You are a naming assistant. Suggest 12 evocative place / city / town names.`,
+            `Book: ${body.title || "(untitled)"} (${body.genre || "unspecified genre"}).`,
+            body.region ? `Region: ${body.region}.` : "",
+            body.climate ? `Climate: ${body.climate}.` : "",
+            body.culture ? `Culture: ${body.culture}.` : "",
+            body.size ? `Size: ${body.size}.` : "",
+            body.vibe ? `Vibe: ${body.vibe}.` : "",
+            `Mix grounded and inventive. Return ONLY JSON: {"names":["Name1", ...]} — place names only.`,
+          ].filter(Boolean).join("\n");
+    try {
+      const text = await callGateway(key, prompt);
+      const names = parseStringArray(text, "names")
+        .map((n) => n.trim())
+        .filter((n) => n.length > 0 && n.length < 60)
+        .slice(0, 12);
+      if (!names.length) throw new Error("AI did not return names");
+      return json({ names }, 200, headers);
+    } catch (err) {
+      console.error("name_suggestions error", err);
+      return json({ error: err instanceof Error ? err.message : "AI request failed" }, 500, headers);
+    }
+  }
+
+  // ===== guiding_questions (existing) =====
   if (!body.category || !["plot", "character", "world"].includes(body.category)) {
     return json({ error: "Invalid category" }, 400, headers);
   }
@@ -96,9 +162,6 @@ Deno.serve(async (req) => {
       );
     }
   }
-
-  const key = Deno.env.get("LOVABLE_API_KEY");
-  if (!key) return json({ error: "AI gateway unavailable" }, 503, headers);
 
   const ctx = body.context ?? {};
   const bullets = (ctx.bullets ?? []).slice(0, 12);
