@@ -699,7 +699,7 @@ export function ChapterMatrixSimulator(props: Props) {
                 />
                 {/* Drag handle (circle) — sits ON the curve midpoint */}
                 <circle
-                  cx={p.hx - 10} cy={p.hy} r={7} fill="#fff" stroke={p.color} strokeWidth={1.5}
+                  cx={p.hx - 22} cy={p.hy} r={7} fill="#fff" stroke={p.color} strokeWidth={1.5}
                   style={{ pointerEvents: "all", cursor: "grab" }}
                   data-curve
                   onMouseDown={(e) => {
@@ -716,11 +716,11 @@ export function ChapterMatrixSimulator(props: Props) {
                   onClick={(e) => { e.stopPropagation(); setDetail({ kind: "link", id: p.link.id }); }}
                 >
                   <rect
-                    x={p.hx + 4} y={p.hy - 7} width={14} height={14} rx={3}
+                    x={p.hx + 15} y={p.hy - 7} width={14} height={14} rx={3}
                     fill={p.color} stroke="#fff" strokeWidth={1.25}
                   />
                   <text
-                    x={p.hx + 11} y={p.hy + 1}
+                    x={p.hx + 22} y={p.hy + 1}
                     textAnchor="middle" dominantBaseline="middle"
                     fontSize="10" fontWeight="700" fill="#fff" style={{ pointerEvents: "none" }}
                   >i</text>
@@ -745,7 +745,7 @@ export function ChapterMatrixSimulator(props: Props) {
                   data-curve
                 />
                 <circle
-                  cx={p.hx - 10} cy={p.hy} r={7} fill="#fff" stroke={INTER_COLOR} strokeWidth={1.5}
+                  cx={p.hx - 22} cy={p.hy} r={7} fill="#fff" stroke={INTER_COLOR} strokeWidth={1.5}
                   style={{ pointerEvents: "all", cursor: "grab" }}
                   data-curve
                   onMouseDown={(e) => {
@@ -761,11 +761,11 @@ export function ChapterMatrixSimulator(props: Props) {
                   onClick={(e) => { e.stopPropagation(); setDetail({ kind: "inter", id: p.link.id }); }}
                 >
                   <rect
-                    x={p.hx + 4} y={p.hy - 7} width={14} height={14} rx={3}
+                    x={p.hx + 15} y={p.hy - 7} width={14} height={14} rx={3}
                     fill={INTER_COLOR} stroke="#fff" strokeWidth={1.25}
                   />
                   <text
-                    x={p.hx + 11} y={p.hy + 1}
+                    x={p.hx + 22} y={p.hy + 1}
                     textAnchor="middle" dominantBaseline="middle"
                     fontSize="10" fontWeight="700" fill="#fff" style={{ pointerEvents: "none" }}
                   >i</text>
