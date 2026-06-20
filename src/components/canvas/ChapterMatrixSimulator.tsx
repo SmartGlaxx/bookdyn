@@ -943,6 +943,32 @@ function NotePopup({
 }) {
   const taRef = useRef<HTMLTextAreaElement | null>(null);
   const [atState, setAtState] = useState<{ startPos: number; query: string } | null>(null);
+  const [pos, setPos] = useState<{ x: number; y: number }>({ x, y });
+  const dragRef = useRef<{ ox: number; oy: number } | null>(null);
+
+  useEffect(() => { setPos({ x, y }); }, [x, y]);
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      const d = dragRef.current;
+      if (!d) return;
+      const parent = (taRef.current?.closest("#cms-app") as HTMLElement | null);
+      const bounds = parent?.getBoundingClientRect();
+      let nx = e.clientX - d.ox;
+      let ny = e.clientY - d.oy;
+      if (bounds) {
+        nx = Math.max(0, Math.min(bounds.width - 300, nx));
+        ny = Math.max(0, Math.min(bounds.height - 60, ny));
+      }
+      setPos({ x: nx, y: ny });
+    };
+    const onUp = () => { dragRef.current = null; };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+  }, []);
 
   useEffect(() => { taRef.current?.focus(); }, []);
 
@@ -983,10 +1009,19 @@ function NotePopup({
     <div
       data-popup
       className="absolute z-[30] w-[300px] bg-[#1d222c] border border-[#3a4254] rounded-lg p-3 shadow-[0_8px_24px_rgba(0,0,0,.5)]"
-      style={{ left: x, top: y }}
+      style={{ left: pos.x, top: pos.y }}
       onClick={(e) => e.stopPropagation()}
     >
-      <h4 className="m-0 mb-2 text-[13px] text-white">{header}</h4>
+      <div
+        className="flex items-center gap-1.5 mb-2 -m-1 px-1 py-1 rounded cursor-grab active:cursor-grabbing hover:bg-[#262c38] select-none"
+        onMouseDown={(e) => {
+          e.preventDefault();
+          dragRef.current = { ox: e.clientX - pos.x, oy: e.clientY - pos.y };
+        }}
+      >
+        <GripVertical className="w-3.5 h-3.5 text-[#5d6577] shrink-0" />
+        <h4 className="m-0 text-[13px] text-white flex-1 min-w-0 truncate">{header}</h4>
+      </div>
       <Textarea
         ref={taRef}
         value={note}
