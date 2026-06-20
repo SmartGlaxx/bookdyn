@@ -482,6 +482,7 @@ function Step2(props: {
         <AskAIGuide
           used={props.aiUsed}
           onUsed={props.onAiUsed}
+          onlyCategory="plot"
           getContext={() => props.getContext() as never}
         />
       </div>
@@ -555,6 +556,7 @@ function Step3(props: {
         <AskAIGuide
           used={props.aiUsed}
           onUsed={props.onAiUsed}
+          onlyCategory="plot"
           getContext={() => props.getContext() as never}
         />
       </div>
