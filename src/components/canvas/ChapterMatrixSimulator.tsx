@@ -49,6 +49,36 @@ interface Props {
 export function ChapterMatrixSimulator(props: Props) {
   const { bullets, characters, worlds, chapters, links } = props;
 
+  const [zoom, setZoom] = useState(1);
+  const zoomIn = () => setZoom((z) => Math.min(1.5, +(z + 0.1).toFixed(2)));
+  const zoomOut = () => setZoom((z) => Math.max(0.6, +(z - 0.1).toFixed(2)));
+  const zoomReset = () => setZoom(1);
+
+  const addChapter = () => {
+    const id = newId();
+    props.onChaptersChange([
+      ...chapters,
+      { id, title: `Chapter ${chapters.length + 1}`, plot: "", scenes: [] },
+    ]);
+  };
+  const removeChapter = (id: string) => {
+    props.onChaptersChange(chapters.filter((c) => c.id !== id));
+    props.onLinksChange(links.filter((l) => l.chapterId !== id));
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const handleDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldI = chapters.findIndex((c) => c.id === active.id);
+    const newI = chapters.findIndex((c) => c.id === over.id);
+    if (oldI < 0 || newI < 0) return;
+    props.onChaptersChange(arrayMove(chapters, oldI, newI));
+  };
+
   // Flatten elements grouped by category
   const groups = useMemo(() => {
     const plotEls: ElementLite[] = bullets
