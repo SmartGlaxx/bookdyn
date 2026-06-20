@@ -313,6 +313,7 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
               onLinksChange={setChapterLinks}
               interLinks={interChapterLinks}
               onInterLinksChange={setInterChapterLinks}
+              arc={arc}
             />
           )}
       </section>

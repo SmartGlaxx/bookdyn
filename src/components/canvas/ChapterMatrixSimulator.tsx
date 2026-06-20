@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   CharacterArcCard, WorldElementCard, CanvasChapter,
-  ChapterLink, InterChapterLink, LinkCategory,
+  ChapterLink, InterChapterLink, LinkCategory, StoryArcCard, StoryArcColor,
 } from "@/types/book";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Trash2, X, Plus, Minus, BookOpen, Link2, GitBranch, MousePointer2,
   Maximize2, Minimize2, GripVertical, ArrowRightLeft, AtSign,
-  ChevronDown,
+  ChevronDown, MoreHorizontal, Eye, Pencil, Zap, Users, Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +30,21 @@ const DOT_CLASS: Record<LinkCategory, string> = {
 };
 const INTER_COLOR = "#9aa3b2"; // grey for inter-chapter links
 
+// Story arc category colors — chapter cards inherit these from their arc index.
+const ARC_COLORS: Record<StoryArcColor, string> = {
+  setup: "#0ea5e9",      // sky
+  rising: "#10b981",     // emerald
+  midpoint: "#8b5cf6",   // violet
+  climax: "#f43f5e",     // rose
+  fall: "#f59e0b",       // amber
+  resolution: "#14b8a6", // teal
+  neutral: "#64748b",    // slate
+};
+const FALLBACK_CYCLE: string[] = [
+  ARC_COLORS.setup, ARC_COLORS.rising, ARC_COLORS.midpoint,
+  ARC_COLORS.climax, ARC_COLORS.fall, ARC_COLORS.resolution,
+];
+
 const CANVAS_W = 3200;
 const CANVAS_H = 1800;
 const CARD_W = 220;
@@ -47,13 +62,24 @@ interface Props {
   onLinksChange: (next: ChapterLink[]) => void;
   interLinks?: InterChapterLink[];
   onInterLinksChange?: (next: InterChapterLink[]) => void;
+  arc?: StoryArcCard[];
 }
 
 export function ChapterMatrixSimulator(props: Props) {
   const {
     bullets, characters, worlds, chapters, links,
-    interLinks = [], onInterLinksChange = () => {},
+    interLinks = [], onInterLinksChange = () => {}, arc = [],
   } = props;
+
+  // Per-index chapter color. Falls back to a stable cycle when no arc exists.
+  const chapterAccentAt = useCallback(
+    (i: number) => {
+      const arcColor = arc[i]?.color;
+      if (arcColor && ARC_COLORS[arcColor]) return ARC_COLORS[arcColor];
+      return FALLBACK_CYCLE[i % FALLBACK_CYCLE.length];
+    },
+    [arc],
+  );
 
   // ---- Zoom ----
   const [zoom, setZoom] = useState(1);
@@ -158,6 +184,9 @@ export function ChapterMatrixSimulator(props: Props) {
     | { kind: "inter"; id: string }
     | null
   >(null);
+  const [cardDetail, setCardDetail] = useState<{ chapterId: string; mode: "view" | "edit" } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
   const [tick, forceTick] = useState(0);
   const redraw = useCallback(() => forceTick((n) => n + 1), []);
 
@@ -200,6 +229,7 @@ export function ChapterMatrixSimulator(props: Props) {
       startY: ev.clientY,
       moved: false,
     };
+    setDraggingId(chId);
   };
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
@@ -220,6 +250,7 @@ export function ChapterMatrixSimulator(props: Props) {
     const onUp = () => {
       if (cardDragRef.current?.moved) suppressNextClick.current = true;
       cardDragRef.current = null;
+      setDraggingId(null);
     };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
@@ -518,14 +549,15 @@ export function ChapterMatrixSimulator(props: Props) {
           {/* Three independent collapsible dropdowns: Plot, Characters, World */}
           <div className="flex-1 min-h-0 overflow-y-auto -mr-1 pr-1 space-y-2">
             {([
-              { cat: "plot" as LinkCategory, title: "Plot" },
-              { cat: "character" as LinkCategory, title: "Characters" },
-              { cat: "world" as LinkCategory, title: "World" },
-            ]).map(({ cat, title }) => (
+              { cat: "plot" as LinkCategory, title: "Plot Points", Icon: Zap },
+              { cat: "character" as LinkCategory, title: "Characters", Icon: Users },
+              { cat: "world" as LinkCategory, title: "World / Locations", Icon: Globe },
+            ]).map(({ cat, title, Icon }) => (
               <CategoryDropdown
                 key={cat}
                 cat={cat}
                 title={title}
+                Icon={Icon}
                 items={groups[cat]}
                 defaultOpen={openCats[cat]}
                 onToggle={(open) => setOpenCats((s) => ({ ...s, [cat]: open }))}
@@ -602,6 +634,8 @@ export function ChapterMatrixSimulator(props: Props) {
                   <FreeChapterCard
                     key={ch.id}
                     index={i}
+                    accent={chapterAccentAt(i)}
+                    isDragging={draggingId === ch.id}
                     chapter={ch}
                     chLinks={links.filter((l) => l.chapterId === ch.id)}
                     interOut={interLinks.filter((l) => l.fromChapterId === ch.id).length}
@@ -609,7 +643,9 @@ export function ChapterMatrixSimulator(props: Props) {
                     onClickCard={onChapterClick}
                     onClickLink={(lid) => setDetail({ kind: "link", id: lid })}
                     onTitleChange={updateChapterTitle}
-                    onRemoveChapter={removeChapter}
+                    onRequestDelete={(id) => setConfirmDelete(id)}
+                    onView={(id) => setCardDetail({ chapterId: id, mode: "view" })}
+                    onEdit={(id) => setCardDetail({ chapterId: id, mode: "edit" })}
                     onStartDrag={beginCardDrag}
                     onStartInterLink={(id) => { setSelected(null); setLinkSource(id === linkSource ? null : id); }}
                     isLinkSource={linkSource === ch.id}
@@ -627,10 +663,17 @@ export function ChapterMatrixSimulator(props: Props) {
           </div>
 
           {/* SVG overlay — over the scroll container, in wrap coordinates */}
-          <svg className="absolute top-0 left-0 w-full h-full pointer-events-none z-[2]">
+          <svg className="absolute top-0 left-0 w-full h-full pointer-events-none z-[20]">
             {/* element→chapter links */}
             {linePaths.map((p) => (
               <g key={p.link.id}>
+                {/* Wide invisible hit-target so the link is selectable even when it overlaps a card */}
+                <path
+                  d={p.d} fill="none" stroke="transparent" strokeWidth={16}
+                  className="cursor-pointer pointer-events-stroke"
+                  onClick={() => setDetail({ kind: "link", id: p.link.id })}
+                  data-curve
+                />
                 <path
                   d={p.d} fill="none" stroke={p.color} strokeWidth={2.5}
                   className="cursor-pointer hover:[stroke-width:4] pointer-events-stroke"
@@ -671,6 +714,12 @@ export function ChapterMatrixSimulator(props: Props) {
             {/* chapter→chapter grey links */}
             {interPaths.map((p) => (
               <g key={p.link.id}>
+                <path
+                  d={p.d} fill="none" stroke="transparent" strokeWidth={16}
+                  className="cursor-pointer pointer-events-stroke"
+                  onClick={() => setDetail({ kind: "inter", id: p.link.id })}
+                  data-curve
+                />
                 <path
                   d={p.d} fill="none" stroke={INTER_COLOR} strokeWidth={2}
                   strokeDasharray="6 4"
@@ -803,6 +852,72 @@ export function ChapterMatrixSimulator(props: Props) {
           />
         );
       })()}
+
+      {/* Card detail / edit modal */}
+      {cardDetail && (() => {
+        const ch = chapters.find((c) => c.id === cardDetail.chapterId);
+        if (!ch) return null;
+        const idx = chapters.findIndex((c) => c.id === ch.id);
+        const accent = chapterAccentAt(idx);
+        const outEls = links.filter((l) => l.chapterId === ch.id);
+        const outInter = interLinks.filter((l) => l.fromChapterId === ch.id);
+        const inInter = interLinks.filter((l) => l.toChapterId === ch.id);
+        return (
+          <ChapterCardModal
+            chapter={ch}
+            index={idx}
+            accent={accent}
+            mode={cardDetail.mode}
+            elementLinks={outEls}
+            outgoingInter={outInter}
+            incomingInter={inInter}
+            chapters={chapters}
+            findElement={findElement}
+            allElements={allElements}
+            onTitleChange={(t) => updateChapterTitle(ch.id, t)}
+            onOpenLink={(id) => { setCardDetail(null); setDetail({ kind: "link", id }); }}
+            onOpenInter={(id) => { setCardDetail(null); setDetail({ kind: "inter", id }); }}
+            onClose={() => setCardDetail(null)}
+          />
+        );
+      })()}
+
+      {/* Delete-confirm */}
+      {confirmDelete && (() => {
+        const ch = chapters.find((c) => c.id === confirmDelete);
+        if (!ch) { return null; }
+        const idx = chapters.findIndex((c) => c.id === ch.id);
+        return (
+          <div
+            className="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setConfirmDelete(null); }}
+          >
+            <div className="bg-[#161a21] border border-[#2a3140] rounded-2xl w-[420px] max-w-[92vw] p-5 text-[#e8eaed] shadow-2xl">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center shrink-0">
+                  <Trash2 className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold m-0">Delete this chapter?</h3>
+                  <p className="text-[12px] text-[#8a93a3] m-0 mt-1">
+                    <b className="text-[#cfd4df]">#{idx + 1} {ch.title || `Chapter ${idx + 1}`}</b> and all of its element / inter-chapter links will be removed. This cannot be undone.
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-5">
+                <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(null)}>Cancel</Button>
+                <Button
+                  size="sm"
+                  onClick={() => { removeChapter(ch.id); setConfirmDelete(null); }}
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Delete chapter
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -863,10 +978,11 @@ function Group({
 }
 
 function CategoryDropdown({
-  cat, title, items, defaultOpen, onToggle, selectedId, onSelect, registerRef, registerAnchorRef,
+  cat, title, Icon, items, defaultOpen, onToggle, selectedId, onSelect, registerRef, registerAnchorRef,
 }: {
   cat: LinkCategory;
   title: string;
+  Icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   items: ElementLite[];
   defaultOpen: boolean;
   onToggle: (open: boolean) => void;
@@ -887,6 +1003,7 @@ function CategoryDropdown({
           ref={registerAnchorRef}
           className={cn("w-2.5 h-2.5 rounded-full shrink-0", DOT_CLASS[cat])}
         />
+        <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: COLORS[cat] } as React.CSSProperties} />
         <span className="text-[12px] font-medium text-[#cfd4df]">{title}</span>
         <span className="ml-auto text-[10px] text-[#5d6577]">{items.length}</span>
         <ChevronDown
@@ -935,11 +1052,13 @@ const CAT_BADGE_BG: Record<LinkCategory, string> = {
 };
 
 function FreeChapterCard({
-  index, chapter, chLinks, interOut, findElement,
-  onClickCard, onClickLink, onTitleChange, onRemoveChapter,
+  index, accent, isDragging, chapter, chLinks, interOut, findElement,
+  onClickCard, onClickLink, onTitleChange, onRequestDelete, onView, onEdit,
   onStartDrag, onStartInterLink, isLinkSource, isLinkTarget, registerNode,
 }: {
   index: number;
+  accent: string;
+  isDragging: boolean;
   chapter: CanvasChapter;
   chLinks: ChapterLink[];
   interOut: number;
@@ -947,16 +1066,24 @@ function FreeChapterCard({
   onClickCard: (id: string, e: React.MouseEvent) => void;
   onClickLink: (linkId: string) => void;
   onTitleChange: (id: string, title: string) => void;
-  onRemoveChapter: (id: string) => void;
+  onRequestDelete: (id: string) => void;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
   onStartDrag: (id: string, e: React.MouseEvent) => void;
   onStartInterLink: (id: string) => void;
   isLinkSource: boolean;
   isLinkTarget: boolean;
   registerNode: (node: HTMLDivElement | null) => void;
 }) {
-  const full = chLinks.length >= 3;
-  const accentColor = chLinks[0] ? COLORS[chLinks[0].category] : "#3b82f6";
+  const accentColor = accent;
   const pos = chapter.position ?? { x: 40, y: 60 };
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDoc = () => setMenuOpen(false);
+    window.addEventListener("click", onDoc);
+    return () => window.removeEventListener("click", onDoc);
+  }, [menuOpen]);
 
   return (
     <div
@@ -970,20 +1097,21 @@ function FreeChapterCard({
         top: pos.y,
         width: CARD_W,
         height: CARD_H,
+        zIndex: isDragging ? 50 : 1,
       }}
       className={cn(
         "cursor-grab active:cursor-grabbing bg-[#1d222c] border rounded-[10px] p-3.5 transition-colors select-none",
+        isDragging && "shadow-[0_24px_64px_rgba(0,0,0,0.6)]",
         isLinkSource
           ? "border-[#facc15] ring-2 ring-[#facc15]/40"
           : isLinkTarget
             ? "border-[#9aa3b2] hover:border-[#cbd5e1] ring-1 ring-[#9aa3b2]/30"
             : "border-[#2a3140] hover:border-[#4b5468]",
-        full && "opacity-95",
       )}
     >
       {/* numbered badge */}
       <span
-        className="absolute -top-2 left-3 px-1.5 py-0.5 rounded text-[11px] font-bold border"
+        className="absolute -top-2 left-3 w-6 h-6 inline-flex items-center justify-center rounded-md text-[11px] font-bold border"
         style={{ background: `${accentColor}22`, color: accentColor, borderColor: `${accentColor}66` }}
       >
         {index + 1}
@@ -996,7 +1124,7 @@ function FreeChapterCard({
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); onStartInterLink(chapter.id); }}
         className={cn(
-          "absolute top-1.5 right-9 p-1 rounded hover:bg-[#262c38]",
+          "absolute top-1.5 right-2 p-1 rounded hover:bg-[#262c38]",
           isLinkSource ? "text-[#facc15]" : "text-[#5d6577] hover:text-[#cbd5e1]",
         )}
         aria-label="Link to another chapter"
@@ -1004,18 +1132,6 @@ function FreeChapterCard({
         disabled={interOut >= 1 && !isLinkSource}
       >
         <ArrowRightLeft className="w-3.5 h-3.5" />
-      </button>
-
-      {/* remove */}
-      <button
-        type="button"
-        data-no-drag
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => { e.stopPropagation(); onRemoveChapter(chapter.id); }}
-        className="absolute top-1.5 right-2 p-1 rounded text-[#5d6577] hover:text-red-400 hover:bg-[#262c38]"
-        aria-label="Remove chapter"
-      >
-        <Trash2 className="w-3.5 h-3.5" />
       </button>
 
       <Input
@@ -1052,17 +1168,49 @@ function FreeChapterCard({
         })}
       </div>
 
-      <div className="absolute bottom-2.5 right-3 text-[10px] text-[#666] flex items-center gap-2">
-        {interOut > 0 && (
-          <span className="flex items-center gap-0.5 text-[#9aa3b2]" title="Inter-chapter link present">
-            <ArrowRightLeft className="w-2.5 h-2.5" /> 1
-          </span>
+      {/* bottom 3-dots menu */}
+      <div className="absolute bottom-2 right-2" data-no-drag onMouseDown={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
+          className="p-1.5 rounded-md text-[#7a8294] hover:text-white hover:bg-[#262c38]"
+          aria-label="Card actions"
+          style={{ color: menuOpen ? accentColor : undefined }}
+        >
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
+        {menuOpen && (
+          <div
+            className="absolute bottom-full right-0 mb-1 w-[150px] rounded-md border border-[#2a3140] bg-[#161a21] shadow-lg overflow-hidden z-30"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => { setMenuOpen(false); onView(chapter.id); }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-[12px] hover:bg-[#1f2532] text-left"
+              style={{ color: accentColor }}
+            >
+              <Eye className="w-3.5 h-3.5" /> View card
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMenuOpen(false); onEdit(chapter.id); }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-[12px] hover:bg-[#1f2532] text-left"
+              style={{ color: accentColor }}
+            >
+              <Pencil className="w-3.5 h-3.5" /> Edit card
+            </button>
+            <div className="h-px bg-[#232833]" />
+            <button
+              type="button"
+              onClick={() => { setMenuOpen(false); onRequestDelete(chapter.id); }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-red-400 hover:bg-red-500/10 text-left"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Delete
+            </button>
+          </div>
         )}
-        <span>{chLinks.length}/3</span>
       </div>
-      {full && (
-        <span className="absolute bottom-2.5 left-3 text-[9px] text-red-500 tracking-wider">FULL</span>
-      )}
     </div>
   );
 }
@@ -1459,6 +1607,172 @@ function EditableLinkModal({
               Save Changes
             </Button>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+// ---- Chapter card detail / edit modal ----
+function ChapterCardModal({
+  chapter, index, accent, mode,
+  elementLinks, outgoingInter, incomingInter,
+  chapters, findElement, allElements,
+  onTitleChange, onOpenLink, onOpenInter, onClose,
+}: {
+  chapter: CanvasChapter;
+  index: number;
+  accent: string;
+  mode: "view" | "edit";
+  elementLinks: ChapterLink[];
+  outgoingInter: InterChapterLink[];
+  incomingInter: InterChapterLink[];
+  chapters: CanvasChapter[];
+  findElement: (id: string) => ElementLite | null;
+  allElements: ElementLite[];
+  onTitleChange: (t: string) => void;
+  onOpenLink: (id: string) => void;
+  onOpenInter: (id: string) => void;
+  onClose: () => void;
+}) {
+  const editable = mode === "edit";
+  const totalLinks = elementLinks.length + outgoingInter.length + incomingInter.length;
+  return (
+    <div
+      className="fixed inset-0 z-[55] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-[#161a21] border border-[#2a3140] rounded-2xl w-[720px] max-w-[96vw] max-h-[92vh] overflow-hidden text-[#e8eaed] shadow-[0_24px_64px_rgba(0,0,0,.6)] flex flex-col">
+        <div
+          className="flex items-center gap-3 px-5 py-4 border-b border-[#232833]"
+          style={{ background: `linear-gradient(90deg, ${accent}26, transparent)` }}
+        >
+          <div
+            className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm shrink-0"
+            style={{ background: `${accent}22`, color: accent, border: `1px solid ${accent}66` }}
+          >
+            {index + 1}
+          </div>
+          <div className="flex-1 min-w-0">
+            {editable ? (
+              <Input
+                value={chapter.title}
+                onChange={(e) => onTitleChange(e.target.value)}
+                placeholder={`Chapter ${index + 1}`}
+                className="h-8 px-2 text-sm font-semibold bg-[#0f1115] border-[#2a3140] text-[#e8eaed]"
+              />
+            ) : (
+              <h2 className="text-base font-semibold m-0 truncate">
+                {chapter.title || `Chapter ${index + 1}`}
+              </h2>
+            )}
+            <p className="text-[11px] text-[#8a93a3] m-0 mt-0.5">
+              {totalLinks} link{totalLinks === 1 ? "" : "s"} · {elementLinks.length} element · {outgoingInter.length + incomingInter.length} inter-chapter
+            </p>
+          </div>
+          <button onClick={onClose} className="text-[#8a93a3] hover:text-white p-1 rounded hover:bg-[#232833]" aria-label="Close">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="px-5 py-4 overflow-y-auto flex-1 space-y-5">
+          <section>
+            <h3 className="text-[10px] uppercase tracking-wider text-[#8a93a3] mb-2 flex items-center gap-1.5">
+              <Link2 className="w-3 h-3" /> Linked Story Elements
+            </h3>
+            {elementLinks.length === 0 ? (
+              <p className="text-[12px] text-[#5d6577] italic">No elements linked to this chapter yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {elementLinks.map((l) => {
+                  const el = findElement(l.elementId);
+                  if (!el) return null;
+                  return (
+                    <div
+                      key={l.id}
+                      className="rounded-lg border border-[#2a3140] bg-[#1d222c] p-3"
+                      style={{ borderLeft: `3px solid ${COLORS[l.category]}` }}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={cn("w-2 h-2 rounded-full", DOT_CLASS[l.category])} />
+                        <b className="text-[13px] truncate">{el.name}</b>
+                        <span className="text-[10px] px-1.5 py-px rounded uppercase tracking-wider text-white" style={{ background: COLORS[l.category] }}>
+                          {l.category}
+                        </span>
+                        <div className="ml-auto flex items-center gap-1 text-[11px] text-[#8a93a3]">
+                          <span className="truncate">→ #{index + 1} {chapter.title || `Chapter ${index + 1}`}</span>
+                          {editable && (
+                            <button
+                              onClick={() => onOpenLink(l.id)}
+                              className="ml-2 inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded hover:bg-[#262c38] text-[#cfd4df]"
+                            >
+                              <Pencil className="w-3 h-3" /> Edit
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {l.note ? (
+                        <p className="text-[12px] text-[#cfd4df] m-0 leading-relaxed whitespace-pre-wrap">
+                          {renderNoteWithRefs(l.note, allElements)}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-[#5d6577] italic m-0">No note.</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          <section>
+            <h3 className="text-[10px] uppercase tracking-wider text-[#8a93a3] mb-2 flex items-center gap-1.5">
+              <ArrowRightLeft className="w-3 h-3" /> Inter-chapter Links
+            </h3>
+            {outgoingInter.length === 0 && incomingInter.length === 0 ? (
+              <p className="text-[12px] text-[#5d6577] italic">No inter-chapter links.</p>
+            ) : (
+              <div className="space-y-2">
+                {[...outgoingInter.map((l) => ({ l, dir: "out" as const })), ...incomingInter.map((l) => ({ l, dir: "in" as const }))].map(({ l, dir }) => {
+                  const otherId = dir === "out" ? l.toChapterId : l.fromChapterId;
+                  const other = chapters.findIndex((c) => c.id === otherId);
+                  const otherCh = chapters[other];
+                  return (
+                    <div
+                      key={l.id + dir}
+                      className="rounded-lg border border-[#2a3140] bg-[#1d222c] p-3"
+                      style={{ borderLeft: `3px solid ${INTER_COLOR}` }}
+                    >
+                      <div className="flex items-center gap-2 mb-1 text-[12px]">
+                        <ArrowRightLeft className="w-3.5 h-3.5 text-[#9aa3b2]" />
+                        <b>#{index + 1} {chapter.title || `Chapter ${index + 1}`}</b>
+                        <span className="text-[#5d6577]">{dir === "out" ? "→" : "←"}</span>
+                        <b>#{other + 1} {otherCh?.title || `Chapter ${other + 1}`}</b>
+                        {editable && (
+                          <button
+                            onClick={() => onOpenInter(l.id)}
+                            className="ml-auto inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded hover:bg-[#262c38] text-[#cfd4df]"
+                          >
+                            <Pencil className="w-3 h-3" /> Edit
+                          </button>
+                        )}
+                      </div>
+                      {l.note ? (
+                        <p className="text-[12px] text-[#cfd4df] m-0 leading-relaxed whitespace-pre-wrap">
+                          {renderNoteWithRefs(l.note, allElements)}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-[#5d6577] italic m-0">No note.</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-[#232833] bg-[#12161d]">
+          <Button variant="ghost" size="sm" onClick={onClose}>Close</Button>
         </div>
       </div>
     </div>
