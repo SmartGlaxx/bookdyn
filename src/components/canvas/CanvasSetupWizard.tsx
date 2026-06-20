@@ -218,23 +218,16 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
 
   return (
     open ? (
-    <div className="space-y-6 pb-28" role="region" aria-label="Create a new book">
-      <header>
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="min-w-0">
-            <h1 className="font-serif text-2xl font-bold">Create a New Book</h1>
-            <p className="text-xs text-muted-foreground">
-              Author-driven setup. AI only asks questions or suggests names — never writes for you.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground text-sm"
-          >
-            <ArrowLeft className="w-4 h-4" /> Back to dashboard
-          </button>
-        </div>
+    <div className="space-y-4" role="region" aria-label="Create a new book">
+      <header className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onClose}
+          className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground"
+          aria-label="Back to dashboard"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </button>
         <Stepper step={step} />
       </header>
 
@@ -311,8 +304,8 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
           )}
       </section>
 
-      <footer className="sticky bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur border-t border-border -mx-4">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
+      <footer className="border-t border-border pt-4 pb-2 mt-8">
+        <div className="flex items-center justify-between gap-2">
           <Button variant="ghost" onClick={goBack} disabled={step === 1}>
             <ArrowLeft className="w-4 h-4 mr-1" /> Back
           </Button>
