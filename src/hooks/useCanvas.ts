@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   StoryCanvas, CanvasSetup, StorySummaryBullet, StoryArcCard,
   CanvasChapter, CanvasScene, StoryArcColor, EMPTY_CANVAS,
-  CharacterArcCard, WorldElementCard,
+  CharacterArcCard, WorldElementCard, CharacterTrait,
 } from "@/types/book";
 
 const newId = () =>
@@ -172,7 +172,14 @@ export function useCanvas(bookId: string, initial?: StoryCanvas | null) {
       ...c,
       characterArcs: [
         ...c.characterArcs,
-        { id: newId(), name: seed?.name ?? "", arcLabel: seed?.arcLabel ?? "", description: seed?.description ?? "" },
+        {
+          id: newId(),
+          name: seed?.name ?? "",
+          gender: seed?.gender,
+          age: seed?.age,
+          nationality: seed?.nationality,
+          traits: seed?.traits ?? [],
+        },
       ],
     }));
   const updateCharacterArc = (id: string, patch: Partial<CharacterArcCard>) =>
@@ -182,6 +189,31 @@ export function useCanvas(bookId: string, initial?: StoryCanvas | null) {
     }));
   const removeCharacterArc = (id: string) =>
     update((c) => ({ ...c, characterArcs: c.characterArcs.filter((a) => a.id !== id) }));
+
+  // trait helpers (operate on a specific character)
+  const addCharacterTrait = (charId: string, label: string) =>
+    update((c) => ({
+      ...c,
+      characterArcs: c.characterArcs.map((a) =>
+        a.id !== charId ? a : { ...a, traits: [...(a.traits ?? []), { id: newId(), label, description: "" }] },
+      ),
+    }));
+  const updateCharacterTrait = (charId: string, traitId: string, patch: Partial<CharacterTrait>) =>
+    update((c) => ({
+      ...c,
+      characterArcs: c.characterArcs.map((a) =>
+        a.id !== charId
+          ? a
+          : { ...a, traits: (a.traits ?? []).map((t) => (t.id === traitId ? { ...t, ...patch } : t)) },
+      ),
+    }));
+  const removeCharacterTrait = (charId: string, traitId: string) =>
+    update((c) => ({
+      ...c,
+      characterArcs: c.characterArcs.map((a) =>
+        a.id !== charId ? a : { ...a, traits: (a.traits ?? []).filter((t) => t.id !== traitId) },
+      ),
+    }));
 
   // ---- world elements ----
   const addWorldElement = (seed?: Partial<WorldElementCard>) =>
@@ -209,6 +241,7 @@ export function useCanvas(bookId: string, initial?: StoryCanvas | null) {
     setScenes, addScene, updateScene, removeScene,
     incrementAiAssist,
     addCharacterArc, updateCharacterArc, removeCharacterArc,
+    addCharacterTrait, updateCharacterTrait, removeCharacterTrait,
     addWorldElement, updateWorldElement, removeWorldElement,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [canvas, saving]);
