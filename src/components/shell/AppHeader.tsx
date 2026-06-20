@@ -1,4 +1,4 @@
-import { BookOpen, Plus, Flame, HelpCircle, ChevronDown } from "lucide-react";
+import { BookOpen, Plus, Flame, HelpCircle, ChevronDown, Menu } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useTurbo } from "@/hooks/useTurbo";
@@ -11,9 +11,10 @@ import { useMemo } from "react";
 
 interface Props {
   projectLabel?: string;
+  onMenuClick?: () => void;
 }
 
-export function AppHeader({ projectLabel }: Props) {
+export function AppHeader({ projectLabel, onMenuClick }: Props) {
   const navigate = useNavigate();
   const turbo = useTurbo();
   const { books } = useBooks();
@@ -33,8 +34,16 @@ export function AppHeader({ projectLabel }: Props) {
 
   return (
     <header
-      className="sticky top-0 z-40 h-16 border-b border-border bg-background/90 backdrop-blur flex items-center gap-3 px-4 sm:px-6"
+      className="sticky top-0 z-40 h-16 border-b border-border bg-background/90 backdrop-blur flex items-center gap-2 sm:gap-3 px-3 sm:px-6"
     >
+      <button
+        type="button"
+        aria-label="Open navigation"
+        onClick={onMenuClick}
+        className="md:hidden w-9 h-9 inline-flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
       <button
         onClick={() => navigate("/dashboard")}
         className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0"
@@ -49,7 +58,7 @@ export function AppHeader({ projectLabel }: Props) {
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="ml-1 sm:ml-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-muted/50 text-sm font-medium max-w-[220px]">
+          <button className="ml-1 sm:ml-4 inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md hover:bg-muted/50 text-sm font-medium max-w-[140px] sm:max-w-[220px]">
             <span className="truncate">{currentLabel}</span>
             <ChevronDown className="w-4 h-4 shrink-0 text-muted-foreground" />
           </button>
@@ -80,7 +89,7 @@ export function AppHeader({ projectLabel }: Props) {
         </div>
       )}
 
-      <Button variant="hero" size="sm" onClick={() => navigate("/dashboard/new-book")} className="rounded-full px-4">
+      <Button variant="hero" size="sm" onClick={() => navigate("/dashboard/new-book")} className="rounded-full px-3 sm:px-4">
         <Plus className="w-4 h-4" />
         <span className="hidden sm:inline ml-1">New Book</span>
       </Button>
@@ -88,7 +97,7 @@ export function AppHeader({ projectLabel }: Props) {
       <button
         type="button"
         aria-label="Help"
-        className="w-9 h-9 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50"
+        className="hidden sm:inline-flex w-9 h-9 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50"
         onClick={() => window.open("https://docs.authoryti.com", "_blank")}
       >
         <HelpCircle className="w-5 h-5" />
