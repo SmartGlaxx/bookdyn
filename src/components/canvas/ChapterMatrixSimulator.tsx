@@ -9,11 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Trash2, X, Plus, Minus, BookOpen, Link2, GitBranch, MousePointer2,
   Maximize2, Minimize2, GripVertical, ArrowRightLeft, AtSign,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 
 const newId = () =>
   (typeof crypto !== "undefined" && "randomUUID" in crypto)
@@ -164,9 +162,13 @@ export function ChapterMatrixSimulator(props: Props) {
   const redraw = useCallback(() => forceTick((n) => n + 1), []);
 
   // Which category is visible in the sidebar (dropdown switches them)
-  const [activeCat, setActiveCat] = useState<LinkCategory>("plot");
+  const [openCats, setOpenCats] = useState<Record<LinkCategory, boolean>>({
+    plot: true,
+    character: true,
+    world: true,
+  });
 
-  useLayoutEffect(() => { redraw(); }, [chapters, links, interLinks, allElements, zoom, fullscreen, activeCat, redraw]);
+  useLayoutEffect(() => { redraw(); }, [chapters, links, interLinks, allElements, zoom, fullscreen, openCats, redraw]);
   useEffect(() => {
     const onResize = () => redraw();
     window.addEventListener("resize", onResize);
@@ -303,7 +305,7 @@ export function ChapterMatrixSimulator(props: Props) {
     });
     return out;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [links, chapters, allElements, popup, detail, zoom, tick, fullscreen]);
+  }, [links, chapters, allElements, popup, detail, zoom, tick, fullscreen, openCats]);
 
   const interPaths = useMemo(() => {
     const wrap = matrixRef.current;
@@ -335,7 +337,7 @@ export function ChapterMatrixSimulator(props: Props) {
     });
     return out;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interLinks, chapters, popup, detail, zoom, tick, fullscreen]);
+  }, [interLinks, chapters, popup, detail, zoom, tick, fullscreen, openCats]);
 
   // ---- Actions ----
   const flashError = (msg: string) => {
@@ -503,42 +505,26 @@ export function ChapterMatrixSimulator(props: Props) {
           </div>
           <p className="text-[11px] text-[#8a93a3] mb-2">Click an element, then click a chapter to link it.</p>
 
-          {/* Category dropdown */}
-          <div className="flex items-center gap-2 mb-3">
-            <div
-              ref={(n) => catAnchorNodes.current.set(activeCat, n)}
-              className={cn("w-2.5 h-2.5 rounded-full shrink-0", DOT_CLASS[activeCat])}
-            />
-            <Select value={activeCat} onValueChange={(v) => setActiveCat(v as LinkCategory)}>
-              <SelectTrigger className="h-8 text-xs bg-[#1d222c] border-[#2a3140] text-[#cfd4df]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-[#161a21] border-[#2a3140] text-[#cfd4df]">
-                <SelectItem value="plot">Plot ({groups.plot.length})</SelectItem>
-                <SelectItem value="character">Characters ({groups.character.length})</SelectItem>
-                <SelectItem value="world">World ({groups.world.length})</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Hidden anchors for inactive categories so links to those elements still point at the sidebar */}
-          <div className="absolute opacity-0 pointer-events-none -z-10">
-            {(["plot", "character", "world"] as LinkCategory[])
-              .filter((c) => c !== activeCat)
-              .map((c) => (
-                <div key={c} ref={(n) => catAnchorNodes.current.set(c, n)} style={{ width: 1, height: 1 }} />
-              ))}
-          </div>
-
-          <div className="flex-1 min-h-0 overflow-y-auto -mr-1 pr-1">
-            <Group
-              title={activeCat === "plot" ? "Plot" : activeCat === "character" ? "Characters" : "World"}
-              cat={activeCat}
-              items={groups[activeCat]}
-              selectedId={selected?.id ?? null}
-              onSelect={selectElement}
-              registerRef={(id, node) => elNodes.current.set(id, node)}
-            />
+          {/* Three independent collapsible dropdowns: Plot, Characters, World */}
+          <div className="flex-1 min-h-0 overflow-y-auto -mr-1 pr-1 space-y-2">
+            {([
+              { cat: "plot" as LinkCategory, title: "Plot" },
+              { cat: "character" as LinkCategory, title: "Characters" },
+              { cat: "world" as LinkCategory, title: "World" },
+            ]).map(({ cat, title }) => (
+              <CategoryDropdown
+                key={cat}
+                cat={cat}
+                title={title}
+                items={groups[cat]}
+                defaultOpen={openCats[cat]}
+                onToggle={(open) => setOpenCats((s) => ({ ...s, [cat]: open }))}
+                selectedId={selected?.id ?? null}
+                onSelect={selectElement}
+                registerRef={(id, node) => elNodes.current.set(id, node)}
+                registerAnchorRef={(node) => catAnchorNodes.current.set(cat, node)}
+              />
+            ))}
           </div>
 
           <div className="mt-3 pt-3 border-t border-[#232833] text-[10px] text-[#5d6577] leading-relaxed space-y-1">
@@ -816,6 +802,71 @@ function Group({
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function CategoryDropdown({
+  cat, title, items, defaultOpen, onToggle, selectedId, onSelect, registerRef, registerAnchorRef,
+}: {
+  cat: LinkCategory;
+  title: string;
+  items: ElementLite[];
+  defaultOpen: boolean;
+  onToggle: (open: boolean) => void;
+  selectedId: string | null;
+  onSelect: (el: ElementLite) => void;
+  registerRef: (id: string, node: HTMLDivElement | null) => void;
+  registerAnchorRef: (node: HTMLDivElement | null) => void;
+}) {
+  const open = defaultOpen;
+  return (
+    <div className="rounded-md border border-[#2a3140] bg-[#1a1f29] overflow-hidden">
+      <button
+        type="button"
+        onClick={() => onToggle(!open)}
+        className="w-full flex items-center gap-2 px-2.5 py-2 hover:bg-[#1f2532] text-left"
+      >
+        <div
+          ref={registerAnchorRef}
+          className={cn("w-2.5 h-2.5 rounded-full shrink-0", DOT_CLASS[cat])}
+        />
+        <span className="text-[12px] font-medium text-[#cfd4df]">{title}</span>
+        <span className="ml-auto text-[10px] text-[#5d6577]">{items.length}</span>
+        <ChevronDown
+          className={cn("w-3.5 h-3.5 text-[#8a93a3] transition-transform", open && "rotate-180")}
+        />
+      </button>
+      {open && (
+        <div className="px-2 pb-2">
+          {items.length === 0 ? (
+            <p className="text-[11px] text-[#5d6577] italic px-1 py-1">None added.</p>
+          ) : (
+            <div className={cn(items.length > 5 && "max-h-[200px] overflow-y-auto pr-1 -mr-1")}>
+              {items.map((el) => {
+                const isSel = selectedId === el.id;
+                return (
+                  <div
+                    key={el.id}
+                    ref={(n) => registerRef(el.id, n)}
+                    data-id={el.id}
+                    onClick={() => onSelect(el)}
+                    className={cn(
+                      "px-2.5 py-2 mb-1 rounded-md bg-[#1d222c] hover:bg-[#252b38] cursor-pointer text-[13px]",
+                      "border flex justify-between items-center transition-colors",
+                      isSel ? "border-current" : "border-transparent",
+                    )}
+                    style={isSel ? { borderColor: COLORS[cat], boxShadow: `inset 0 0 0 1px ${COLORS[cat]}` } : undefined}
+                  >
+                    <span className="truncate mr-2">{el.name}</span>
+                    <span className="text-[10px] text-[#8a93a3] shrink-0">{cat}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
