@@ -12,11 +12,12 @@ import {
   BOOK_TYPE_AUDIENCES, AUDIENCE_OPTIONS, getDefaultControls, getDefaultFrontMatter,
   TONE_OPTIONS, TEMPORAL_ERA_OPTIONS, StoryCanvas, StoryArcCard, StoryArcColor,
   CanvasChapter, ToneProfile, ToneLevel, EMPTY_CANVAS, CharacterArcCard, WorldElementCard,
+  ChapterLink, InterChapterLink,
 } from "@/types/book";
 import { ARC_COLOR_CLASS, ARC_COLORS } from "@/hooks/useCanvas";
 import {
   ArrowLeft, ArrowRight, Check, Plus, Trash2, Loader2, Pin,
-  GripVertical, X,
+  GripVertical,
 } from "lucide-react";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent,
@@ -29,6 +30,7 @@ import { SortableCard } from "./SortableCard";
 import { AskAIGuide } from "./AskAIGuide";
 import { CharacterArcsPanel } from "./CharacterArcsPanel";
 import { WorldbuildingPanel } from "./WorldbuildingPanel";
+import { ChapterMatrixSimulator } from "./ChapterMatrixSimulator";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
