@@ -473,21 +473,68 @@ export interface CanvasChapter {
 export interface CharacterArcCard {
   id: string;
   name: string;
-  /** Short 2–3 word label (e.g. "Hidden guilt"). */
-  arcLabel: string;
-  /** User-written paragraph describing the arc. */
+  /** Optional AI-name-suggester metadata (kept for re-suggesting later). */
+  gender?: string;
+  age?: string;
+  nationality?: string;
+  /** New: multiple personality traits, each with its own description. */
+  traits?: CharacterTrait[];
+  /** Legacy single-arc fields — kept readable for older books. */
+  arcLabel?: string;
+  description?: string;
+}
+
+export interface CharacterTrait {
+  id: string;
+  label: string;
+  /** Author-written; UI enforces min 20 words. */
   description: string;
 }
 
+/** Fixed preset list of common personality / arc traits (15). */
+export const PRESET_CHARACTER_TRAITS: string[] = [
+  "Hidden guilt",
+  "Rising courage",
+  "Broken loyalty",
+  "Reluctant leadership",
+  "Quiet rage",
+  "Deep grief",
+  "Stubborn pride",
+  "Fragile hope",
+  "Cold ambition",
+  "Compassionate naivety",
+  "Wounded cynicism",
+  "Restless wanderlust",
+  "Loyal stoicism",
+  "Self-destructive obsession",
+  "Fearful empathy",
+];
+
 export interface WorldElementCard {
   id: string;
-  /** Short 2–3 word label (e.g. "Desert outpost", "Sacred grove"). */
+  /** Short label (e.g. "Desert kingdom"). Can be preset or custom. */
   label: string;
-  /** "location" | "culture" | "rule" — free-form tag. */
+  /** User-written "kind / category" — UI enforces min 20 words. */
   kind?: string;
-  /** User-written paragraph describing this world element. */
+  /** User-written full description — UI enforces min 40 words. */
   description: string;
+  /** Preset key if user picked from dropdown (otherwise "custom"). */
+  presetKey?: string;
 }
+
+/** Ten common world-building presets the user can drop in (plus "custom"). */
+export const PRESET_WORLD_SCENARIOS: { key: string; label: string }[] = [
+  { key: "desert-kingdom", label: "Desert kingdom" },
+  { key: "coastal-port-city", label: "Coastal port city" },
+  { key: "mountain-stronghold", label: "Mountain stronghold" },
+  { key: "forest-enclave", label: "Forest enclave" },
+  { key: "frozen-tundra", label: "Frozen tundra" },
+  { key: "underground-caverns", label: "Underground caverns" },
+  { key: "floating-sky-city", label: "Floating sky city" },
+  { key: "post-apocalyptic-ruins", label: "Post-apocalyptic ruins" },
+  { key: "jungle-settlement", label: "Jungle settlement" },
+  { key: "volcanic-island", label: "Volcanic island" },
+];
 
 export interface CanvasSetup {
   title?: string;

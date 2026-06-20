@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -208,33 +207,31 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
   }), [title, genre, tone, era, filledBullets, chapters]);
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent
-        className="max-w-4xl w-[95vw] max-h-[92vh] overflow-y-auto p-0 gap-0"
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
-      >
-        <DialogHeader className="sticky top-0 z-10 bg-background/95 backdrop-blur px-6 pt-5 pb-3 border-b border-border">
+    open ? (
+    <div className="fixed inset-0 z-50 bg-background overflow-y-auto" role="dialog" aria-modal="true">
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
+        <div className="max-w-7xl mx-auto px-8 py-4">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <DialogTitle className="font-serif text-xl">Create a New Book</DialogTitle>
-              <DialogDescription className="text-xs">
-                Author-driven setup. AI only asks questions — never writes for you.
-              </DialogDescription>
+              <h1 className="font-serif text-2xl font-bold">Create a New Book</h1>
+              <p className="text-xs text-muted-foreground">
+                Author-driven setup. AI only asks questions or suggests names — never writes for you.
+              </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="p-1.5 rounded-md hover:bg-muted text-muted-foreground"
+              className="p-2 rounded-md hover:bg-muted text-muted-foreground"
               aria-label="Close"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           </div>
           <Stepper step={step} />
-        </DialogHeader>
+        </div>
+      </header>
 
-        <div className="px-6 py-5">
+      <main className="max-w-7xl mx-auto px-8 py-8 pb-32">
           {step === 1 && (
             <Step1
               title={title} setTitle={setTitle}
@@ -272,13 +269,10 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
               onAdd={(seed) => setCharacterArcs((prev) => [...prev, {
                 id: newId(),
                 name: seed?.name ?? "",
-                arcLabel: seed?.arcLabel ?? "",
-                description: seed?.description ?? "",
+                traits: seed?.traits ?? [],
               }])}
               onUpdate={(id, patch) => setCharacterArcs((prev) => prev.map((a) => a.id === id ? { ...a, ...patch } : a))}
               onRemove={(id) => setCharacterArcs((prev) => prev.filter((a) => a.id !== id))}
-              aiAssistUsed={aiUsed}
-              onAiAssistUsed={() => setAiUsed((n) => Math.min(3, n + 1))}
             />
           )}
           {step === 5 && (
@@ -291,11 +285,10 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
                 label: seed?.label ?? "",
                 kind: seed?.kind ?? "",
                 description: seed?.description ?? "",
+                presetKey: seed?.presetKey,
               }])}
               onUpdate={(id, patch) => setWorldElements((prev) => prev.map((w) => w.id === id ? { ...w, ...patch } : w))}
               onRemove={(id) => setWorldElements((prev) => prev.filter((w) => w.id !== id))}
-              aiAssistUsed={aiUsed}
-              onAiAssistUsed={() => setAiUsed((n) => Math.min(3, n + 1))}
             />
           )}
           {step === 6 && (
@@ -309,14 +302,11 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
               getContext={() => setupCtx}
             />
           )}
-        </div>
+      </main>
 
-        <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border px-6 py-3 flex items-center justify-between gap-2">
-          <Button
-            variant="ghost"
-            onClick={goBack}
-            disabled={step === 1}
-          >
+      <footer className="fixed bottom-0 left-0 right-0 z-10 bg-background/95 backdrop-blur border-t border-border">
+        <div className="max-w-7xl mx-auto px-8 py-3 flex items-center justify-between gap-2">
+          <Button variant="ghost" onClick={goBack} disabled={step === 1}>
             <ArrowLeft className="w-4 h-4 mr-1" /> Back
           </Button>
           <div className="text-xs text-muted-foreground hidden sm:block">
@@ -340,8 +330,9 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
             </Button>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </footer>
+    </div>
+    ) : null
   );
 }
 
@@ -491,6 +482,7 @@ function Step2(props: {
         <AskAIGuide
           used={props.aiUsed}
           onUsed={props.onAiUsed}
+          onlyCategory="plot"
           getContext={() => props.getContext() as never}
         />
       </div>
@@ -564,6 +556,7 @@ function Step3(props: {
         <AskAIGuide
           used={props.aiUsed}
           onUsed={props.onAiUsed}
+          onlyCategory="plot"
           getContext={() => props.getContext() as never}
         />
       </div>
@@ -652,6 +645,7 @@ function Step4(props: {
           <AskAIGuide
             used={props.aiUsed}
             onUsed={props.onAiUsed}
+            onlyCategory="plot"
             getContext={() => props.getContext() as never}
           />
           <Button variant="outline" size="sm" onClick={add}>
@@ -751,6 +745,7 @@ function SceneEditor({
             used={aiUsed}
             onUsed={onAiUsed}
             label="Ask AI"
+            onlyCategory="plot"
             getContext={() => ({
               ...(getContext() as Record<string, unknown>),
               focusChapterTitle: chapter.title,
