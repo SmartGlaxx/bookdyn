@@ -30,6 +30,14 @@ const DOT_CLASS: Record<LinkCategory, string> = {
 };
 const INTER_COLOR = "#9aa3b2"; // grey for inter-chapter links
 
+// Icon per category — used everywhere a category needs to be visually identified
+// (sidebar dropdown titles, dropdown items, linked-element rows inside cards).
+const CAT_ICON: Record<LinkCategory, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
+  plot: Zap,
+  character: Users,
+  world: Globe,
+};
+
 // Story arc category colors — chapter cards inherit these from their arc index.
 const ARC_COLORS: Record<StoryArcColor, string> = {
   setup: "#0ea5e9",      // sky
