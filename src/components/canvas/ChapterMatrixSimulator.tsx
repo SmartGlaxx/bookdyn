@@ -745,28 +745,33 @@ export function ChapterMatrixSimulator(props: Props) {
         const el = findElement(link.elementId);
         const ch = chapters.find((c) => c.id === link.chapterId);
         if (!el || !ch) return null;
-        const chNum = chapters.findIndex((c) => c.id === ch.id) + 1;
         return (
-          <DetailModal onClose={() => setDetail(null)}>
-            <h2 className="text-lg font-semibold m-0">Link Details</h2>
-            <p className="text-xs text-[#8a93a3] mt-1 mb-4">Connection between a story element and a chapter.</p>
-            <div className="flex gap-2.5 mb-3.5">
-              <Field label="Element"><div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded text-sm" style={{ borderLeft: `3px solid ${COLORS[link.category]}` }}><b>{el.name}</b></div></Field>
-              <Field label="Category"><div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded"><span className="text-[10px] px-1.5 py-0.5 rounded text-white" style={{ background: COLORS[link.category] }}>{link.category}</span></div></Field>
-              <Field label="Chapter"><div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded text-sm">#{chNum} — {ch.title || `Chapter ${chNum}`}</div></Field>
-            </div>
-            <Field label="Note">
-              <div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded text-sm whitespace-pre-wrap min-h-[60px] leading-relaxed">
-                {link.note ? renderNoteWithRefs(link.note, allElements) : <i className="text-[#8a93a3]">No note added.</i>}
-              </div>
-            </Field>
-            <div className="flex justify-between gap-2 mt-4">
-              <Button variant="destructive" size="sm" onClick={() => deleteLink(link.id)}>
-                <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Link
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => setDetail(null)}>Close</Button>
-            </div>
-          </DetailModal>
+          <EditableLinkModal
+            key={link.id}
+            title="Link Details"
+            subtitle="Connection between a story element and a chapter."
+            color={COLORS[link.category]}
+            sourceLabel="Element"
+            destLabel="Chapter"
+            sourceOptions={allElements.map((e) => ({ value: e.id, label: e.name, color: COLORS[e.category], badge: e.category }))}
+            destOptions={chapters.map((c, i) => ({ value: c.id, label: `#${i + 1} ${c.title || `Chapter ${i + 1}`}` }))}
+            sourceValue={link.elementId}
+            destValue={link.chapterId}
+            note={link.note ?? ""}
+            allElements={allElements}
+            onSave={(src, dst, note) => {
+              const found = allElements.find((e) => e.id === src);
+              updateLink(link.id, {
+                elementId: src,
+                chapterId: dst,
+                category: found?.category ?? link.category,
+                note,
+              });
+              setDetail(null);
+            }}
+            onDelete={() => deleteLink(link.id)}
+            onClose={() => setDetail(null)}
+          />
         );
       })()}
 
@@ -774,25 +779,28 @@ export function ChapterMatrixSimulator(props: Props) {
         const link = interLinks.find((l) => l.id === detail.id);
         if (!link) return null;
         return (
-          <DetailModal onClose={() => setDetail(null)}>
-            <h2 className="text-lg font-semibold m-0 flex items-center gap-2"><ArrowRightLeft className="w-4 h-4 text-[#9aa3b2]" /> Inter-chapter Link</h2>
-            <p className="text-xs text-[#8a93a3] mt-1 mb-4">Structural connection between two chapters. References existing elements only.</p>
-            <div className="flex gap-2.5 mb-3.5">
-              <Field label="From"><div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded text-sm">{chapterLabel(chapters, link.fromChapterId)}</div></Field>
-              <Field label="To"><div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded text-sm">{chapterLabel(chapters, link.toChapterId)}</div></Field>
-            </div>
-            <Field label="Note">
-              <div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded text-sm whitespace-pre-wrap min-h-[60px] leading-relaxed">
-                {renderNoteWithRefs(link.note, allElements)}
-              </div>
-            </Field>
-            <div className="flex justify-between gap-2 mt-4">
-              <Button variant="destructive" size="sm" onClick={() => deleteInterLink(link.id)}>
-                <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Link
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => setDetail(null)}>Close</Button>
-            </div>
-          </DetailModal>
+          <EditableLinkModal
+            key={link.id}
+            title="Inter-chapter Link"
+            subtitle="Structural connection between two chapters. References existing elements only."
+            color={INTER_COLOR}
+            sourceLabel="From"
+            destLabel="To"
+            sourceOptions={chapters.map((c, i) => ({ value: c.id, label: `#${i + 1} ${c.title || `Chapter ${i + 1}`}` }))}
+            destOptions={chapters.map((c, i) => ({ value: c.id, label: `#${i + 1} ${c.title || `Chapter ${i + 1}`}` }))}
+            sourceValue={link.fromChapterId}
+            destValue={link.toChapterId}
+            note={link.note}
+            allElements={allElements}
+            requireAt
+            onSave={(src, dst, note) => {
+              if (src === dst) { flashError("A chapter cannot link to itself."); return; }
+              updateInterLink(link.id, { fromChapterId: src, toChapterId: dst, note });
+              setDetail(null);
+            }}
+            onDelete={() => deleteInterLink(link.id)}
+            onClose={() => setDetail(null)}
+          />
         );
       })()}
     </div>
