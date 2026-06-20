@@ -501,42 +501,26 @@ export function ChapterMatrixSimulator(props: Props) {
           </div>
           <p className="text-[11px] text-[#8a93a3] mb-2">Click an element, then click a chapter to link it.</p>
 
-          {/* Category dropdown */}
-          <div className="flex items-center gap-2 mb-3">
-            <div
-              ref={(n) => catAnchorNodes.current.set(activeCat, n)}
-              className={cn("w-2.5 h-2.5 rounded-full shrink-0", DOT_CLASS[activeCat])}
-            />
-            <Select value={activeCat} onValueChange={(v) => setActiveCat(v as LinkCategory)}>
-              <SelectTrigger className="h-8 text-xs bg-[#1d222c] border-[#2a3140] text-[#cfd4df]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-[#161a21] border-[#2a3140] text-[#cfd4df]">
-                <SelectItem value="plot">Plot ({groups.plot.length})</SelectItem>
-                <SelectItem value="character">Characters ({groups.character.length})</SelectItem>
-                <SelectItem value="world">World ({groups.world.length})</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Hidden anchors for inactive categories so links to those elements still point at the sidebar */}
-          <div className="absolute opacity-0 pointer-events-none -z-10">
-            {(["plot", "character", "world"] as LinkCategory[])
-              .filter((c) => c !== activeCat)
-              .map((c) => (
-                <div key={c} ref={(n) => catAnchorNodes.current.set(c, n)} style={{ width: 1, height: 1 }} />
-              ))}
-          </div>
-
-          <div className="flex-1 min-h-0 overflow-y-auto -mr-1 pr-1">
-            <Group
-              title={activeCat === "plot" ? "Plot" : activeCat === "character" ? "Characters" : "World"}
-              cat={activeCat}
-              items={groups[activeCat]}
-              selectedId={selected?.id ?? null}
-              onSelect={selectElement}
-              registerRef={(id, node) => elNodes.current.set(id, node)}
-            />
+          {/* Three independent collapsible dropdowns: Plot, Characters, World */}
+          <div className="flex-1 min-h-0 overflow-y-auto -mr-1 pr-1 space-y-2">
+            {([
+              { cat: "plot" as LinkCategory, title: "Plot" },
+              { cat: "character" as LinkCategory, title: "Characters" },
+              { cat: "world" as LinkCategory, title: "World" },
+            ]).map(({ cat, title }) => (
+              <CategoryDropdown
+                key={cat}
+                cat={cat}
+                title={title}
+                items={groups[cat]}
+                defaultOpen={openCats[cat]}
+                onToggle={(open) => setOpenCats((s) => ({ ...s, [cat]: open }))}
+                selectedId={selected?.id ?? null}
+                onSelect={selectElement}
+                registerRef={(id, node) => elNodes.current.set(id, node)}
+                registerAnchorRef={(node) => catAnchorNodes.current.set(cat, node)}
+              />
+            ))}
           </div>
 
           <div className="mt-3 pt-3 border-t border-[#232833] text-[10px] text-[#5d6577] leading-relaxed space-y-1">
