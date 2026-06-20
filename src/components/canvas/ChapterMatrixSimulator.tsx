@@ -305,7 +305,7 @@ export function ChapterMatrixSimulator(props: Props) {
     });
     return out;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [links, chapters, allElements, popup, detail, zoom, tick, fullscreen]);
+  }, [links, chapters, allElements, popup, detail, zoom, tick, fullscreen, openCats]);
 
   const interPaths = useMemo(() => {
     const wrap = matrixRef.current;
@@ -337,7 +337,7 @@ export function ChapterMatrixSimulator(props: Props) {
     });
     return out;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interLinks, chapters, popup, detail, zoom, tick, fullscreen]);
+  }, [interLinks, chapters, popup, detail, zoom, tick, fullscreen, openCats]);
 
   // ---- Actions ----
   const flashError = (msg: string) => {
