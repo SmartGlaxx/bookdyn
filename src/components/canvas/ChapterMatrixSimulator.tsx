@@ -9,11 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Trash2, X, Plus, Minus, BookOpen, Link2, GitBranch, MousePointer2,
   Maximize2, Minimize2, GripVertical, ArrowRightLeft, AtSign,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 
 const newId = () =>
   (typeof crypto !== "undefined" && "randomUUID" in crypto)
