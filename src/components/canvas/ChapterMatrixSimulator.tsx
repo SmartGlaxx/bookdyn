@@ -229,6 +229,7 @@ export function ChapterMatrixSimulator(props: Props) {
       startY: ev.clientY,
       moved: false,
     };
+    setDraggingId(chId);
   };
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
@@ -249,6 +250,7 @@ export function ChapterMatrixSimulator(props: Props) {
     const onUp = () => {
       if (cardDragRef.current?.moved) suppressNextClick.current = true;
       cardDragRef.current = null;
+      setDraggingId(null);
     };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
