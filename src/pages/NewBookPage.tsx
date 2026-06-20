@@ -31,7 +31,7 @@ export default function NewBookPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navigation onCreateBook={() => navigate("/dashboard/new-book")} />
-      <main className="container max-w-6xl mx-auto px-4 py-6">
+      <main className="container max-w-6xl mx-auto px-4 pt-2 pb-6">
         <CanvasSetupWizard
           open
           onClose={() => navigate("/dashboard")}
