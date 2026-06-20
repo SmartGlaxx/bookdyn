@@ -1,6 +1,6 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { AppHeader } from "./AppHeader";
-import { LeftRail, type RailItem } from "./LeftRail";
+import { LeftRail, MobileLeftRailSheet, type RailItem } from "./LeftRail";
 import { cn } from "@/lib/utils";
 
 interface AppShellProps {
@@ -21,14 +21,15 @@ export function AppShell({
   pageCard = true,
   className,
 }: AppShellProps) {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <AppHeader projectLabel={projectLabel} />
+      <AppHeader projectLabel={projectLabel} onMenuClick={() => setMobileNavOpen(true)} />
       <div className="flex-1 flex min-h-0">
         <LeftRail items={sidebarItems} />
-        <main className={cn("flex-1 min-w-0 p-4 sm:p-6", className)}>
+        <main className={cn("flex-1 min-w-0 p-3 sm:p-6", className)}>
           {pageCard ? (
-            <div className="rounded-2xl border border-border bg-card/40 p-5 sm:p-8 min-h-[calc(100vh-64px-3rem)]">
+            <div className="rounded-2xl border border-border bg-card/40 p-4 sm:p-8 min-h-[calc(100vh-64px-3rem)]">
               {children}
             </div>
           ) : (
@@ -36,6 +37,7 @@ export function AppShell({
           )}
         </main>
       </div>
+      <MobileLeftRailSheet items={sidebarItems} open={mobileNavOpen} onOpenChange={setMobileNavOpen} />
     </div>
   );
 }
