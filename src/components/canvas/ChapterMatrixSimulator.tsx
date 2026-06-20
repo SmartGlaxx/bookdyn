@@ -468,11 +468,12 @@ function Group({
     <div className="mb-4">
       <h3 className="text-[11px] uppercase tracking-[1px] m-0 mb-2 text-[#aab2c0] flex items-center gap-1.5">
         <span className={cn("w-2 h-2 rounded-full inline-block", DOT_CLASS[cat])} />
-        {title}
+        {title} <span className="ml-auto text-[10px] text-[#5d6577] normal-case tracking-normal">{items.length}</span>
       </h3>
       {items.length === 0 && (
         <p className="text-[11px] text-[#5d6577] italic">None added.</p>
       )}
+      <div className={cn(items.length > 5 && "max-h-[200px] overflow-y-auto pr-1 -mr-1")}>
       {items.map((el) => {
         const selected = selectedId === el.id;
         return (
@@ -493,6 +494,118 @@ function Group({
           </div>
         );
       })}
+      </div>
+    </div>
+  );
+}
+
+// ---- Sortable chapter card ----
+const CAT_BADGE_BG: Record<LinkCategory, string> = {
+  plot: "bg-[#ef4444]/15 text-[#ef4444] border-[#ef4444]/40",
+  character: "bg-[#3b82f6]/15 text-[#3b82f6] border-[#3b82f6]/40",
+  world: "bg-[#22c55e]/15 text-[#22c55e] border-[#22c55e]/40",
+};
+
+function SortableChapterCard({
+  index, chapter, chLinks, findElement,
+  onClickCard, onClickLink, onTitleChange, onRemoveChapter, registerNode,
+}: {
+  index: number;
+  chapter: CanvasChapter;
+  chLinks: ChapterLink[];
+  findElement: (id: string) => ElementLite | null;
+  onClickCard: (id: string, e: React.MouseEvent) => void;
+  onClickLink: (linkId: string) => void;
+  onTitleChange: (id: string, title: string) => void;
+  onRemoveChapter: (id: string) => void;
+  registerNode: (node: HTMLDivElement | null) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: chapter.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.7 : 1,
+  };
+  const full = chLinks.length >= 3;
+  const accentColor = chLinks[0] ? COLORS[chLinks[0].category] : "#3b82f6";
+
+  const setRefs = (node: HTMLDivElement | null) => {
+    setNodeRef(node);
+    registerNode(node);
+  };
+
+  return (
+    <div
+      ref={setRefs}
+      style={style}
+      data-chapter={chapter.id}
+      onClick={(e) => onClickCard(chapter.id, e)}
+      className={cn(
+        "inline-block align-top w-[220px] h-[300px] mr-6 cursor-pointer whitespace-normal",
+        "bg-[#1d222c] border rounded-[10px] p-3.5 relative transition-colors",
+        "border-[#2a3140] hover:border-[#4b5468]",
+        full && "opacity-95",
+      )}
+    >
+      {/* numbered badge */}
+      <span
+        className="absolute -top-2 left-3 px-1.5 py-0.5 rounded text-[11px] font-bold border"
+        style={{ background: `${accentColor}22`, color: accentColor, borderColor: `${accentColor}66` }}
+      >
+        {index + 1}
+      </span>
+      {/* drag handle */}
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        onClick={(e) => e.stopPropagation()}
+        className="absolute top-1.5 right-8 p-1 rounded text-[#5d6577] hover:text-white hover:bg-[#262c38] cursor-grab active:cursor-grabbing"
+        aria-label="Drag chapter"
+      >
+        <GripVertical className="w-3.5 h-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onRemoveChapter(chapter.id); }}
+        className="absolute top-1.5 right-2 p-1 rounded text-[#5d6577] hover:text-red-400 hover:bg-[#262c38]"
+        aria-label="Remove chapter"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </button>
+
+      <Input
+        value={chapter.title}
+        onChange={(e) => onTitleChange(chapter.id, e.target.value)}
+        onClick={(e) => e.stopPropagation()}
+        placeholder={`Chapter ${index + 1}`}
+        className="mt-3 h-7 px-1 text-sm font-semibold bg-transparent border-0 border-b border-transparent hover:border-[#2a3140] focus-visible:border-[#3a4254] focus-visible:ring-0 text-[#e8eaed]"
+      />
+
+      {chLinks.length > 0 && (
+        <div className="mt-3 text-[10px] uppercase tracking-wider text-[#7a8294]">Linked elements</div>
+      )}
+      <div className="mt-1 space-y-1.5">
+        {chLinks.map((l) => {
+          const el = findElement(l.elementId);
+          if (!el) return null;
+          return (
+            <div
+              key={l.id}
+              onClick={(e) => { e.stopPropagation(); onClickLink(l.id); }}
+              className="flex items-center gap-1.5 bg-[#262c38] hover:bg-[#323a4a] px-1.5 py-1 rounded text-[11px] text-[#cfd4df] cursor-pointer"
+            >
+              <span className={cn("w-1.5 h-1.5 rounded-full", DOT_CLASS[l.category])} />
+              <b className="truncate">{el.name}</b>
+              <span className={cn("ml-auto text-[9px] px-1 py-px rounded border", CAT_BADGE_BG[l.category])}>{l.category}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="absolute bottom-2.5 right-3 text-[10px] text-[#666]">{chLinks.length}/3</div>
+      {full && (
+        <span className="absolute bottom-2.5 left-3 text-[9px] text-red-500 tracking-wider">FULL</span>
+      )}
     </div>
   );
 }
