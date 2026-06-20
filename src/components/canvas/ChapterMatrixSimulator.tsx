@@ -647,9 +647,18 @@ export function ChapterMatrixSimulator(props: Props) {
                     chapter={ch}
                     chLinks={links.filter((l) => l.chapterId === ch.id)}
                     interOut={interLinks.filter((l) => l.fromChapterId === ch.id).length}
+                    interChapterLinks={[
+                      ...interLinks
+                        .filter((l) => l.fromChapterId === ch.id)
+                        .map((l) => ({ id: l.id, label: chapterLabel(chapters, l.toChapterId), direction: "out" as const })),
+                      ...interLinks
+                        .filter((l) => l.toChapterId === ch.id)
+                        .map((l) => ({ id: l.id, label: chapterLabel(chapters, l.fromChapterId), direction: "in" as const })),
+                    ]}
                     findElement={findElement}
                     onClickCard={onChapterClick}
                     onClickLink={(lid) => setDetail({ kind: "link", id: lid })}
+                    onClickInterLink={(lid) => setDetail({ kind: "inter", id: lid })}
                     onTitleChange={updateChapterTitle}
                     onRequestDelete={(id) => setConfirmDelete(id)}
                     onView={(id) => setCardDetail({ chapterId: id, mode: "view" })}
