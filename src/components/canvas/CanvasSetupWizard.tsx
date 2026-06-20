@@ -94,6 +94,10 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
   const [characterArcs, setCharacterArcs] = useState<CharacterArcCard[]>([]);
   const [worldElements, setWorldElements] = useState<WorldElementCard[]>([]);
 
+  // Step 6 — chapter-matrix simulator links
+  const [chapterLinks, setChapterLinks] = useState<ChapterLink[]>([]);
+  const [interChapterLinks, setInterChapterLinks] = useState<InterChapterLink[]>([]);
+
   // AI counter (client mirror — server-enforced once book exists)
   const [aiUsed, setAiUsed] = useState(0);
 
@@ -102,8 +106,10 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
     1: title.trim().length > 0 && genre.trim().length > 0,
     2: filledBullets.length >= 10,
     3: arc.length >= 10,
-    4: true, // optional
-    5: true, // optional
+    4: characterArcs.length >= 1,
+    5: worldElements.length >= 1
+      && arc.length >= 10
+      && characterArcs.length >= 1,
     6: chapters.length > 0 && chapters.every((c) => c.title.trim().length > 0),
   };
 
@@ -153,6 +159,8 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
       characterArcs,
       worldElements,
       chapters,
+      chapterLinks,
+      interChapterLinks,
       aiAssistUsed: aiUsed,
       updatedAt: new Date().toISOString(),
     };
@@ -223,10 +231,10 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-md hover:bg-muted text-muted-foreground"
-              aria-label="Close"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground text-sm"
+              aria-label="Back"
             >
-              <X className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4" /> Back
             </button>
           </div>
           <Stepper step={step} />
