@@ -141,6 +141,7 @@ export function ChapterMatrixSimulator(props: Props) {
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const elNodes = useRef<Map<string, HTMLDivElement | null>>(new Map());
   const chNodes = useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const catAnchorNodes = useRef<Map<LinkCategory, HTMLDivElement | null>>(new Map());
 
   // ---- Selection / link state ----
   const [selected, setSelected] = useState<{ id: string; category: LinkCategory } | null>(null);
@@ -273,8 +274,12 @@ export function ChapterMatrixSimulator(props: Props) {
     links.forEach((link) => {
       const elNode = elNodes.current.get(link.elementId);
       const chNode = chNodes.current.get(link.chapterId);
-      if (!elNode || !chNode) return;
-      const er = elNode.getBoundingClientRect();
+      if (!chNode) return;
+      // Fall back to the category anchor in the sidebar when the element row is
+      // not currently visible (e.g. a different category is selected in the dropdown).
+      const sourceNode = elNode ?? catAnchorNodes.current.get(link.category) ?? null;
+      if (!sourceNode) return;
+      const er = sourceNode.getBoundingClientRect();
       const cr = chNode.getBoundingClientRect();
       const x1 = er.right - wrapRect.left;
       const y1 = er.top + er.height / 2 - wrapRect.top;
