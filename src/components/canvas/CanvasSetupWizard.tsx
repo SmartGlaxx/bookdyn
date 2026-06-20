@@ -12,11 +12,12 @@ import {
   BOOK_TYPE_AUDIENCES, AUDIENCE_OPTIONS, getDefaultControls, getDefaultFrontMatter,
   TONE_OPTIONS, TEMPORAL_ERA_OPTIONS, StoryCanvas, StoryArcCard, StoryArcColor,
   CanvasChapter, ToneProfile, ToneLevel, EMPTY_CANVAS, CharacterArcCard, WorldElementCard,
+  ChapterLink, InterChapterLink,
 } from "@/types/book";
 import { ARC_COLOR_CLASS, ARC_COLORS } from "@/hooks/useCanvas";
 import {
   ArrowLeft, ArrowRight, Check, Plus, Trash2, Loader2, Pin,
-  GripVertical, X,
+  GripVertical,
 } from "lucide-react";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent,
@@ -29,6 +30,7 @@ import { SortableCard } from "./SortableCard";
 import { AskAIGuide } from "./AskAIGuide";
 import { CharacterArcsPanel } from "./CharacterArcsPanel";
 import { WorldbuildingPanel } from "./WorldbuildingPanel";
+import { ChapterMatrixSimulator } from "./ChapterMatrixSimulator";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -92,6 +94,10 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
   const [characterArcs, setCharacterArcs] = useState<CharacterArcCard[]>([]);
   const [worldElements, setWorldElements] = useState<WorldElementCard[]>([]);
 
+  // Step 6 — chapter-matrix simulator links
+  const [chapterLinks, setChapterLinks] = useState<ChapterLink[]>([]);
+  const [interChapterLinks, setInterChapterLinks] = useState<InterChapterLink[]>([]);
+
   // AI counter (client mirror — server-enforced once book exists)
   const [aiUsed, setAiUsed] = useState(0);
 
@@ -100,8 +106,10 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
     1: title.trim().length > 0 && genre.trim().length > 0,
     2: filledBullets.length >= 10,
     3: arc.length >= 10,
-    4: true, // optional
-    5: true, // optional
+    4: characterArcs.length >= 1,
+    5: worldElements.length >= 1
+      && arc.length >= 10
+      && characterArcs.length >= 1,
     6: chapters.length > 0 && chapters.every((c) => c.title.trim().length > 0),
   };
 
@@ -151,6 +159,8 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
       characterArcs,
       worldElements,
       chapters,
+      chapterLinks,
+      interChapterLinks,
       aiAssistUsed: aiUsed,
       updatedAt: new Date().toISOString(),
     };
@@ -221,10 +231,10 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-md hover:bg-muted text-muted-foreground"
-              aria-label="Close"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground text-sm"
+              aria-label="Back"
             >
-              <X className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4" /> Back
             </button>
           </div>
           <Stepper step={step} />
@@ -292,15 +302,27 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
             />
           )}
           {step === 6 && (
-            <Step4
-              chapters={chapters}
-              setChapters={setChapters}
-              openChapterId={openChapterId}
-              setOpenChapterId={setOpenChapterId}
-              aiUsed={aiUsed}
-              onAiUsed={() => setAiUsed((n) => Math.min(3, n + 1))}
-              getContext={() => setupCtx}
-            />
+            <div className="space-y-5">
+              <Step4
+                chapters={chapters}
+                setChapters={setChapters}
+                openChapterId={openChapterId}
+                setOpenChapterId={setOpenChapterId}
+                aiUsed={aiUsed}
+                onAiUsed={() => setAiUsed((n) => Math.min(3, n + 1))}
+                getContext={() => setupCtx}
+              />
+              <ChapterMatrixSimulator
+                arc={arc}
+                characters={characterArcs}
+                worlds={worldElements}
+                chapters={chapters}
+                links={chapterLinks}
+                interLinks={interChapterLinks}
+                onLinksChange={setChapterLinks}
+                onInterLinksChange={setInterChapterLinks}
+              />
+            </div>
           )}
       </main>
 
@@ -312,9 +334,9 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
           <div className="text-xs text-muted-foreground hidden sm:block">
             {step === 2 && `${filledBullets.length} / 10 bullets filled`}
             {step === 3 && `${arc.length} arc cards`}
-            {step === 4 && `${characterArcs.length} character${characterArcs.length === 1 ? "" : "s"} (optional)`}
-            {step === 5 && `${worldElements.length} world element${worldElements.length === 1 ? "" : "s"} (optional)`}
-            {step === 6 && `${chapters.length} chapters · ${chapters.filter((c) => c.title.trim()).length} titled`}
+            {step === 4 && `${characterArcs.length} character${characterArcs.length === 1 ? "" : "s"} · need ≥1`}
+            {step === 5 && `${worldElements.length} world element${worldElements.length === 1 ? "" : "s"} · need ≥1`}
+            {step === 6 && `${chapters.length} chapters · ${chapterLinks.length} link${chapterLinks.length === 1 ? "" : "s"}`}
           </div>
           {step < 6 ? (
             <Button onClick={goNext} disabled={!canAdvance[step]} variant="hero">
