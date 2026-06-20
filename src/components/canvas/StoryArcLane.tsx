@@ -75,7 +75,7 @@ export function StoryArcLane({ cards, onReorder, onAdd, onUpdate, onRemove }: Pr
                   id={c.id}
                   className={cn("min-w-[200px] max-w-[220px] shrink-0 border-2", ARC_COLOR_CLASS[c.color])}
                 >
-                  <div className="p-3 pt-7">
+                  <div className="p-3">
                     <Textarea
                       value={c.text}
                       onChange={(e) => onUpdate(c.id, { text: e.target.value })}
