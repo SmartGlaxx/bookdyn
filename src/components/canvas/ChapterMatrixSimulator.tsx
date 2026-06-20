@@ -1612,3 +1612,169 @@ function EditableLinkModal({
     </div>
   );
 }
+// ---- Chapter card detail / edit modal ----
+function ChapterCardModal({
+  chapter, index, accent, mode,
+  elementLinks, outgoingInter, incomingInter,
+  chapters, findElement, allElements,
+  onTitleChange, onOpenLink, onOpenInter, onClose,
+}: {
+  chapter: CanvasChapter;
+  index: number;
+  accent: string;
+  mode: "view" | "edit";
+  elementLinks: ChapterLink[];
+  outgoingInter: InterChapterLink[];
+  incomingInter: InterChapterLink[];
+  chapters: CanvasChapter[];
+  findElement: (id: string) => ElementLite | null;
+  allElements: ElementLite[];
+  onTitleChange: (t: string) => void;
+  onOpenLink: (id: string) => void;
+  onOpenInter: (id: string) => void;
+  onClose: () => void;
+}) {
+  const editable = mode === "edit";
+  const totalLinks = elementLinks.length + outgoingInter.length + incomingInter.length;
+  return (
+    <div
+      className="fixed inset-0 z-[55] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-[#161a21] border border-[#2a3140] rounded-2xl w-[720px] max-w-[96vw] max-h-[92vh] overflow-hidden text-[#e8eaed] shadow-[0_24px_64px_rgba(0,0,0,.6)] flex flex-col">
+        <div
+          className="flex items-center gap-3 px-5 py-4 border-b border-[#232833]"
+          style={{ background: `linear-gradient(90deg, ${accent}26, transparent)` }}
+        >
+          <div
+            className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm shrink-0"
+            style={{ background: `${accent}22`, color: accent, border: `1px solid ${accent}66` }}
+          >
+            {index + 1}
+          </div>
+          <div className="flex-1 min-w-0">
+            {editable ? (
+              <Input
+                value={chapter.title}
+                onChange={(e) => onTitleChange(e.target.value)}
+                placeholder={`Chapter ${index + 1}`}
+                className="h-8 px-2 text-sm font-semibold bg-[#0f1115] border-[#2a3140] text-[#e8eaed]"
+              />
+            ) : (
+              <h2 className="text-base font-semibold m-0 truncate">
+                {chapter.title || `Chapter ${index + 1}`}
+              </h2>
+            )}
+            <p className="text-[11px] text-[#8a93a3] m-0 mt-0.5">
+              {totalLinks} link{totalLinks === 1 ? "" : "s"} · {elementLinks.length} element · {outgoingInter.length + incomingInter.length} inter-chapter
+            </p>
+          </div>
+          <button onClick={onClose} className="text-[#8a93a3] hover:text-white p-1 rounded hover:bg-[#232833]" aria-label="Close">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="px-5 py-4 overflow-y-auto flex-1 space-y-5">
+          <section>
+            <h3 className="text-[10px] uppercase tracking-wider text-[#8a93a3] mb-2 flex items-center gap-1.5">
+              <Link2 className="w-3 h-3" /> Linked Story Elements
+            </h3>
+            {elementLinks.length === 0 ? (
+              <p className="text-[12px] text-[#5d6577] italic">No elements linked to this chapter yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {elementLinks.map((l) => {
+                  const el = findElement(l.elementId);
+                  if (!el) return null;
+                  return (
+                    <div
+                      key={l.id}
+                      className="rounded-lg border border-[#2a3140] bg-[#1d222c] p-3"
+                      style={{ borderLeft: `3px solid ${COLORS[l.category]}` }}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={cn("w-2 h-2 rounded-full", DOT_CLASS[l.category])} />
+                        <b className="text-[13px] truncate">{el.name}</b>
+                        <span className="text-[10px] px-1.5 py-px rounded uppercase tracking-wider text-white" style={{ background: COLORS[l.category] }}>
+                          {l.category}
+                        </span>
+                        <div className="ml-auto flex items-center gap-1 text-[11px] text-[#8a93a3]">
+                          <span className="truncate">→ #{index + 1} {chapter.title || `Chapter ${index + 1}`}</span>
+                          {editable && (
+                            <button
+                              onClick={() => onOpenLink(l.id)}
+                              className="ml-2 inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded hover:bg-[#262c38] text-[#cfd4df]"
+                            >
+                              <Pencil className="w-3 h-3" /> Edit
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {l.note ? (
+                        <p className="text-[12px] text-[#cfd4df] m-0 leading-relaxed whitespace-pre-wrap">
+                          {renderNoteWithRefs(l.note, allElements)}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-[#5d6577] italic m-0">No note.</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          <section>
+            <h3 className="text-[10px] uppercase tracking-wider text-[#8a93a3] mb-2 flex items-center gap-1.5">
+              <ArrowRightLeft className="w-3 h-3" /> Inter-chapter Links
+            </h3>
+            {outgoingInter.length === 0 && incomingInter.length === 0 ? (
+              <p className="text-[12px] text-[#5d6577] italic">No inter-chapter links.</p>
+            ) : (
+              <div className="space-y-2">
+                {[...outgoingInter.map((l) => ({ l, dir: "out" as const })), ...incomingInter.map((l) => ({ l, dir: "in" as const }))].map(({ l, dir }) => {
+                  const otherId = dir === "out" ? l.toChapterId : l.fromChapterId;
+                  const other = chapters.findIndex((c) => c.id === otherId);
+                  const otherCh = chapters[other];
+                  return (
+                    <div
+                      key={l.id + dir}
+                      className="rounded-lg border border-[#2a3140] bg-[#1d222c] p-3"
+                      style={{ borderLeft: `3px solid ${INTER_COLOR}` }}
+                    >
+                      <div className="flex items-center gap-2 mb-1 text-[12px]">
+                        <ArrowRightLeft className="w-3.5 h-3.5 text-[#9aa3b2]" />
+                        <b>#{index + 1} {chapter.title || `Chapter ${index + 1}`}</b>
+                        <span className="text-[#5d6577]">{dir === "out" ? "→" : "←"}</span>
+                        <b>#{other + 1} {otherCh?.title || `Chapter ${other + 1}`}</b>
+                        {editable && (
+                          <button
+                            onClick={() => onOpenInter(l.id)}
+                            className="ml-auto inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded hover:bg-[#262c38] text-[#cfd4df]"
+                          >
+                            <Pencil className="w-3 h-3" /> Edit
+                          </button>
+                        )}
+                      </div>
+                      {l.note ? (
+                        <p className="text-[12px] text-[#cfd4df] m-0 leading-relaxed whitespace-pre-wrap">
+                          {renderNoteWithRefs(l.note, allElements)}
+                        </p>
+                      ) : (
+                        <p className="text-[11px] text-[#5d6577] italic m-0">No note.</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-[#232833] bg-[#12161d]">
+          <Button variant="ghost" size="sm" onClick={onClose}>Close</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
