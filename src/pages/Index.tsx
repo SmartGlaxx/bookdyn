@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import Navigation from "@/components/Navigation";
+import { AppShell } from "@/components/shell/AppShell";
 import { BookOpen, Sparkles, ArrowLeft, ArrowUpDown, Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -506,10 +506,8 @@ const Index = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation onCreateBook={openNewBook} />
-
-      <main>
+    <AppShell>
+      <div>
         {isLoading ? (
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center space-y-4">
@@ -518,7 +516,7 @@ const Index = () => {
             </div>
           </div>
         ) : books.length === 0 ? (
-          <div className="container max-w-6xl mx-auto px-4 py-8">
+          <div className="py-2">
             <div className="flex items-center justify-between mb-8">
               <div>
                 <h3 className="text-2xl font-serif font-bold">Your Library</h3>
@@ -547,7 +545,7 @@ const Index = () => {
             </motion.div>
           </div>
         ) : (
-          <div className="container max-w-6xl mx-auto px-4 py-8">
+          <div className="py-2">
             {toolbar}
 
             {isBookTypeRoute ? (
@@ -590,8 +588,8 @@ const Index = () => {
             )}
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 };
 
