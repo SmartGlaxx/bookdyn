@@ -1165,7 +1165,7 @@ function FreeChapterCard({
         className="mt-3 h-7 px-1 text-sm font-semibold bg-transparent border-0 border-b border-transparent hover:border-[#2a3140] focus-visible:border-[#3a4254] focus-visible:ring-0 text-[#e8eaed]"
       />
 
-      {chLinks.length > 0 && (
+      {(chLinks.length > 0 || interChapterLinks.length > 0) && (
         <div className="mt-3 text-[10px] uppercase tracking-wider text-[#7a8294] flex items-center gap-1">
           <Link2 className="w-3 h-3" /> Linked elements
         </div>
@@ -1174,6 +1174,7 @@ function FreeChapterCard({
         {chLinks.map((l) => {
           const el = findElement(l.elementId);
           if (!el) return null;
+          const CatI = CAT_ICON[l.category];
           return (
             <div
               key={l.id}
@@ -1182,12 +1183,24 @@ function FreeChapterCard({
               onClick={(e) => { e.stopPropagation(); onClickLink(l.id); }}
               className="flex items-center gap-1.5 bg-[#262c38] hover:bg-[#323a4a] px-1.5 py-1 rounded text-[11px] text-[#cfd4df] cursor-pointer"
             >
-              <span className={cn("w-1.5 h-1.5 rounded-full", DOT_CLASS[l.category])} />
+              <CatI className="w-3 h-3 shrink-0" style={{ color: COLORS[l.category] } as React.CSSProperties} />
               <b className="truncate">{el.name}</b>
-              <span className={cn("ml-auto text-[9px] px-1 py-px rounded border", CAT_BADGE_BG[l.category])}>{l.category}</span>
             </div>
           );
         })}
+        {interChapterLinks.map((il) => (
+          <div
+            key={il.id}
+            data-no-drag
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); onClickInterLink(il.id); }}
+            className="flex items-center gap-1.5 bg-[#262c38] hover:bg-[#323a4a] px-1.5 py-1 rounded text-[11px] text-[#9aa3b2] cursor-pointer"
+            title={il.direction === "out" ? `Links to ${il.label}` : `Linked from ${il.label}`}
+          >
+            <ArrowRightLeft className="w-3 h-3 shrink-0" style={{ color: INTER_COLOR }} />
+            <b className="truncate">{il.label}</b>
+          </div>
+        ))}
       </div>
 
       {/* bottom 3-dots menu */}
