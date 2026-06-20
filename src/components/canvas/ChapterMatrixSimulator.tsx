@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   CharacterArcCard, WorldElementCard, CanvasChapter,
-  ChapterLink, InterChapterLink, LinkCategory,
+  ChapterLink, InterChapterLink, LinkCategory, StoryArcCard, StoryArcColor,
 } from "@/types/book";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Trash2, X, Plus, Minus, BookOpen, Link2, GitBranch, MousePointer2,
   Maximize2, Minimize2, GripVertical, ArrowRightLeft, AtSign,
-  ChevronDown,
+  ChevronDown, MoreHorizontal, Eye, Pencil, Zap, Users, Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +30,21 @@ const DOT_CLASS: Record<LinkCategory, string> = {
 };
 const INTER_COLOR = "#9aa3b2"; // grey for inter-chapter links
 
+// Story arc category colors — chapter cards inherit these from their arc index.
+const ARC_COLORS: Record<StoryArcColor, string> = {
+  setup: "#0ea5e9",      // sky
+  rising: "#10b981",     // emerald
+  midpoint: "#8b5cf6",   // violet
+  climax: "#f43f5e",     // rose
+  fall: "#f59e0b",       // amber
+  resolution: "#14b8a6", // teal
+  neutral: "#64748b",    // slate
+};
+const FALLBACK_CYCLE: string[] = [
+  ARC_COLORS.setup, ARC_COLORS.rising, ARC_COLORS.midpoint,
+  ARC_COLORS.climax, ARC_COLORS.fall, ARC_COLORS.resolution,
+];
+
 const CANVAS_W = 3200;
 const CANVAS_H = 1800;
 const CARD_W = 220;
@@ -47,13 +62,24 @@ interface Props {
   onLinksChange: (next: ChapterLink[]) => void;
   interLinks?: InterChapterLink[];
   onInterLinksChange?: (next: InterChapterLink[]) => void;
+  arc?: StoryArcCard[];
 }
 
 export function ChapterMatrixSimulator(props: Props) {
   const {
     bullets, characters, worlds, chapters, links,
-    interLinks = [], onInterLinksChange = () => {},
+    interLinks = [], onInterLinksChange = () => {}, arc = [],
   } = props;
+
+  // Per-index chapter color. Falls back to a stable cycle when no arc exists.
+  const chapterAccentAt = useCallback(
+    (i: number) => {
+      const arcColor = arc[i]?.color;
+      if (arcColor && ARC_COLORS[arcColor]) return ARC_COLORS[arcColor];
+      return FALLBACK_CYCLE[i % FALLBACK_CYCLE.length];
+    },
+    [arc],
+  );
 
   // ---- Zoom ----
   const [zoom, setZoom] = useState(1);
