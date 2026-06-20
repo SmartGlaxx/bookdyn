@@ -1149,7 +1149,7 @@ function NotePopup({
   return (
     <div
       data-popup
-      className="absolute z-[30] w-[300px] bg-[#1d222c] border border-[#3a4254] rounded-lg p-3 shadow-[0_8px_24px_rgba(0,0,0,.5)]"
+      className="absolute z-[30] w-[380px] bg-[#1d222c] border border-[#3a4254] rounded-xl p-4 shadow-[0_12px_40px_rgba(0,0,0,.55)]"
       style={{ left: pos.x, top: pos.y }}
       onClick={(e) => e.stopPropagation()}
     >
