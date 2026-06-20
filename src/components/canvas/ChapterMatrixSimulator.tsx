@@ -852,6 +852,72 @@ export function ChapterMatrixSimulator(props: Props) {
           />
         );
       })()}
+
+      {/* Card detail / edit modal */}
+      {cardDetail && (() => {
+        const ch = chapters.find((c) => c.id === cardDetail.chapterId);
+        if (!ch) return null;
+        const idx = chapters.findIndex((c) => c.id === ch.id);
+        const accent = chapterAccentAt(idx);
+        const outEls = links.filter((l) => l.chapterId === ch.id);
+        const outInter = interLinks.filter((l) => l.fromChapterId === ch.id);
+        const inInter = interLinks.filter((l) => l.toChapterId === ch.id);
+        return (
+          <ChapterCardModal
+            chapter={ch}
+            index={idx}
+            accent={accent}
+            mode={cardDetail.mode}
+            elementLinks={outEls}
+            outgoingInter={outInter}
+            incomingInter={inInter}
+            chapters={chapters}
+            findElement={findElement}
+            allElements={allElements}
+            onTitleChange={(t) => updateChapterTitle(ch.id, t)}
+            onOpenLink={(id) => { setCardDetail(null); setDetail({ kind: "link", id }); }}
+            onOpenInter={(id) => { setCardDetail(null); setDetail({ kind: "inter", id }); }}
+            onClose={() => setCardDetail(null)}
+          />
+        );
+      })()}
+
+      {/* Delete-confirm */}
+      {confirmDelete && (() => {
+        const ch = chapters.find((c) => c.id === confirmDelete);
+        if (!ch) { return null; }
+        const idx = chapters.findIndex((c) => c.id === ch.id);
+        return (
+          <div
+            className="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setConfirmDelete(null); }}
+          >
+            <div className="bg-[#161a21] border border-[#2a3140] rounded-2xl w-[420px] max-w-[92vw] p-5 text-[#e8eaed] shadow-2xl">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center shrink-0">
+                  <Trash2 className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold m-0">Delete this chapter?</h3>
+                  <p className="text-[12px] text-[#8a93a3] m-0 mt-1">
+                    <b className="text-[#cfd4df]">#{idx + 1} {ch.title || `Chapter ${idx + 1}`}</b> and all of its element / inter-chapter links will be removed. This cannot be undone.
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 mt-5">
+                <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(null)}>Cancel</Button>
+                <Button
+                  size="sm"
+                  onClick={() => { removeChapter(ch.id); setConfirmDelete(null); }}
+                  className="bg-red-500 hover:bg-red-600 text-white"
+                >
+                  <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Delete chapter
+                </Button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
