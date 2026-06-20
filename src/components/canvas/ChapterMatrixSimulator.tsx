@@ -250,6 +250,32 @@ export function ChapterMatrixSimulator(props: Props) {
 
   return (
     <div className="rounded-2xl border border-border overflow-hidden bg-[#0f1115] text-[#e8eaed]">
+      {/* Header toolbar */}
+      <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-[#232833] flex-wrap">
+        <div>
+          <h2 className="font-serif font-semibold text-lg leading-tight">Chapter Matrix</h2>
+          <p className="text-[11px] text-[#8a93a3]">
+            Build your story's backbone. Create chapters and link them to plot points, characters, and world elements.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-[#161a21] border border-[#232833] text-xs">
+            <BookOpen className="w-3.5 h-3.5 text-[#8a93a3]" /> {chapters.length} Chapters
+          </div>
+          <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-[#161a21] border border-[#232833] text-xs">
+            <Link2 className="w-3.5 h-3.5 text-[#8a93a3]" /> {links.length} Links
+          </div>
+          <div className="flex items-center gap-0.5 px-1 py-0.5 rounded-md bg-[#161a21] border border-[#232833]">
+            <button onClick={zoomOut} className="p-1 rounded hover:bg-[#232833] text-[#cfd4df]" aria-label="Zoom out"><Minus className="w-3.5 h-3.5" /></button>
+            <button onClick={zoomReset} className="text-[10px] px-1.5 text-[#8a93a3] tabular-nums">{Math.round(zoom * 100)}%</button>
+            <button onClick={zoomIn} className="p-1 rounded hover:bg-[#232833] text-[#cfd4df]" aria-label="Zoom in"><Plus className="w-3.5 h-3.5" /></button>
+          </div>
+          <Button variant="outline" size="sm" onClick={addChapter} className="h-7 text-xs">
+            <Plus className="w-3.5 h-3.5 mr-1" /> Add chapter
+          </Button>
+        </div>
+      </div>
+
       <div className="flex h-[640px]" id="cms-app">
         {/* Sidebar */}
         <aside className="w-[260px] min-w-[260px] h-full bg-[#161a21] border-r border-[#232833] p-4 overflow-y-auto z-[3]">
