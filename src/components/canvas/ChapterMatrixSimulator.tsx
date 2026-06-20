@@ -549,14 +549,15 @@ export function ChapterMatrixSimulator(props: Props) {
           {/* Three independent collapsible dropdowns: Plot, Characters, World */}
           <div className="flex-1 min-h-0 overflow-y-auto -mr-1 pr-1 space-y-2">
             {([
-              { cat: "plot" as LinkCategory, title: "Plot" },
-              { cat: "character" as LinkCategory, title: "Characters" },
-              { cat: "world" as LinkCategory, title: "World" },
-            ]).map(({ cat, title }) => (
+              { cat: "plot" as LinkCategory, title: "Plot Points", Icon: Zap },
+              { cat: "character" as LinkCategory, title: "Characters", Icon: Users },
+              { cat: "world" as LinkCategory, title: "World / Locations", Icon: Globe },
+            ]).map(({ cat, title, Icon }) => (
               <CategoryDropdown
                 key={cat}
                 cat={cat}
                 title={title}
+                Icon={Icon}
                 items={groups[cat]}
                 defaultOpen={openCats[cat]}
                 onToggle={(open) => setOpenCats((s) => ({ ...s, [cat]: open }))}
