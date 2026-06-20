@@ -2,7 +2,7 @@ import { BookOpen, Plus, Flame, HelpCircle, ChevronDown } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useTurbo } from "@/hooks/useTurbo";
-import { AppSidebar as UserMenu } from "@/components/AppSidebar";
+import { UserMenuDropdown } from "@/components/UserMenuDropdown";
 import { useBooks } from "@/hooks/useBooks";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -86,7 +86,7 @@ export function AppHeader({ projectLabel }: Props) {
         <span className="hidden sm:inline ml-1">New Book</span>
       </Button>
 
-      <UserMenu />
+      <UserMenuDropdown />
 
       <button
         type="button"
