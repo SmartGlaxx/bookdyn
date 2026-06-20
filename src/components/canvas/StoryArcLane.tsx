@@ -7,10 +7,11 @@ import { StoryArcCard, StoryArcColor } from "@/types/book";
 import { SortableCard } from "./SortableCard";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Palette } from "lucide-react";
+import { Plus, Trash2, Palette, Minus } from "lucide-react";
 import { ARC_COLOR_CLASS, ARC_COLORS } from "@/hooks/useCanvas";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 interface Props {
   cards: StoryArcCard[];
@@ -21,6 +22,10 @@ interface Props {
 }
 
 export function StoryArcLane({ cards, onReorder, onAdd, onUpdate, onRemove }: Props) {
+  const [zoom, setZoom] = useState(1);
+  const zoomIn = () => setZoom((z) => Math.min(1.5, +(z + 0.1).toFixed(2)));
+  const zoomOut = () => setZoom((z) => Math.max(0.6, +(z - 0.1).toFixed(2)));
+  const zoomReset = () => setZoom(1);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -42,9 +47,16 @@ export function StoryArcLane({ cards, onReorder, onAdd, onUpdate, onRemove }: Pr
           <h2 className="font-serif font-semibold text-lg">Story Arc</h2>
           <p className="text-xs text-muted-foreground">Drag to reorder. Color each beat so the arc reads at a glance.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={onAdd}>
-          <Plus className="w-4 h-4 mr-1" /> Add beat
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5 px-1 py-0.5 rounded-md bg-muted/40 border border-border">
+            <button onClick={zoomOut} className="p-1 rounded hover:bg-muted" aria-label="Zoom out"><Minus className="w-3.5 h-3.5" /></button>
+            <button onClick={zoomReset} className="text-[10px] px-1.5 text-muted-foreground tabular-nums">{Math.round(zoom * 100)}%</button>
+            <button onClick={zoomIn} className="p-1 rounded hover:bg-muted" aria-label="Zoom in"><Plus className="w-3.5 h-3.5" /></button>
+          </div>
+          <Button variant="outline" size="sm" onClick={onAdd}>
+            <Plus className="w-4 h-4 mr-1" /> Add beat
+          </Button>
+        </div>
       </div>
 
       {cards.length === 0 ? (
@@ -52,7 +64,11 @@ export function StoryArcLane({ cards, onReorder, onAdd, onUpdate, onRemove }: Pr
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleEnd}>
           <SortableContext items={cards.map((c) => c.id)} strategy={horizontalListSortingStrategy}>
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scroll-smooth">
+            <div className="overflow-x-auto pb-2 -mx-1 px-1 scroll-smooth">
+              <div
+                className="flex gap-3 transition-transform"
+                style={{ transform: `scale(${zoom})`, transformOrigin: "top left" }}
+              >
               {cards.map((c) => (
                 <SortableCard
                   key={c.id}
@@ -104,6 +120,7 @@ export function StoryArcLane({ cards, onReorder, onAdd, onUpdate, onRemove }: Pr
                   </div>
                 </SortableCard>
               ))}
+              </div>
             </div>
           </SortableContext>
         </DndContext>

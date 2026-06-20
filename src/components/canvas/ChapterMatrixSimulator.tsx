@@ -6,8 +6,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, X } from "lucide-react";
+import { Trash2, X, Plus, Minus, BookOpen, Link2, List, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext, sortableKeyboardCoordinates, horizontalListSortingStrategy,
+  arrayMove, useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const newId = () =>
   (typeof crypto !== "undefined" && "randomUUID" in crypto)
@@ -39,6 +48,36 @@ interface Props {
 
 export function ChapterMatrixSimulator(props: Props) {
   const { bullets, characters, worlds, chapters, links } = props;
+
+  const [zoom, setZoom] = useState(1);
+  const zoomIn = () => setZoom((z) => Math.min(1.5, +(z + 0.1).toFixed(2)));
+  const zoomOut = () => setZoom((z) => Math.max(0.6, +(z - 0.1).toFixed(2)));
+  const zoomReset = () => setZoom(1);
+
+  const addChapter = () => {
+    const id = newId();
+    props.onChaptersChange([
+      ...chapters,
+      { id, title: `Chapter ${chapters.length + 1}`, plot: "", scenes: [] },
+    ]);
+  };
+  const removeChapter = (id: string) => {
+    props.onChaptersChange(chapters.filter((c) => c.id !== id));
+    props.onLinksChange(links.filter((l) => l.chapterId !== id));
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const handleDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldI = chapters.findIndex((c) => c.id === active.id);
+    const newI = chapters.findIndex((c) => c.id === over.id);
+    if (oldI < 0 || newI < 0) return;
+    props.onChaptersChange(arrayMove(chapters, oldI, newI));
+  };
 
   // Flatten elements grouped by category
   const groups = useMemo(() => {
@@ -211,6 +250,32 @@ export function ChapterMatrixSimulator(props: Props) {
 
   return (
     <div className="rounded-2xl border border-border overflow-hidden bg-[#0f1115] text-[#e8eaed]">
+      {/* Header toolbar */}
+      <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-[#232833] flex-wrap">
+        <div>
+          <h2 className="font-serif font-semibold text-lg leading-tight">Chapter Matrix</h2>
+          <p className="text-[11px] text-[#8a93a3]">
+            Build your story's backbone. Create chapters and link them to plot points, characters, and world elements.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-[#161a21] border border-[#232833] text-xs">
+            <BookOpen className="w-3.5 h-3.5 text-[#8a93a3]" /> {chapters.length} Chapters
+          </div>
+          <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-[#161a21] border border-[#232833] text-xs">
+            <Link2 className="w-3.5 h-3.5 text-[#8a93a3]" /> {links.length} Links
+          </div>
+          <div className="flex items-center gap-0.5 px-1 py-0.5 rounded-md bg-[#161a21] border border-[#232833]">
+            <button onClick={zoomOut} className="p-1 rounded hover:bg-[#232833] text-[#cfd4df]" aria-label="Zoom out"><Minus className="w-3.5 h-3.5" /></button>
+            <button onClick={zoomReset} className="text-[10px] px-1.5 text-[#8a93a3] tabular-nums">{Math.round(zoom * 100)}%</button>
+            <button onClick={zoomIn} className="p-1 rounded hover:bg-[#232833] text-[#cfd4df]" aria-label="Zoom in"><Plus className="w-3.5 h-3.5" /></button>
+          </div>
+          <Button variant="outline" size="sm" onClick={addChapter} className="h-7 text-xs">
+            <Plus className="w-3.5 h-3.5 mr-1" /> Add chapter
+          </Button>
+        </div>
+      </div>
+
       <div className="flex h-[640px]" id="cms-app">
         {/* Sidebar */}
         <aside className="w-[260px] min-w-[260px] h-full bg-[#161a21] border-r border-[#232833] p-4 overflow-y-auto z-[3]">
@@ -263,57 +328,39 @@ export function ChapterMatrixSimulator(props: Props) {
               }
             }}
           >
-            {chapters.map((ch, i) => {
-              const chLinks = links.filter((l) => l.chapterId === ch.id);
-              const full = chLinks.length >= 3;
-              return (
-                <div
-                  key={ch.id}
-                  data-chapter={ch.id}
-                  ref={(n) => chNodes.current.set(ch.id, n)}
-                  onClick={(e) => onChapterClick(ch.id, e)}
-                  className={cn(
-                    "inline-block align-top w-[220px] h-[300px] mr-6 cursor-pointer whitespace-normal",
-                    "bg-[#1d222c] border rounded-[10px] p-3.5 relative transition-colors",
-                    "border-[#2a3140] hover:border-[#4b5468]",
-                    full && "opacity-95",
-                  )}
-                >
-                  {full && (
-                    <span className="absolute top-2 right-2.5 text-[9px] text-red-500 tracking-wider">FULL</span>
-                  )}
-                  <div className="text-[10px] text-[#8a93a3] tracking-wider">CHAPTER {i + 1}</div>
-                  <Input
-                    value={ch.title}
-                    onChange={(e) => updateChapterTitle(ch.id, e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                    placeholder={`Chapter ${i + 1}`}
-                    className="mt-1 h-7 px-1 text-sm font-semibold bg-transparent border-0 border-b border-transparent hover:border-[#2a3140] focus-visible:border-[#3a4254] focus-visible:ring-0 text-[#e8eaed]"
-                  />
-                  <div className="mt-2 space-y-1.5">
-                    {chLinks.map((l) => {
-                      const el = findElement(l.elementId);
-                      if (!el) return null;
-                      return (
-                        <div
-                          key={l.id}
-                          onClick={(e) => { e.stopPropagation(); setDetailLinkId(l.id); }}
-                          className="flex items-center gap-1.5 bg-[#262c38] hover:bg-[#323a4a] px-1.5 py-1 rounded text-[11px] text-[#cfd4df] cursor-pointer"
-                        >
-                          <span className={cn("w-1.5 h-1.5 rounded-full", DOT_CLASS[l.category])} />
-                          <b className="truncate">{el.name}</b>
-                          <span className="ml-auto text-[10px] text-[#7a8294]">{l.category}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="absolute bottom-2.5 right-3 text-[10px] text-[#666]">{chLinks.length}/3</div>
-                </div>
-              );
-            })}
-            {chapters.length === 0 && (
-              <div className="text-sm text-[#8a93a3]">No chapters yet — add chapters in step 5 first.</div>
-            )}
+            <div
+              style={{ transform: `scale(${zoom})`, transformOrigin: "top left" }}
+              className="inline-block transition-transform"
+            >
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={chapters.map((c) => c.id)} strategy={horizontalListSortingStrategy}>
+                  {chapters.map((ch, i) => (
+                    <SortableChapterCard
+                      key={ch.id}
+                      index={i}
+                      chapter={ch}
+                      chLinks={links.filter((l) => l.chapterId === ch.id)}
+                      findElement={findElement}
+                      onClickCard={onChapterClick}
+                      onClickLink={(lid) => setDetailLinkId(lid)}
+                      onTitleChange={updateChapterTitle}
+                      onRemoveChapter={removeChapter}
+                      registerNode={(node) => chNodes.current.set(ch.id, node)}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+              <button
+                onClick={addChapter}
+                className="inline-flex flex-col items-center justify-center align-top w-[220px] h-[300px] mr-6 rounded-[10px] border border-dashed border-[#3a4254] text-[#8a93a3] hover:text-white hover:border-[#5d6577] transition-colors"
+              >
+                <Plus className="w-6 h-6 mb-2" />
+                <span className="text-sm">Add Chapter</span>
+              </button>
+              {chapters.length === 0 && (
+                <div className="text-sm text-[#8a93a3]">No chapters yet — use Add Chapter to start.</div>
+              )}
+            </div>
           </div>
 
           {/* SVG overlay */}
@@ -421,11 +468,12 @@ function Group({
     <div className="mb-4">
       <h3 className="text-[11px] uppercase tracking-[1px] m-0 mb-2 text-[#aab2c0] flex items-center gap-1.5">
         <span className={cn("w-2 h-2 rounded-full inline-block", DOT_CLASS[cat])} />
-        {title}
+        {title} <span className="ml-auto text-[10px] text-[#5d6577] normal-case tracking-normal">{items.length}</span>
       </h3>
       {items.length === 0 && (
         <p className="text-[11px] text-[#5d6577] italic">None added.</p>
       )}
+      <div className={cn(items.length > 5 && "max-h-[200px] overflow-y-auto pr-1 -mr-1")}>
       {items.map((el) => {
         const selected = selectedId === el.id;
         return (
@@ -446,6 +494,118 @@ function Group({
           </div>
         );
       })}
+      </div>
+    </div>
+  );
+}
+
+// ---- Sortable chapter card ----
+const CAT_BADGE_BG: Record<LinkCategory, string> = {
+  plot: "bg-[#ef4444]/15 text-[#ef4444] border-[#ef4444]/40",
+  character: "bg-[#3b82f6]/15 text-[#3b82f6] border-[#3b82f6]/40",
+  world: "bg-[#22c55e]/15 text-[#22c55e] border-[#22c55e]/40",
+};
+
+function SortableChapterCard({
+  index, chapter, chLinks, findElement,
+  onClickCard, onClickLink, onTitleChange, onRemoveChapter, registerNode,
+}: {
+  index: number;
+  chapter: CanvasChapter;
+  chLinks: ChapterLink[];
+  findElement: (id: string) => ElementLite | null;
+  onClickCard: (id: string, e: React.MouseEvent) => void;
+  onClickLink: (linkId: string) => void;
+  onTitleChange: (id: string, title: string) => void;
+  onRemoveChapter: (id: string) => void;
+  registerNode: (node: HTMLDivElement | null) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: chapter.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.7 : 1,
+  };
+  const full = chLinks.length >= 3;
+  const accentColor = chLinks[0] ? COLORS[chLinks[0].category] : "#3b82f6";
+
+  const setRefs = (node: HTMLDivElement | null) => {
+    setNodeRef(node);
+    registerNode(node);
+  };
+
+  return (
+    <div
+      ref={setRefs}
+      style={style}
+      data-chapter={chapter.id}
+      onClick={(e) => onClickCard(chapter.id, e)}
+      className={cn(
+        "inline-block align-top w-[220px] h-[300px] mr-6 cursor-pointer whitespace-normal",
+        "bg-[#1d222c] border rounded-[10px] p-3.5 relative transition-colors",
+        "border-[#2a3140] hover:border-[#4b5468]",
+        full && "opacity-95",
+      )}
+    >
+      {/* numbered badge */}
+      <span
+        className="absolute -top-2 left-3 px-1.5 py-0.5 rounded text-[11px] font-bold border"
+        style={{ background: `${accentColor}22`, color: accentColor, borderColor: `${accentColor}66` }}
+      >
+        {index + 1}
+      </span>
+      {/* drag handle */}
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        onClick={(e) => e.stopPropagation()}
+        className="absolute top-1.5 right-8 p-1 rounded text-[#5d6577] hover:text-white hover:bg-[#262c38] cursor-grab active:cursor-grabbing"
+        aria-label="Drag chapter"
+      >
+        <GripVertical className="w-3.5 h-3.5" />
+      </button>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onRemoveChapter(chapter.id); }}
+        className="absolute top-1.5 right-2 p-1 rounded text-[#5d6577] hover:text-red-400 hover:bg-[#262c38]"
+        aria-label="Remove chapter"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </button>
+
+      <Input
+        value={chapter.title}
+        onChange={(e) => onTitleChange(chapter.id, e.target.value)}
+        onClick={(e) => e.stopPropagation()}
+        placeholder={`Chapter ${index + 1}`}
+        className="mt-3 h-7 px-1 text-sm font-semibold bg-transparent border-0 border-b border-transparent hover:border-[#2a3140] focus-visible:border-[#3a4254] focus-visible:ring-0 text-[#e8eaed]"
+      />
+
+      {chLinks.length > 0 && (
+        <div className="mt-3 text-[10px] uppercase tracking-wider text-[#7a8294]">Linked elements</div>
+      )}
+      <div className="mt-1 space-y-1.5">
+        {chLinks.map((l) => {
+          const el = findElement(l.elementId);
+          if (!el) return null;
+          return (
+            <div
+              key={l.id}
+              onClick={(e) => { e.stopPropagation(); onClickLink(l.id); }}
+              className="flex items-center gap-1.5 bg-[#262c38] hover:bg-[#323a4a] px-1.5 py-1 rounded text-[11px] text-[#cfd4df] cursor-pointer"
+            >
+              <span className={cn("w-1.5 h-1.5 rounded-full", DOT_CLASS[l.category])} />
+              <b className="truncate">{el.name}</b>
+              <span className={cn("ml-auto text-[9px] px-1 py-px rounded border", CAT_BADGE_BG[l.category])}>{l.category}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div className="absolute bottom-2.5 right-3 text-[10px] text-[#666]">{chLinks.length}/3</div>
+      {full && (
+        <span className="absolute bottom-2.5 left-3 text-[9px] text-red-500 tracking-wider">FULL</span>
+      )}
     </div>
   );
 }
