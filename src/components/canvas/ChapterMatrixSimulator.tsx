@@ -822,6 +822,7 @@ function FreeChapterCard({
       ref={registerNode}
       data-chapter={chapter.id}
       onClick={(e) => onClickCard(chapter.id, e)}
+      onMouseDown={(e) => onStartDrag(chapter.id, e)}
       style={{
         position: "absolute",
         left: pos.x,
@@ -830,7 +831,7 @@ function FreeChapterCard({
         height: CARD_H,
       }}
       className={cn(
-        "cursor-pointer bg-[#1d222c] border rounded-[10px] p-3.5 transition-colors select-none",
+        "cursor-grab active:cursor-grabbing bg-[#1d222c] border rounded-[10px] p-3.5 transition-colors select-none",
         isLinkSource
           ? "border-[#facc15] ring-2 ring-[#facc15]/40"
           : isLinkTarget
@@ -847,21 +848,11 @@ function FreeChapterCard({
         {index + 1}
       </span>
 
-      {/* drag handle */}
-      <button
-        type="button"
-        onMouseDown={(e) => onStartDrag(chapter.id, e)}
-        onClick={(e) => e.stopPropagation()}
-        className="absolute top-1.5 left-1.5 p-1 rounded text-[#5d6577] hover:text-white hover:bg-[#262c38] cursor-grab active:cursor-grabbing"
-        aria-label="Drag chapter"
-        title="Drag to move"
-      >
-        <Move className="w-3.5 h-3.5" />
-      </button>
-
       {/* inter-chapter link button */}
       <button
         type="button"
+        data-no-drag
+        onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); onStartInterLink(chapter.id); }}
         className={cn(
           "absolute top-1.5 right-9 p-1 rounded hover:bg-[#262c38]",
@@ -877,6 +868,8 @@ function FreeChapterCard({
       {/* remove */}
       <button
         type="button"
+        data-no-drag
+        onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); onRemoveChapter(chapter.id); }}
         className="absolute top-1.5 right-2 p-1 rounded text-[#5d6577] hover:text-red-400 hover:bg-[#262c38]"
         aria-label="Remove chapter"
@@ -890,7 +883,7 @@ function FreeChapterCard({
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
         placeholder={`Chapter ${index + 1}`}
-        className="mt-7 h-7 px-1 text-sm font-semibold bg-transparent border-0 border-b border-transparent hover:border-[#2a3140] focus-visible:border-[#3a4254] focus-visible:ring-0 text-[#e8eaed]"
+        className="mt-3 h-7 px-1 text-sm font-semibold bg-transparent border-0 border-b border-transparent hover:border-[#2a3140] focus-visible:border-[#3a4254] focus-visible:ring-0 text-[#e8eaed]"
       />
 
       {chLinks.length > 0 && (
@@ -905,6 +898,8 @@ function FreeChapterCard({
           return (
             <div
               key={l.id}
+              data-no-drag
+              onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => { e.stopPropagation(); onClickLink(l.id); }}
               className="flex items-center gap-1.5 bg-[#262c38] hover:bg-[#323a4a] px-1.5 py-1 rounded text-[11px] text-[#cfd4df] cursor-pointer"
             >
