@@ -166,7 +166,7 @@ export function ChapterMatrixSimulator(props: Props) {
   // Which category is visible in the sidebar (dropdown switches them)
   const [activeCat, setActiveCat] = useState<LinkCategory>("plot");
 
-  useLayoutEffect(() => { redraw(); }, [chapters, links, interLinks, allElements, zoom, fullscreen, redraw]);
+  useLayoutEffect(() => { redraw(); }, [chapters, links, interLinks, allElements, zoom, fullscreen, activeCat, redraw]);
   useEffect(() => {
     const onResize = () => redraw();
     window.addEventListener("resize", onResize);
