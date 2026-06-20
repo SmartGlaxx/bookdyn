@@ -334,9 +334,9 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
           <div className="text-xs text-muted-foreground hidden sm:block">
             {step === 2 && `${filledBullets.length} / 10 bullets filled`}
             {step === 3 && `${arc.length} arc cards`}
-            {step === 4 && `${characterArcs.length} character${characterArcs.length === 1 ? "" : "s"} (optional)`}
-            {step === 5 && `${worldElements.length} world element${worldElements.length === 1 ? "" : "s"} (optional)`}
-            {step === 6 && `${chapters.length} chapters · ${chapters.filter((c) => c.title.trim()).length} titled`}
+            {step === 4 && `${characterArcs.length} character${characterArcs.length === 1 ? "" : "s"} · need ≥1`}
+            {step === 5 && `${worldElements.length} world element${worldElements.length === 1 ? "" : "s"} · need ≥1`}
+            {step === 6 && `${chapters.length} chapters · ${chapterLinks.length} link${chapterLinks.length === 1 ? "" : "s"}`}
           </div>
           {step < 6 ? (
             <Button onClick={goNext} disabled={!canAdvance[step]} variant="hero">
