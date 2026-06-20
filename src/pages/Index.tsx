@@ -507,7 +507,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation onCreateBook={() => setShowEngine(true)} />
+      <Navigation onCreateBook={openNewBook} />
 
       <main>
         {isLoading ? (
@@ -540,7 +540,7 @@ const Index = () => {
                   generation.
                 </p>
               </div>
-              <Button variant="hero" size="lg" onClick={() => setShowEngine(true)} className="group">
+              <Button variant="hero" size="lg" onClick={openNewBook} className="group">
                 <Sparkles className="w-5 h-5 transition-transform group-hover:scale-110" />
                 Get Started
               </Button>
@@ -591,17 +591,6 @@ const Index = () => {
           </div>
         )}
       </main>
-
-      <AnimatePresence>
-        {showEngine && (
-          <CanvasSetupWizard
-            open={showEngine}
-            onClose={() => setShowEngine(false)}
-            onCreate={handleCreateBook}
-            isCreating={isCreating}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 };
