@@ -328,57 +328,39 @@ export function ChapterMatrixSimulator(props: Props) {
               }
             }}
           >
-            {chapters.map((ch, i) => {
-              const chLinks = links.filter((l) => l.chapterId === ch.id);
-              const full = chLinks.length >= 3;
-              return (
-                <div
-                  key={ch.id}
-                  data-chapter={ch.id}
-                  ref={(n) => chNodes.current.set(ch.id, n)}
-                  onClick={(e) => onChapterClick(ch.id, e)}
-                  className={cn(
-                    "inline-block align-top w-[220px] h-[300px] mr-6 cursor-pointer whitespace-normal",
-                    "bg-[#1d222c] border rounded-[10px] p-3.5 relative transition-colors",
-                    "border-[#2a3140] hover:border-[#4b5468]",
-                    full && "opacity-95",
-                  )}
-                >
-                  {full && (
-                    <span className="absolute top-2 right-2.5 text-[9px] text-red-500 tracking-wider">FULL</span>
-                  )}
-                  <div className="text-[10px] text-[#8a93a3] tracking-wider">CHAPTER {i + 1}</div>
-                  <Input
-                    value={ch.title}
-                    onChange={(e) => updateChapterTitle(ch.id, e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                    placeholder={`Chapter ${i + 1}`}
-                    className="mt-1 h-7 px-1 text-sm font-semibold bg-transparent border-0 border-b border-transparent hover:border-[#2a3140] focus-visible:border-[#3a4254] focus-visible:ring-0 text-[#e8eaed]"
-                  />
-                  <div className="mt-2 space-y-1.5">
-                    {chLinks.map((l) => {
-                      const el = findElement(l.elementId);
-                      if (!el) return null;
-                      return (
-                        <div
-                          key={l.id}
-                          onClick={(e) => { e.stopPropagation(); setDetailLinkId(l.id); }}
-                          className="flex items-center gap-1.5 bg-[#262c38] hover:bg-[#323a4a] px-1.5 py-1 rounded text-[11px] text-[#cfd4df] cursor-pointer"
-                        >
-                          <span className={cn("w-1.5 h-1.5 rounded-full", DOT_CLASS[l.category])} />
-                          <b className="truncate">{el.name}</b>
-                          <span className="ml-auto text-[10px] text-[#7a8294]">{l.category}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="absolute bottom-2.5 right-3 text-[10px] text-[#666]">{chLinks.length}/3</div>
-                </div>
-              );
-            })}
-            {chapters.length === 0 && (
-              <div className="text-sm text-[#8a93a3]">No chapters yet — add chapters in step 5 first.</div>
-            )}
+            <div
+              style={{ transform: `scale(${zoom})`, transformOrigin: "top left" }}
+              className="inline-block transition-transform"
+            >
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={chapters.map((c) => c.id)} strategy={horizontalListSortingStrategy}>
+                  {chapters.map((ch, i) => (
+                    <SortableChapterCard
+                      key={ch.id}
+                      index={i}
+                      chapter={ch}
+                      chLinks={links.filter((l) => l.chapterId === ch.id)}
+                      findElement={findElement}
+                      onClickCard={onChapterClick}
+                      onClickLink={(lid) => setDetailLinkId(lid)}
+                      onTitleChange={updateChapterTitle}
+                      onRemoveChapter={removeChapter}
+                      registerNode={(node) => chNodes.current.set(ch.id, node)}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
+              <button
+                onClick={addChapter}
+                className="inline-flex flex-col items-center justify-center align-top w-[220px] h-[300px] mr-6 rounded-[10px] border border-dashed border-[#3a4254] text-[#8a93a3] hover:text-white hover:border-[#5d6577] transition-colors"
+              >
+                <Plus className="w-6 h-6 mb-2" />
+                <span className="text-sm">Add Chapter</span>
+              </button>
+              {chapters.length === 0 && (
+                <div className="text-sm text-[#8a93a3]">No chapters yet — use Add Chapter to start.</div>
+              )}
+            </div>
           </div>
 
           {/* SVG overlay */}
