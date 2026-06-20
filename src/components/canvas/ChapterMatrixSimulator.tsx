@@ -912,10 +912,11 @@ function Group({
 }
 
 function CategoryDropdown({
-  cat, title, items, defaultOpen, onToggle, selectedId, onSelect, registerRef, registerAnchorRef,
+  cat, title, Icon, items, defaultOpen, onToggle, selectedId, onSelect, registerRef, registerAnchorRef,
 }: {
   cat: LinkCategory;
   title: string;
+  Icon: React.ComponentType<{ className?: string }>;
   items: ElementLite[];
   defaultOpen: boolean;
   onToggle: (open: boolean) => void;
@@ -936,6 +937,7 @@ function CategoryDropdown({
           ref={registerAnchorRef}
           className={cn("w-2.5 h-2.5 rounded-full shrink-0", DOT_CLASS[cat])}
         />
+        <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: COLORS[cat] } as React.CSSProperties} />
         <span className="text-[12px] font-medium text-[#cfd4df]">{title}</span>
         <span className="ml-auto text-[10px] text-[#5d6577]">{items.length}</span>
         <ChevronDown
