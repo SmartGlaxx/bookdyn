@@ -64,6 +64,7 @@ export function ChapterMatrix({
             used={aiAssistUsed}
             bookId={bookId}
             onUsed={onAiAssistUsed}
+            onlyCategory="plot"
             getContext={() => ({
               title: setupTitle,
               genre: setupGenre,

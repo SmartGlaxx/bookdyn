@@ -645,6 +645,7 @@ function Step4(props: {
           <AskAIGuide
             used={props.aiUsed}
             onUsed={props.onAiUsed}
+            onlyCategory="plot"
             getContext={() => props.getContext() as never}
           />
           <Button variant="outline" size="sm" onClick={add}>
@@ -744,6 +745,7 @@ function SceneEditor({
             used={aiUsed}
             onUsed={onAiUsed}
             label="Ask AI"
+            onlyCategory="plot"
             getContext={() => ({
               ...(getContext() as Record<string, unknown>),
               focusChapterTitle: chapter.title,

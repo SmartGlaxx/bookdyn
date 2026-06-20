@@ -38,6 +38,7 @@ export function StorySummaryList({
           used={aiAssistUsed}
           bookId={bookId}
           onUsed={onAiAssistUsed}
+          onlyCategory="plot"
           getContext={() => ({
             title: setup.title,
             genre: setup.genre,

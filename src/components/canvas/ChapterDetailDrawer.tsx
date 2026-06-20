@@ -67,6 +67,7 @@ export function ChapterDetailDrawer({
                   bookId={bookId}
                   onUsed={onAiAssistUsed}
                   label="Ask AI"
+                  onlyCategory="plot"
                   getContext={() => ({
                     title: setupTitle,
                     genre: setupGenre,
