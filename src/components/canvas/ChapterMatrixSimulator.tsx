@@ -231,8 +231,8 @@ export function ChapterMatrixSimulator(props: Props) {
 
   // ---- Curve handle drag (works for both link kinds) ----
   const curveDragRef = useRef<
-    | { kind: "link"; id: string; baseMx: number; baseMy: number }
-    | { kind: "inter"; id: string; baseMx: number; baseMy: number }
+    | { kind: "link"; id: string; baseHx: number; baseHy: number }
+    | { kind: "inter"; id: string; baseHx: number; baseHy: number }
     | null
   >(null);
   useEffect(() => {
@@ -246,13 +246,13 @@ export function ChapterMatrixSimulator(props: Props) {
       if (d.kind === "link") {
         props.onLinksChange(
           props.links.map((l) =>
-            l.id === d.id ? { ...l, curveOffset: { dx: x - d.baseMx, dy: y - d.baseMy } } : l,
+            l.id === d.id ? { ...l, curveOffset: { dx: x - d.baseHx, dy: y - d.baseHy } } : l,
           ),
         );
       } else {
         onInterLinksChange(
           interLinks.map((l) =>
-            l.id === d.id ? { ...l, curveOffset: { dx: x - d.baseMx, dy: y - d.baseMy } } : l,
+            l.id === d.id ? { ...l, curveOffset: { dx: x - d.baseHx, dy: y - d.baseHy } } : l,
           ),
         );
       }
@@ -270,12 +270,12 @@ export function ChapterMatrixSimulator(props: Props) {
   const linePaths = useMemo(() => {
     const wrap = matrixRef.current;
     if (!wrap) return [] as Array<{
-      d: string; color: string; mx: number; my: number; baseMx: number; baseMy: number; link: ChapterLink;
+      d: string; color: string; hx: number; hy: number; baseHx: number; baseHy: number; link: ChapterLink;
     }>;
     const wrapRect = wrap.getBoundingClientRect();
     const byCh: Record<string, ChapterLink[]> = {};
     links.forEach((l) => { (byCh[l.chapterId] = byCh[l.chapterId] || []).push(l); });
-    const out: Array<{ d: string; color: string; mx: number; my: number; baseMx: number; baseMy: number; link: ChapterLink }> = [];
+    const out: Array<{ d: string; color: string; hx: number; hy: number; baseHx: number; baseHy: number; link: ChapterLink }> = [];
     links.forEach((link) => {
       const elNode = elNodes.current.get(link.elementId);
       const chNode = chNodes.current.get(link.chapterId);
@@ -293,14 +293,18 @@ export function ChapterMatrixSimulator(props: Props) {
       const stack = byCh[link.chapterId] || [];
       const idx = stack.indexOf(link);
       const stackOffset = (idx - (stack.length - 1) / 2) * 30;
-      const baseMx = (x1 + x2) / 2;
-      const baseMy = (y1 + y2) / 2 + stackOffset;
-      const mx = baseMx + (link.curveOffset?.dx ?? 0);
-      const my = baseMy + (link.curveOffset?.dy ?? 0);
+      // The handle sits on the *real* curve midpoint (Bezier t=0.5).
+      const baseHx = (x1 + x2) / 2;
+      const baseHy = (y1 + y2) / 2 + stackOffset;
+      const hx = baseHx + (link.curveOffset?.dx ?? 0);
+      const hy = baseHy + (link.curveOffset?.dy ?? 0);
+      // Solve for control point so curve midpoint equals (hx, hy).
+      const qx = 2 * hx - (x1 + x2) / 2;
+      const qy = 2 * hy - (y1 + y2) / 2;
       out.push({
-        d: `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`,
+        d: `M ${x1} ${y1} Q ${qx} ${qy} ${x2} ${y2}`,
         color: COLORS[link.category],
-        mx, my, baseMx, baseMy, link,
+        hx, hy, baseHx, baseHy, link,
       });
     });
     return out;
@@ -310,10 +314,10 @@ export function ChapterMatrixSimulator(props: Props) {
   const interPaths = useMemo(() => {
     const wrap = matrixRef.current;
     if (!wrap) return [] as Array<{
-      d: string; mx: number; my: number; baseMx: number; baseMy: number; link: InterChapterLink;
+      d: string; hx: number; hy: number; baseHx: number; baseHy: number; link: InterChapterLink;
     }>;
     const wrapRect = wrap.getBoundingClientRect();
-    const out: Array<{ d: string; mx: number; my: number; baseMx: number; baseMy: number; link: InterChapterLink }> = [];
+    const out: Array<{ d: string; hx: number; hy: number; baseHx: number; baseHy: number; link: InterChapterLink }> = [];
     interLinks.forEach((link, idx) => {
       const a = chNodes.current.get(link.fromChapterId);
       const b = chNodes.current.get(link.toChapterId);
@@ -324,15 +328,16 @@ export function ChapterMatrixSimulator(props: Props) {
       const y1 = ar.top - wrapRect.top; // top of source
       const x2 = br.left + br.width / 2 - wrapRect.left;
       const y2 = br.top - wrapRect.top; // top of target
-      const baseMx = (x1 + x2) / 2;
-      // auto-arc upward; offset to avoid overlap
       const arcLift = 60 + (idx % 4) * 16;
-      const baseMy = Math.min(y1, y2) - arcLift;
-      const mx = baseMx + (link.curveOffset?.dx ?? 0);
-      const my = baseMy + (link.curveOffset?.dy ?? 0);
+      const baseHx = (x1 + x2) / 2;
+      const baseHy = Math.min(y1, y2) - arcLift;
+      const hx = baseHx + (link.curveOffset?.dx ?? 0);
+      const hy = baseHy + (link.curveOffset?.dy ?? 0);
+      const qx = 2 * hx - (x1 + x2) / 2;
+      const qy = 2 * hy - (y1 + y2) / 2;
       out.push({
-        d: `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`,
-        mx, my, baseMx, baseMy, link,
+        d: `M ${x1} ${y1} Q ${qx} ${qy} ${x2} ${y2}`,
+        hx, hy, baseHx, baseHy, link,
       });
     });
     return out;
@@ -434,6 +439,11 @@ export function ChapterMatrixSimulator(props: Props) {
     onInterLinksChange(interLinks.filter((l) => l.id !== id));
     setDetail(null);
   };
+
+  const updateLink = (id: string, patch: Partial<ChapterLink>) =>
+    props.onLinksChange(links.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+  const updateInterLink = (id: string, patch: Partial<InterChapterLink>) =>
+    onInterLinksChange(interLinks.map((l) => (l.id === id ? { ...l, ...patch } : l)));
 
   const updateChapterTitle = (id: string, title: string) =>
     props.onChaptersChange(chapters.map((c) => (c.id === id ? { ...c, title } : c)));
@@ -627,15 +637,35 @@ export function ChapterMatrixSimulator(props: Props) {
                   onClick={() => setDetail({ kind: "link", id: p.link.id })}
                   data-curve
                 />
+                {/* Drag handle (circle) — sits ON the curve midpoint */}
                 <circle
-                  cx={p.mx} cy={p.my} r={6} fill="#fff" stroke={p.color} strokeWidth={1}
+                  cx={p.hx - 10} cy={p.hy} r={7} fill="#fff" stroke={p.color} strokeWidth={1.5}
                   style={{ pointerEvents: "all", cursor: "grab" }}
                   data-curve
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    curveDragRef.current = { kind: "link", id: p.link.id, baseMx: p.baseMx, baseMy: p.baseMy };
+                    curveDragRef.current = { kind: "link", id: p.link.id, baseHx: p.baseHx, baseHy: p.baseHy };
                   }}
-                />
+                >
+                  <title>Drag to reshape</title>
+                </circle>
+                {/* Details button (square) — sits next to the handle */}
+                <g
+                  data-curve
+                  style={{ pointerEvents: "all", cursor: "pointer" }}
+                  onClick={(e) => { e.stopPropagation(); setDetail({ kind: "link", id: p.link.id }); }}
+                >
+                  <rect
+                    x={p.hx + 4} y={p.hy - 7} width={14} height={14} rx={3}
+                    fill={p.color} stroke="#fff" strokeWidth={1.25}
+                  />
+                  <text
+                    x={p.hx + 11} y={p.hy + 1}
+                    textAnchor="middle" dominantBaseline="middle"
+                    fontSize="10" fontWeight="700" fill="#fff" style={{ pointerEvents: "none" }}
+                  >i</text>
+                  <title>Link details</title>
+                </g>
               </g>
             ))}
             {/* chapter→chapter grey links */}
@@ -649,14 +679,32 @@ export function ChapterMatrixSimulator(props: Props) {
                   data-curve
                 />
                 <circle
-                  cx={p.mx} cy={p.my} r={6} fill="#1d222c" stroke={INTER_COLOR} strokeWidth={1.5}
+                  cx={p.hx - 10} cy={p.hy} r={7} fill="#fff" stroke={INTER_COLOR} strokeWidth={1.5}
                   style={{ pointerEvents: "all", cursor: "grab" }}
                   data-curve
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    curveDragRef.current = { kind: "inter", id: p.link.id, baseMx: p.baseMx, baseMy: p.baseMy };
+                    curveDragRef.current = { kind: "inter", id: p.link.id, baseHx: p.baseHx, baseHy: p.baseHy };
                   }}
-                />
+                >
+                  <title>Drag to reshape</title>
+                </circle>
+                <g
+                  data-curve
+                  style={{ pointerEvents: "all", cursor: "pointer" }}
+                  onClick={(e) => { e.stopPropagation(); setDetail({ kind: "inter", id: p.link.id }); }}
+                >
+                  <rect
+                    x={p.hx + 4} y={p.hy - 7} width={14} height={14} rx={3}
+                    fill={INTER_COLOR} stroke="#fff" strokeWidth={1.25}
+                  />
+                  <text
+                    x={p.hx + 11} y={p.hy + 1}
+                    textAnchor="middle" dominantBaseline="middle"
+                    fontSize="10" fontWeight="700" fill="#fff" style={{ pointerEvents: "none" }}
+                  >i</text>
+                  <title>Link details</title>
+                </g>
               </g>
             ))}
           </svg>
@@ -697,28 +745,33 @@ export function ChapterMatrixSimulator(props: Props) {
         const el = findElement(link.elementId);
         const ch = chapters.find((c) => c.id === link.chapterId);
         if (!el || !ch) return null;
-        const chNum = chapters.findIndex((c) => c.id === ch.id) + 1;
         return (
-          <DetailModal onClose={() => setDetail(null)}>
-            <h2 className="text-lg font-semibold m-0">Link Details</h2>
-            <p className="text-xs text-[#8a93a3] mt-1 mb-4">Connection between a story element and a chapter.</p>
-            <div className="flex gap-2.5 mb-3.5">
-              <Field label="Element"><div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded text-sm" style={{ borderLeft: `3px solid ${COLORS[link.category]}` }}><b>{el.name}</b></div></Field>
-              <Field label="Category"><div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded"><span className="text-[10px] px-1.5 py-0.5 rounded text-white" style={{ background: COLORS[link.category] }}>{link.category}</span></div></Field>
-              <Field label="Chapter"><div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded text-sm">#{chNum} — {ch.title || `Chapter ${chNum}`}</div></Field>
-            </div>
-            <Field label="Note">
-              <div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded text-sm whitespace-pre-wrap min-h-[60px] leading-relaxed">
-                {link.note ? renderNoteWithRefs(link.note, allElements) : <i className="text-[#8a93a3]">No note added.</i>}
-              </div>
-            </Field>
-            <div className="flex justify-between gap-2 mt-4">
-              <Button variant="destructive" size="sm" onClick={() => deleteLink(link.id)}>
-                <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Link
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => setDetail(null)}>Close</Button>
-            </div>
-          </DetailModal>
+          <EditableLinkModal
+            key={link.id}
+            title="Link Details"
+            subtitle="Connection between a story element and a chapter."
+            color={COLORS[link.category]}
+            sourceLabel="Element"
+            destLabel="Chapter"
+            sourceOptions={allElements.map((e) => ({ value: e.id, label: e.name, color: COLORS[e.category], badge: e.category }))}
+            destOptions={chapters.map((c, i) => ({ value: c.id, label: `#${i + 1} ${c.title || `Chapter ${i + 1}`}` }))}
+            sourceValue={link.elementId}
+            destValue={link.chapterId}
+            note={link.note ?? ""}
+            allElements={allElements}
+            onSave={(src, dst, note) => {
+              const found = allElements.find((e) => e.id === src);
+              updateLink(link.id, {
+                elementId: src,
+                chapterId: dst,
+                category: found?.category ?? link.category,
+                note,
+              });
+              setDetail(null);
+            }}
+            onDelete={() => deleteLink(link.id)}
+            onClose={() => setDetail(null)}
+          />
         );
       })()}
 
@@ -726,25 +779,28 @@ export function ChapterMatrixSimulator(props: Props) {
         const link = interLinks.find((l) => l.id === detail.id);
         if (!link) return null;
         return (
-          <DetailModal onClose={() => setDetail(null)}>
-            <h2 className="text-lg font-semibold m-0 flex items-center gap-2"><ArrowRightLeft className="w-4 h-4 text-[#9aa3b2]" /> Inter-chapter Link</h2>
-            <p className="text-xs text-[#8a93a3] mt-1 mb-4">Structural connection between two chapters. References existing elements only.</p>
-            <div className="flex gap-2.5 mb-3.5">
-              <Field label="From"><div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded text-sm">{chapterLabel(chapters, link.fromChapterId)}</div></Field>
-              <Field label="To"><div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded text-sm">{chapterLabel(chapters, link.toChapterId)}</div></Field>
-            </div>
-            <Field label="Note">
-              <div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded text-sm whitespace-pre-wrap min-h-[60px] leading-relaxed">
-                {renderNoteWithRefs(link.note, allElements)}
-              </div>
-            </Field>
-            <div className="flex justify-between gap-2 mt-4">
-              <Button variant="destructive" size="sm" onClick={() => deleteInterLink(link.id)}>
-                <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Link
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => setDetail(null)}>Close</Button>
-            </div>
-          </DetailModal>
+          <EditableLinkModal
+            key={link.id}
+            title="Inter-chapter Link"
+            subtitle="Structural connection between two chapters. References existing elements only."
+            color={INTER_COLOR}
+            sourceLabel="From"
+            destLabel="To"
+            sourceOptions={chapters.map((c, i) => ({ value: c.id, label: `#${i + 1} ${c.title || `Chapter ${i + 1}`}` }))}
+            destOptions={chapters.map((c, i) => ({ value: c.id, label: `#${i + 1} ${c.title || `Chapter ${i + 1}`}` }))}
+            sourceValue={link.fromChapterId}
+            destValue={link.toChapterId}
+            note={link.note}
+            allElements={allElements}
+            requireAt
+            onSave={(src, dst, note) => {
+              if (src === dst) { flashError("A chapter cannot link to itself."); return; }
+              updateInterLink(link.id, { fromChapterId: src, toChapterId: dst, note });
+              setDetail(null);
+            }}
+            onDelete={() => deleteInterLink(link.id)}
+            onClose={() => setDetail(null)}
+          />
         );
       })()}
     </div>
@@ -1093,7 +1149,7 @@ function NotePopup({
   return (
     <div
       data-popup
-      className="absolute z-[30] w-[300px] bg-[#1d222c] border border-[#3a4254] rounded-lg p-3 shadow-[0_8px_24px_rgba(0,0,0,.5)]"
+      className="absolute z-[30] w-[380px] bg-[#1d222c] border border-[#3a4254] rounded-xl p-4 shadow-[0_12px_40px_rgba(0,0,0,.55)]"
       style={{ left: pos.x, top: pos.y }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -1112,7 +1168,7 @@ function NotePopup({
         value={note}
         onChange={onInput}
         placeholder={placeholder ?? "Describe this link… type @ to reference another element"}
-        className="min-h-[60px] bg-[#0f1115] text-[#e8eaed] border-[#2a3140] text-xs"
+        className="min-h-[140px] bg-[#0f1115] text-[#e8eaed] border-[#2a3140] text-[13px] leading-relaxed resize-y"
       />
       <div className="text-[10px] text-[#8a93a3] mt-1 flex items-center gap-1">
         <AtSign className="w-3 h-3" />
@@ -1214,4 +1270,197 @@ function renderNoteWithRefs(note: string, elements: ElementLite[]): React.ReactN
   }
   if (last < note.length) parts.push(note.slice(last));
   return parts;
+}
+
+// ---- Editable link details modal ----
+type Opt = { value: string; label: string; color?: string; badge?: string };
+function EditableLinkModal({
+  title, subtitle, color,
+  sourceLabel, destLabel, sourceOptions, destOptions,
+  sourceValue, destValue, note, allElements, requireAt,
+  onSave, onDelete, onClose,
+}: {
+  title: string;
+  subtitle: string;
+  color: string;
+  sourceLabel: string;
+  destLabel: string;
+  sourceOptions: Opt[];
+  destOptions: Opt[];
+  sourceValue: string;
+  destValue: string;
+  note: string;
+  allElements: ElementLite[];
+  requireAt?: boolean;
+  onSave: (src: string, dst: string, note: string) => void;
+  onDelete: () => void;
+  onClose: () => void;
+}) {
+  const [src, setSrc] = useState(sourceValue);
+  const [dst, setDst] = useState(destValue);
+  const [noteVal, setNoteVal] = useState(note);
+  const [preview, setPreview] = useState(false);
+  const taRef = useRef<HTMLTextAreaElement | null>(null);
+  const [atState, setAtState] = useState<{ startPos: number; query: string } | null>(null);
+
+  const onInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNoteVal(e.target.value);
+    const ta = e.target;
+    const pos = ta.selectionStart;
+    const before = ta.value.slice(0, pos);
+    const m = before.match(/@(\w*)$/);
+    if (m) setAtState({ startPos: pos - m[0].length, query: m[1] });
+    else setAtState(null);
+  };
+
+  const matches = atState
+    ? allElements.filter((e) => e.name.toLowerCase().includes(atState.query.toLowerCase())).slice(0, 8)
+    : [];
+
+  const insertRef = (m: ElementLite) => {
+    if (!atState || !taRef.current) return;
+    const ta = taRef.current;
+    const before = ta.value.slice(0, atState.startPos);
+    const after = ta.value.slice(ta.selectionStart);
+    const tag = "@" + m.name;
+    const next = before + tag + " " + after;
+    setNoteVal(next);
+    setAtState(null);
+    requestAnimationFrame(() => {
+      const newPos = (before + tag + " ").length;
+      ta.focus();
+      ta.setSelectionRange(newPos, newPos);
+    });
+  };
+
+  const canSave = (!requireAt || /@\w/.test(noteVal)) && src && dst;
+
+  return (
+    <div
+      className="fixed inset-0 z-[50] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-[#161a21] border border-[#2a3140] rounded-2xl w-[640px] max-w-[96vw] max-h-[92vh] overflow-hidden text-[#e8eaed] shadow-[0_24px_64px_rgba(0,0,0,.6)] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-[#232833]" style={{ background: `linear-gradient(90deg, ${color}22, transparent)` }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: color }}>
+            <Link2 className="w-4 h-4 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-semibold m-0 truncate">{title}</h2>
+            <p className="text-[11px] text-[#8a93a3] m-0 truncate">{subtitle}</p>
+          </div>
+          <button onClick={onClose} className="text-[#8a93a3] hover:text-white p-1 rounded hover:bg-[#232833]" aria-label="Close">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-5 py-4 overflow-y-auto flex-1">
+          {/* Source → Destination */}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3 mb-5">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-[#8a93a3] mb-1.5">{sourceLabel}</div>
+              <select
+                value={src}
+                onChange={(e) => setSrc(e.target.value)}
+                className="w-full bg-[#0f1115] border border-[#2a3140] rounded-md px-2.5 py-2 text-sm text-[#e8eaed] focus:outline-none focus:border-[#3a4254]"
+                style={{ borderLeft: `3px solid ${color}` }}
+              >
+                {sourceOptions.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}{o.badge ? `  •  ${o.badge}` : ""}</option>
+                ))}
+              </select>
+            </div>
+            <div className="pb-2 text-[#5d6577]">
+              <ArrowRightLeft className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-[#8a93a3] mb-1.5">{destLabel}</div>
+              <select
+                value={dst}
+                onChange={(e) => setDst(e.target.value)}
+                className="w-full bg-[#0f1115] border border-[#2a3140] rounded-md px-2.5 py-2 text-sm text-[#e8eaed] focus:outline-none focus:border-[#3a4254]"
+              >
+                {destOptions.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Note */}
+          <div className="mb-2 flex items-center gap-2">
+            <div className="text-[10px] uppercase tracking-wider text-[#8a93a3]">Note</div>
+            <div className="ml-auto inline-flex rounded-md border border-[#2a3140] bg-[#0f1115] p-0.5">
+              <button
+                type="button"
+                onClick={() => setPreview(false)}
+                className={cn("text-[11px] px-2 py-0.5 rounded", !preview ? "bg-[#232833] text-white" : "text-[#8a93a3] hover:text-white")}
+              >Edit</button>
+              <button
+                type="button"
+                onClick={() => setPreview(true)}
+                className={cn("text-[11px] px-2 py-0.5 rounded", preview ? "bg-[#232833] text-white" : "text-[#8a93a3] hover:text-white")}
+              >Preview</button>
+            </div>
+          </div>
+          {preview ? (
+            <div className="bg-[#0f1115] border border-[#2a3140] rounded-md px-3 py-2.5 text-sm whitespace-pre-wrap min-h-[180px] leading-relaxed">
+              {noteVal.trim() ? renderNoteWithRefs(noteVal, allElements) : <i className="text-[#8a93a3]">No note added.</i>}
+            </div>
+          ) : (
+            <div className="relative">
+              <Textarea
+                ref={taRef}
+                value={noteVal}
+                onChange={onInput}
+                placeholder="Describe this link… type @ to reference another element"
+                className="min-h-[180px] bg-[#0f1115] text-[#e8eaed] border-[#2a3140] text-sm leading-relaxed resize-y"
+              />
+              {matches.length > 0 && (
+                <div className="absolute left-2 top-full mt-1 z-10 w-[260px] max-h-[180px] overflow-y-auto bg-[#0f1115] border border-[#3a4254] rounded shadow-lg">
+                  {matches.map((m) => (
+                    <div
+                      key={m.id}
+                      onClick={() => insertRef(m)}
+                      className="px-2.5 py-1.5 text-xs cursor-pointer flex items-center gap-1.5 hover:bg-[#1d222c]"
+                    >
+                      <span className={cn("w-2 h-2 rounded-full", DOT_CLASS[m.category])} />
+                      {m.name}
+                      <span className="ml-auto text-[10px] text-[#7a8294]">{m.category}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          <p className="text-[10px] text-[#8a93a3] mt-1.5 flex items-center gap-1">
+            <AtSign className="w-3 h-3" />
+            {requireAt
+              ? <>Must reference an existing element with <b className="text-[#cfd4df] mx-1">@Name</b>.</>
+              : <>Tip: type <b className="text-[#cfd4df] mx-1">@</b> to insert a reference.</>}
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between gap-2 px-5 py-3.5 border-t border-[#232833] bg-[#12161d]">
+          <Button variant="ghost" size="sm" onClick={onDelete} className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
+            <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Delete
+          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
+            <Button
+              size="sm"
+              onClick={() => onSave(src, dst, noteVal.trim())}
+              disabled={!canSave}
+              style={{ background: canSave ? color : `${color}80`, color: "#fff" }}
+            >
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
