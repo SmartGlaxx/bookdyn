@@ -1072,7 +1072,8 @@ const CAT_BADGE_BG: Record<LinkCategory, string> = {
 
 function FreeChapterCard({
   index, accent, isDragging, chapter, chLinks, interOut, findElement,
-  onClickCard, onClickLink, onTitleChange, onRequestDelete, onView, onEdit,
+  onClickCard, onClickLink, onClickInterLink, interChapterLinks,
+  onTitleChange, onRequestDelete, onView, onEdit,
   onStartDrag, onStartInterLink, isLinkSource, isLinkTarget, registerNode,
 }: {
   index: number;
@@ -1081,9 +1082,11 @@ function FreeChapterCard({
   chapter: CanvasChapter;
   chLinks: ChapterLink[];
   interOut: number;
+  interChapterLinks: { id: string; label: string; direction: "in" | "out" }[];
   findElement: (id: string) => ElementLite | null;
   onClickCard: (id: string, e: React.MouseEvent) => void;
   onClickLink: (linkId: string) => void;
+  onClickInterLink: (linkId: string) => void;
   onTitleChange: (id: string, title: string) => void;
   onRequestDelete: (id: string) => void;
   onView: (id: string) => void;
