@@ -218,30 +218,27 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
 
   return (
     open ? (
-    <div className="fixed inset-0 z-50 bg-background overflow-y-auto" role="dialog" aria-modal="true">
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border">
-        <div className="max-w-7xl mx-auto px-8 py-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="font-serif text-2xl font-bold">Create a New Book</h1>
-              <p className="text-xs text-muted-foreground">
-                Author-driven setup. AI only asks questions or suggests names — never writes for you.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground text-sm"
-              aria-label="Back"
-            >
-              <ArrowLeft className="w-4 h-4" /> Back
-            </button>
+    <div className="space-y-6 pb-28" role="region" aria-label="Create a new book">
+      <header>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <h1 className="font-serif text-2xl font-bold">Create a New Book</h1>
+            <p className="text-xs text-muted-foreground">
+              Author-driven setup. AI only asks questions or suggests names — never writes for you.
+            </p>
           </div>
-          <Stepper step={step} />
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground text-sm"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to dashboard
+          </button>
         </div>
+        <Stepper step={step} />
       </header>
 
-      <main className="max-w-7xl mx-auto px-8 py-8 pb-32">
+      <section>
           {step === 1 && (
             <Step1
               title={title} setTitle={setTitle}
@@ -302,32 +299,20 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
             />
           )}
           {step === 6 && (
-            <div className="space-y-5">
-              <Step4
-                chapters={chapters}
-                setChapters={setChapters}
-                openChapterId={openChapterId}
-                setOpenChapterId={setOpenChapterId}
-                aiUsed={aiUsed}
-                onAiUsed={() => setAiUsed((n) => Math.min(3, n + 1))}
-                getContext={() => setupCtx}
-              />
-              <ChapterMatrixSimulator
-                arc={arc}
-                characters={characterArcs}
-                worlds={worldElements}
-                chapters={chapters}
-                links={chapterLinks}
-                interLinks={interChapterLinks}
-                onLinksChange={setChapterLinks}
-                onInterLinksChange={setInterChapterLinks}
-              />
-            </div>
+            <ChapterMatrixSimulator
+              bullets={filledBullets.map((b) => ({ id: b.id, text: b.text.trim() }))}
+              characters={characterArcs}
+              worlds={worldElements}
+              chapters={chapters}
+              onChaptersChange={setChapters}
+              links={chapterLinks}
+              onLinksChange={setChapterLinks}
+            />
           )}
-      </main>
+      </section>
 
-      <footer className="fixed bottom-0 left-0 right-0 z-10 bg-background/95 backdrop-blur border-t border-border">
-        <div className="max-w-7xl mx-auto px-8 py-3 flex items-center justify-between gap-2">
+      <footer className="sticky bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur border-t border-border -mx-4">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-2">
           <Button variant="ghost" onClick={goBack} disabled={step === 1}>
             <ArrowLeft className="w-4 h-4 mr-1" /> Back
           </Button>
