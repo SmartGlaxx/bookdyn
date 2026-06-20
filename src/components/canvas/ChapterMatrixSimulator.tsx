@@ -1271,3 +1271,196 @@ function renderNoteWithRefs(note: string, elements: ElementLite[]): React.ReactN
   if (last < note.length) parts.push(note.slice(last));
   return parts;
 }
+
+// ---- Editable link details modal ----
+type Opt = { value: string; label: string; color?: string; badge?: string };
+function EditableLinkModal({
+  title, subtitle, color,
+  sourceLabel, destLabel, sourceOptions, destOptions,
+  sourceValue, destValue, note, allElements, requireAt,
+  onSave, onDelete, onClose,
+}: {
+  title: string;
+  subtitle: string;
+  color: string;
+  sourceLabel: string;
+  destLabel: string;
+  sourceOptions: Opt[];
+  destOptions: Opt[];
+  sourceValue: string;
+  destValue: string;
+  note: string;
+  allElements: ElementLite[];
+  requireAt?: boolean;
+  onSave: (src: string, dst: string, note: string) => void;
+  onDelete: () => void;
+  onClose: () => void;
+}) {
+  const [src, setSrc] = useState(sourceValue);
+  const [dst, setDst] = useState(destValue);
+  const [noteVal, setNoteVal] = useState(note);
+  const [preview, setPreview] = useState(false);
+  const taRef = useRef<HTMLTextAreaElement | null>(null);
+  const [atState, setAtState] = useState<{ startPos: number; query: string } | null>(null);
+
+  const onInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNoteVal(e.target.value);
+    const ta = e.target;
+    const pos = ta.selectionStart;
+    const before = ta.value.slice(0, pos);
+    const m = before.match(/@(\w*)$/);
+    if (m) setAtState({ startPos: pos - m[0].length, query: m[1] });
+    else setAtState(null);
+  };
+
+  const matches = atState
+    ? allElements.filter((e) => e.name.toLowerCase().includes(atState.query.toLowerCase())).slice(0, 8)
+    : [];
+
+  const insertRef = (m: ElementLite) => {
+    if (!atState || !taRef.current) return;
+    const ta = taRef.current;
+    const before = ta.value.slice(0, atState.startPos);
+    const after = ta.value.slice(ta.selectionStart);
+    const tag = "@" + m.name;
+    const next = before + tag + " " + after;
+    setNoteVal(next);
+    setAtState(null);
+    requestAnimationFrame(() => {
+      const newPos = (before + tag + " ").length;
+      ta.focus();
+      ta.setSelectionRange(newPos, newPos);
+    });
+  };
+
+  const canSave = (!requireAt || /@\w/.test(noteVal)) && src && dst;
+
+  return (
+    <div
+      className="fixed inset-0 z-[50] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="bg-[#161a21] border border-[#2a3140] rounded-2xl w-[640px] max-w-[96vw] max-h-[92vh] overflow-hidden text-[#e8eaed] shadow-[0_24px_64px_rgba(0,0,0,.6)] flex flex-col">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-[#232833]" style={{ background: `linear-gradient(90deg, ${color}22, transparent)` }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: color }}>
+            <Link2 className="w-4 h-4 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-base font-semibold m-0 truncate">{title}</h2>
+            <p className="text-[11px] text-[#8a93a3] m-0 truncate">{subtitle}</p>
+          </div>
+          <button onClick={onClose} className="text-[#8a93a3] hover:text-white p-1 rounded hover:bg-[#232833]" aria-label="Close">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-5 py-4 overflow-y-auto flex-1">
+          {/* Source → Destination */}
+          <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3 mb-5">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-[#8a93a3] mb-1.5">{sourceLabel}</div>
+              <select
+                value={src}
+                onChange={(e) => setSrc(e.target.value)}
+                className="w-full bg-[#0f1115] border border-[#2a3140] rounded-md px-2.5 py-2 text-sm text-[#e8eaed] focus:outline-none focus:border-[#3a4254]"
+                style={{ borderLeft: `3px solid ${color}` }}
+              >
+                {sourceOptions.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}{o.badge ? `  •  ${o.badge}` : ""}</option>
+                ))}
+              </select>
+            </div>
+            <div className="pb-2 text-[#5d6577]">
+              <ArrowRightLeft className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-[#8a93a3] mb-1.5">{destLabel}</div>
+              <select
+                value={dst}
+                onChange={(e) => setDst(e.target.value)}
+                className="w-full bg-[#0f1115] border border-[#2a3140] rounded-md px-2.5 py-2 text-sm text-[#e8eaed] focus:outline-none focus:border-[#3a4254]"
+              >
+                {destOptions.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Note */}
+          <div className="mb-2 flex items-center gap-2">
+            <div className="text-[10px] uppercase tracking-wider text-[#8a93a3]">Note</div>
+            <div className="ml-auto inline-flex rounded-md border border-[#2a3140] bg-[#0f1115] p-0.5">
+              <button
+                type="button"
+                onClick={() => setPreview(false)}
+                className={cn("text-[11px] px-2 py-0.5 rounded", !preview ? "bg-[#232833] text-white" : "text-[#8a93a3] hover:text-white")}
+              >Edit</button>
+              <button
+                type="button"
+                onClick={() => setPreview(true)}
+                className={cn("text-[11px] px-2 py-0.5 rounded", preview ? "bg-[#232833] text-white" : "text-[#8a93a3] hover:text-white")}
+              >Preview</button>
+            </div>
+          </div>
+          {preview ? (
+            <div className="bg-[#0f1115] border border-[#2a3140] rounded-md px-3 py-2.5 text-sm whitespace-pre-wrap min-h-[180px] leading-relaxed">
+              {noteVal.trim() ? renderNoteWithRefs(noteVal, allElements) : <i className="text-[#8a93a3]">No note added.</i>}
+            </div>
+          ) : (
+            <div className="relative">
+              <Textarea
+                ref={taRef}
+                value={noteVal}
+                onChange={onInput}
+                placeholder="Describe this link… type @ to reference another element"
+                className="min-h-[180px] bg-[#0f1115] text-[#e8eaed] border-[#2a3140] text-sm leading-relaxed resize-y"
+              />
+              {matches.length > 0 && (
+                <div className="absolute left-2 top-full mt-1 z-10 w-[260px] max-h-[180px] overflow-y-auto bg-[#0f1115] border border-[#3a4254] rounded shadow-lg">
+                  {matches.map((m) => (
+                    <div
+                      key={m.id}
+                      onClick={() => insertRef(m)}
+                      className="px-2.5 py-1.5 text-xs cursor-pointer flex items-center gap-1.5 hover:bg-[#1d222c]"
+                    >
+                      <span className={cn("w-2 h-2 rounded-full", DOT_CLASS[m.category])} />
+                      {m.name}
+                      <span className="ml-auto text-[10px] text-[#7a8294]">{m.category}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+          <p className="text-[10px] text-[#8a93a3] mt-1.5 flex items-center gap-1">
+            <AtSign className="w-3 h-3" />
+            {requireAt
+              ? <>Must reference an existing element with <b className="text-[#cfd4df] mx-1">@Name</b>.</>
+              : <>Tip: type <b className="text-[#cfd4df] mx-1">@</b> to insert a reference.</>}
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between gap-2 px-5 py-3.5 border-t border-[#232833] bg-[#12161d]">
+          <Button variant="ghost" size="sm" onClick={onDelete} className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
+            <Trash2 className="w-3.5 h-3.5 mr-1.5" /> Delete
+          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
+            <Button
+              size="sm"
+              onClick={() => onSave(src, dst, noteVal.trim())}
+              disabled={!canSave}
+              style={{ background: canSave ? color : `${color}80`, color: "#fff" }}
+            >
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
