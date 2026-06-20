@@ -440,6 +440,11 @@ export function ChapterMatrixSimulator(props: Props) {
     setDetail(null);
   };
 
+  const updateLink = (id: string, patch: Partial<ChapterLink>) =>
+    props.onLinksChange(links.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+  const updateInterLink = (id: string, patch: Partial<InterChapterLink>) =>
+    onInterLinksChange(interLinks.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+
   const updateChapterTitle = (id: string, title: string) =>
     props.onChaptersChange(chapters.map((c) => (c.id === id ? { ...c, title } : c)));
 
