@@ -30,6 +30,14 @@ const DOT_CLASS: Record<LinkCategory, string> = {
 };
 const INTER_COLOR = "#9aa3b2"; // grey for inter-chapter links
 
+// Icon per category — used everywhere a category needs to be visually identified
+// (sidebar dropdown titles, dropdown items, linked-element rows inside cards).
+const CAT_ICON: Record<LinkCategory, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
+  plot: Zap,
+  character: Users,
+  world: Globe,
+};
+
 // Story arc category colors — chapter cards inherit these from their arc index.
 const ARC_COLORS: Record<StoryArcColor, string> = {
   setup: "#0ea5e9",      // sky
@@ -639,9 +647,18 @@ export function ChapterMatrixSimulator(props: Props) {
                     chapter={ch}
                     chLinks={links.filter((l) => l.chapterId === ch.id)}
                     interOut={interLinks.filter((l) => l.fromChapterId === ch.id).length}
+                    interChapterLinks={[
+                      ...interLinks
+                        .filter((l) => l.fromChapterId === ch.id)
+                        .map((l) => ({ id: l.id, label: chapterLabel(chapters, l.toChapterId), direction: "out" as const })),
+                      ...interLinks
+                        .filter((l) => l.toChapterId === ch.id)
+                        .map((l) => ({ id: l.id, label: chapterLabel(chapters, l.fromChapterId), direction: "in" as const })),
+                    ]}
                     findElement={findElement}
                     onClickCard={onChapterClick}
                     onClickLink={(lid) => setDetail({ kind: "link", id: lid })}
+                    onClickInterLink={(lid) => setDetail({ kind: "inter", id: lid })}
                     onTitleChange={updateChapterTitle}
                     onRequestDelete={(id) => setConfirmDelete(id)}
                     onView={(id) => setCardDetail({ chapterId: id, mode: "view" })}
@@ -682,7 +699,7 @@ export function ChapterMatrixSimulator(props: Props) {
                 />
                 {/* Drag handle (circle) — sits ON the curve midpoint */}
                 <circle
-                  cx={p.hx - 10} cy={p.hy} r={7} fill="#fff" stroke={p.color} strokeWidth={1.5}
+                  cx={p.hx - 22} cy={p.hy} r={7} fill="#fff" stroke={p.color} strokeWidth={1.5}
                   style={{ pointerEvents: "all", cursor: "grab" }}
                   data-curve
                   onMouseDown={(e) => {
@@ -699,11 +716,11 @@ export function ChapterMatrixSimulator(props: Props) {
                   onClick={(e) => { e.stopPropagation(); setDetail({ kind: "link", id: p.link.id }); }}
                 >
                   <rect
-                    x={p.hx + 4} y={p.hy - 7} width={14} height={14} rx={3}
+                    x={p.hx + 15} y={p.hy - 7} width={14} height={14} rx={3}
                     fill={p.color} stroke="#fff" strokeWidth={1.25}
                   />
                   <text
-                    x={p.hx + 11} y={p.hy + 1}
+                    x={p.hx + 22} y={p.hy + 1}
                     textAnchor="middle" dominantBaseline="middle"
                     fontSize="10" fontWeight="700" fill="#fff" style={{ pointerEvents: "none" }}
                   >i</text>
@@ -728,7 +745,7 @@ export function ChapterMatrixSimulator(props: Props) {
                   data-curve
                 />
                 <circle
-                  cx={p.hx - 10} cy={p.hy} r={7} fill="#fff" stroke={INTER_COLOR} strokeWidth={1.5}
+                  cx={p.hx - 22} cy={p.hy} r={7} fill="#fff" stroke={INTER_COLOR} strokeWidth={1.5}
                   style={{ pointerEvents: "all", cursor: "grab" }}
                   data-curve
                   onMouseDown={(e) => {
@@ -744,11 +761,11 @@ export function ChapterMatrixSimulator(props: Props) {
                   onClick={(e) => { e.stopPropagation(); setDetail({ kind: "inter", id: p.link.id }); }}
                 >
                   <rect
-                    x={p.hx + 4} y={p.hy - 7} width={14} height={14} rx={3}
+                    x={p.hx + 15} y={p.hy - 7} width={14} height={14} rx={3}
                     fill={INTER_COLOR} stroke="#fff" strokeWidth={1.25}
                   />
                   <text
-                    x={p.hx + 11} y={p.hy + 1}
+                    x={p.hx + 22} y={p.hy + 1}
                     textAnchor="middle" dominantBaseline="middle"
                     fontSize="10" fontWeight="700" fill="#fff" style={{ pointerEvents: "none" }}
                   >i</text>
@@ -1031,8 +1048,10 @@ function CategoryDropdown({
                     )}
                     style={isSel ? { borderColor: COLORS[cat], boxShadow: `inset 0 0 0 1px ${COLORS[cat]}` } : undefined}
                   >
-                    <span className="truncate mr-2">{el.name}</span>
-                    <span className="text-[10px] text-[#8a93a3] shrink-0">{cat}</span>
+                    <span className="flex items-center gap-1.5 min-w-0">
+                      <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: COLORS[cat] } as React.CSSProperties} />
+                      <span className="truncate">{el.name}</span>
+                    </span>
                   </div>
                 );
               })}
@@ -1053,7 +1072,8 @@ const CAT_BADGE_BG: Record<LinkCategory, string> = {
 
 function FreeChapterCard({
   index, accent, isDragging, chapter, chLinks, interOut, findElement,
-  onClickCard, onClickLink, onTitleChange, onRequestDelete, onView, onEdit,
+  onClickCard, onClickLink, onClickInterLink, interChapterLinks,
+  onTitleChange, onRequestDelete, onView, onEdit,
   onStartDrag, onStartInterLink, isLinkSource, isLinkTarget, registerNode,
 }: {
   index: number;
@@ -1062,9 +1082,11 @@ function FreeChapterCard({
   chapter: CanvasChapter;
   chLinks: ChapterLink[];
   interOut: number;
+  interChapterLinks: { id: string; label: string; direction: "in" | "out" }[];
   findElement: (id: string) => ElementLite | null;
   onClickCard: (id: string, e: React.MouseEvent) => void;
   onClickLink: (linkId: string) => void;
+  onClickInterLink: (linkId: string) => void;
   onTitleChange: (id: string, title: string) => void;
   onRequestDelete: (id: string) => void;
   onView: (id: string) => void;
@@ -1143,7 +1165,7 @@ function FreeChapterCard({
         className="mt-3 h-7 px-1 text-sm font-semibold bg-transparent border-0 border-b border-transparent hover:border-[#2a3140] focus-visible:border-[#3a4254] focus-visible:ring-0 text-[#e8eaed]"
       />
 
-      {chLinks.length > 0 && (
+      {(chLinks.length > 0 || interChapterLinks.length > 0) && (
         <div className="mt-3 text-[10px] uppercase tracking-wider text-[#7a8294] flex items-center gap-1">
           <Link2 className="w-3 h-3" /> Linked elements
         </div>
@@ -1152,6 +1174,7 @@ function FreeChapterCard({
         {chLinks.map((l) => {
           const el = findElement(l.elementId);
           if (!el) return null;
+          const CatI = CAT_ICON[l.category];
           return (
             <div
               key={l.id}
@@ -1160,12 +1183,24 @@ function FreeChapterCard({
               onClick={(e) => { e.stopPropagation(); onClickLink(l.id); }}
               className="flex items-center gap-1.5 bg-[#262c38] hover:bg-[#323a4a] px-1.5 py-1 rounded text-[11px] text-[#cfd4df] cursor-pointer"
             >
-              <span className={cn("w-1.5 h-1.5 rounded-full", DOT_CLASS[l.category])} />
+              <CatI className="w-3 h-3 shrink-0" style={{ color: COLORS[l.category] } as React.CSSProperties} />
               <b className="truncate">{el.name}</b>
-              <span className={cn("ml-auto text-[9px] px-1 py-px rounded border", CAT_BADGE_BG[l.category])}>{l.category}</span>
             </div>
           );
         })}
+        {interChapterLinks.map((il) => (
+          <div
+            key={il.id}
+            data-no-drag
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); onClickInterLink(il.id); }}
+            className="flex items-center gap-1.5 bg-[#262c38] hover:bg-[#323a4a] px-1.5 py-1 rounded text-[11px] text-[#9aa3b2] cursor-pointer"
+            title={il.direction === "out" ? `Links to ${il.label}` : `Linked from ${il.label}`}
+          >
+            <ArrowRightLeft className="w-3 h-3 shrink-0" style={{ color: INTER_COLOR }} />
+            <b className="truncate">{il.label}</b>
+          </div>
+        ))}
       </div>
 
       {/* bottom 3-dots menu */}
