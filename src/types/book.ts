@@ -468,6 +468,8 @@ export interface CanvasChapter {
   selectedSuggestionIndex?: number | null;
   plot: string;
   scenes: CanvasScene[];
+  /** Optional free-form 2D position in the Chapter Matrix canvas. */
+  position?: { x: number; y: number };
 }
 
 export interface CharacterArcCard {
