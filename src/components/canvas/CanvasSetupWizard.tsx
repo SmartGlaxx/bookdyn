@@ -102,14 +102,25 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
   const [aiUsed, setAiUsed] = useState(0);
 
   const filledBullets = bullets.filter((b) => b.text.trim().length > 0);
+  const wc = (s?: string) => ((s ?? "").trim() ? (s as string).trim().split(/\s+/).length : 0);
+  const charactersComplete =
+    characterArcs.length >= 1 &&
+    characterArcs.every((c) =>
+      c.name.trim().length > 0 &&
+      (c.traits ?? []).length >= 1 &&
+      (c.traits ?? []).every((t) => t.label.trim().length > 0 && wc(t.description) >= 20),
+    );
+  const worldsComplete =
+    worldElements.length >= 1 &&
+    worldElements.every((w) =>
+      w.label.trim().length > 0 && wc(w.kind) >= 20 && wc(w.description) >= 40,
+    );
   const canAdvance: Record<Step, boolean> = {
     1: title.trim().length > 0 && genre.trim().length > 0,
     2: filledBullets.length >= 10,
     3: arc.length >= 10,
-    4: characterArcs.length >= 1,
-    5: worldElements.length >= 1
-      && arc.length >= 10
-      && characterArcs.length >= 1,
+    4: charactersComplete,
+    5: worldsComplete && arc.length >= 10 && charactersComplete,
     6: chapters.length > 0 && chapters.every((c) => c.title.trim().length > 0),
   };
 
@@ -300,6 +311,8 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
               onChaptersChange={setChapters}
               links={chapterLinks}
               onLinksChange={setChapterLinks}
+              interLinks={interChapterLinks}
+              onInterLinksChange={setInterChapterLinks}
             />
           )}
       </section>
