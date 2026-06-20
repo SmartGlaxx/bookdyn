@@ -21,6 +21,7 @@ import CheckEmail from "./pages/CheckEmail";
 import Waitlist from "./pages/Waitlist";
 import Onboarding from "./pages/Onboarding";
 import BookDetail from "./pages/BookDetail";
+import NewBookPage from "./pages/NewBookPage";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { BookOpen } from "lucide-react";
 import { BOOK_TYPE_INFO } from "@/types/book";
@@ -132,6 +133,10 @@ const App = () => (
             <Route
               path="/dashboard"
               element={<ProtectedRoute><Index /></ProtectedRoute>}
+            />
+            <Route
+              path="/dashboard/new-book"
+              element={<ProtectedRoute><NewBookPage /></ProtectedRoute>}
             />
             <Route
               path="/dashboard/:slug"
