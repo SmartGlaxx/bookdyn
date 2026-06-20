@@ -231,8 +231,8 @@ export function ChapterMatrixSimulator(props: Props) {
 
   // ---- Curve handle drag (works for both link kinds) ----
   const curveDragRef = useRef<
-    | { kind: "link"; id: string; baseMx: number; baseMy: number }
-    | { kind: "inter"; id: string; baseMx: number; baseMy: number }
+    | { kind: "link"; id: string; baseHx: number; baseHy: number }
+    | { kind: "inter"; id: string; baseHx: number; baseHy: number }
     | null
   >(null);
   useEffect(() => {
@@ -246,13 +246,13 @@ export function ChapterMatrixSimulator(props: Props) {
       if (d.kind === "link") {
         props.onLinksChange(
           props.links.map((l) =>
-            l.id === d.id ? { ...l, curveOffset: { dx: x - d.baseMx, dy: y - d.baseMy } } : l,
+            l.id === d.id ? { ...l, curveOffset: { dx: x - d.baseHx, dy: y - d.baseHy } } : l,
           ),
         );
       } else {
         onInterLinksChange(
           interLinks.map((l) =>
-            l.id === d.id ? { ...l, curveOffset: { dx: x - d.baseMx, dy: y - d.baseMy } } : l,
+            l.id === d.id ? { ...l, curveOffset: { dx: x - d.baseHx, dy: y - d.baseHy } } : l,
           ),
         );
       }
