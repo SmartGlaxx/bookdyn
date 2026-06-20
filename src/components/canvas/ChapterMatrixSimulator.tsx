@@ -983,11 +983,13 @@ const CAT_BADGE_BG: Record<LinkCategory, string> = {
 };
 
 function FreeChapterCard({
-  index, chapter, chLinks, interOut, findElement,
-  onClickCard, onClickLink, onTitleChange, onRemoveChapter,
+  index, accent, isDragging, chapter, chLinks, interOut, findElement,
+  onClickCard, onClickLink, onTitleChange, onRequestDelete, onView, onEdit,
   onStartDrag, onStartInterLink, isLinkSource, isLinkTarget, registerNode,
 }: {
   index: number;
+  accent: string;
+  isDragging: boolean;
   chapter: CanvasChapter;
   chLinks: ChapterLink[];
   interOut: number;
@@ -995,16 +997,24 @@ function FreeChapterCard({
   onClickCard: (id: string, e: React.MouseEvent) => void;
   onClickLink: (linkId: string) => void;
   onTitleChange: (id: string, title: string) => void;
-  onRemoveChapter: (id: string) => void;
+  onRequestDelete: (id: string) => void;
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
   onStartDrag: (id: string, e: React.MouseEvent) => void;
   onStartInterLink: (id: string) => void;
   isLinkSource: boolean;
   isLinkTarget: boolean;
   registerNode: (node: HTMLDivElement | null) => void;
 }) {
-  const full = chLinks.length >= 3;
-  const accentColor = chLinks[0] ? COLORS[chLinks[0].category] : "#3b82f6";
+  const accentColor = accent;
   const pos = chapter.position ?? { x: 40, y: 60 };
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDoc = () => setMenuOpen(false);
+    window.addEventListener("click", onDoc);
+    return () => window.removeEventListener("click", onDoc);
+  }, [menuOpen]);
 
   return (
     <div
@@ -1018,20 +1028,21 @@ function FreeChapterCard({
         top: pos.y,
         width: CARD_W,
         height: CARD_H,
+        zIndex: isDragging ? 50 : 1,
       }}
       className={cn(
         "cursor-grab active:cursor-grabbing bg-[#1d222c] border rounded-[10px] p-3.5 transition-colors select-none",
+        isDragging && "shadow-[0_24px_64px_rgba(0,0,0,0.6)]",
         isLinkSource
           ? "border-[#facc15] ring-2 ring-[#facc15]/40"
           : isLinkTarget
             ? "border-[#9aa3b2] hover:border-[#cbd5e1] ring-1 ring-[#9aa3b2]/30"
             : "border-[#2a3140] hover:border-[#4b5468]",
-        full && "opacity-95",
       )}
     >
       {/* numbered badge */}
       <span
-        className="absolute -top-2 left-3 px-1.5 py-0.5 rounded text-[11px] font-bold border"
+        className="absolute -top-2 left-3 w-6 h-6 inline-flex items-center justify-center rounded-md text-[11px] font-bold border"
         style={{ background: `${accentColor}22`, color: accentColor, borderColor: `${accentColor}66` }}
       >
         {index + 1}
@@ -1044,7 +1055,7 @@ function FreeChapterCard({
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); onStartInterLink(chapter.id); }}
         className={cn(
-          "absolute top-1.5 right-9 p-1 rounded hover:bg-[#262c38]",
+          "absolute top-1.5 right-2 p-1 rounded hover:bg-[#262c38]",
           isLinkSource ? "text-[#facc15]" : "text-[#5d6577] hover:text-[#cbd5e1]",
         )}
         aria-label="Link to another chapter"
@@ -1052,18 +1063,6 @@ function FreeChapterCard({
         disabled={interOut >= 1 && !isLinkSource}
       >
         <ArrowRightLeft className="w-3.5 h-3.5" />
-      </button>
-
-      {/* remove */}
-      <button
-        type="button"
-        data-no-drag
-        onMouseDown={(e) => e.stopPropagation()}
-        onClick={(e) => { e.stopPropagation(); onRemoveChapter(chapter.id); }}
-        className="absolute top-1.5 right-2 p-1 rounded text-[#5d6577] hover:text-red-400 hover:bg-[#262c38]"
-        aria-label="Remove chapter"
-      >
-        <Trash2 className="w-3.5 h-3.5" />
       </button>
 
       <Input
@@ -1100,17 +1099,49 @@ function FreeChapterCard({
         })}
       </div>
 
-      <div className="absolute bottom-2.5 right-3 text-[10px] text-[#666] flex items-center gap-2">
-        {interOut > 0 && (
-          <span className="flex items-center gap-0.5 text-[#9aa3b2]" title="Inter-chapter link present">
-            <ArrowRightLeft className="w-2.5 h-2.5" /> 1
-          </span>
+      {/* bottom 3-dots menu */}
+      <div className="absolute bottom-2 right-2" data-no-drag onMouseDown={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
+          className="p-1.5 rounded-md text-[#7a8294] hover:text-white hover:bg-[#262c38]"
+          aria-label="Card actions"
+          style={{ color: menuOpen ? accentColor : undefined }}
+        >
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
+        {menuOpen && (
+          <div
+            className="absolute bottom-full right-0 mb-1 w-[150px] rounded-md border border-[#2a3140] bg-[#161a21] shadow-lg overflow-hidden z-30"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => { setMenuOpen(false); onView(chapter.id); }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-[12px] hover:bg-[#1f2532] text-left"
+              style={{ color: accentColor }}
+            >
+              <Eye className="w-3.5 h-3.5" /> View card
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMenuOpen(false); onEdit(chapter.id); }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-[12px] hover:bg-[#1f2532] text-left"
+              style={{ color: accentColor }}
+            >
+              <Pencil className="w-3.5 h-3.5" /> Edit card
+            </button>
+            <div className="h-px bg-[#232833]" />
+            <button
+              type="button"
+              onClick={() => { setMenuOpen(false); onRequestDelete(chapter.id); }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-[12px] text-red-400 hover:bg-red-500/10 text-left"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Delete
+            </button>
+          </div>
         )}
-        <span>{chLinks.length}/3</span>
       </div>
-      {full && (
-        <span className="absolute bottom-2.5 left-3 text-[9px] text-red-500 tracking-wider">FULL</span>
-      )}
     </div>
   );
 }
