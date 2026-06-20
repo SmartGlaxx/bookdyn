@@ -302,15 +302,27 @@ export function CanvasSetupWizard({ open, onClose, onCreate, isCreating }: Props
             />
           )}
           {step === 6 && (
-            <Step4
-              chapters={chapters}
-              setChapters={setChapters}
-              openChapterId={openChapterId}
-              setOpenChapterId={setOpenChapterId}
-              aiUsed={aiUsed}
-              onAiUsed={() => setAiUsed((n) => Math.min(3, n + 1))}
-              getContext={() => setupCtx}
-            />
+            <div className="space-y-5">
+              <Step4
+                chapters={chapters}
+                setChapters={setChapters}
+                openChapterId={openChapterId}
+                setOpenChapterId={setOpenChapterId}
+                aiUsed={aiUsed}
+                onAiUsed={() => setAiUsed((n) => Math.min(3, n + 1))}
+                getContext={() => setupCtx}
+              />
+              <ChapterMatrixSimulator
+                arc={arc}
+                characters={characterArcs}
+                worlds={worldElements}
+                chapters={chapters}
+                links={chapterLinks}
+                interLinks={interChapterLinks}
+                onLinksChange={setChapterLinks}
+                onInterLinksChange={setInterChapterLinks}
+              />
+            </div>
           )}
       </main>
 
