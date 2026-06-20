@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import BookCard from "@/components/BookCard";
-import { CanvasSetupWizard } from "@/components/canvas/CanvasSetupWizard";
 import { useBooks } from "@/hooks/useBooks";
 import { Book, CreateBookInput, BOOK_CATEGORIES, BOOK_TYPE_INFO, BookCategory, BookType } from "@/types/book";
 import { Loader2 } from "lucide-react";
@@ -23,7 +22,7 @@ type CoverFilter = "all" | "with-cover" | "without-cover";
 const Index = () => {
   const navigate = useNavigate();
   const { bookType: routeBookType, slug } = useParams<{ bookType?: string; slug?: string }>();
-  const [showEngine, setShowEngine] = useState(false);
+  // wizard now lives on its own /dashboard/new-book route
   const [sortBy, setSortBy] = useState<SortOption>("updated");
   const [filterCategory, setFilterCategory] = useState<BookCategory | "all">("all");
   const [filterType, setFilterType] = useState<BookType | "all">("all");
@@ -36,7 +35,7 @@ const Index = () => {
   const sentinelWipRef = useRef<HTMLDivElement | null>(null);
   const sentinelCompletedRef = useRef<HTMLDivElement | null>(null);
 
-  const { books, isLoading, addBook, deleteBook, updateBook, isCreating } = useBooks();
+  const { books, isLoading, deleteBook, updateBook } = useBooks();
   const dashboardBookType = (routeBookType ?? slug) as BookType | undefined;
   const isBookTypeRoute = !!dashboardBookType && Object.prototype.hasOwnProperty.call(BOOK_TYPE_INFO, dashboardBookType);
 
@@ -170,15 +169,7 @@ const Index = () => {
     }
   }, []);
 
-  const handleCreateBook = async (input: CreateBookInput) => {
-    try {
-      const newBook = await addBook(input);
-      setShowEngine(false);
-      navigate(`/dashboard/${newBook.id}`);
-    } catch (error) {
-      console.error("Failed to create book:", error);
-    }
-  };
+  const openNewBook = () => navigate("/dashboard/new-book");
 
   const handleDeleteBook = async (id: string) => {
     try {
@@ -516,7 +507,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation onCreateBook={() => setShowEngine(true)} />
+      <Navigation onCreateBook={openNewBook} />
 
       <main>
         {isLoading ? (
@@ -549,7 +540,7 @@ const Index = () => {
                   generation.
                 </p>
               </div>
-              <Button variant="hero" size="lg" onClick={() => setShowEngine(true)} className="group">
+              <Button variant="hero" size="lg" onClick={openNewBook} className="group">
                 <Sparkles className="w-5 h-5 transition-transform group-hover:scale-110" />
                 Get Started
               </Button>
@@ -600,17 +591,6 @@ const Index = () => {
           </div>
         )}
       </main>
-
-      <AnimatePresence>
-        {showEngine && (
-          <CanvasSetupWizard
-            open={showEngine}
-            onClose={() => setShowEngine(false)}
-            onCreate={handleCreateBook}
-            isCreating={isCreating}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 };

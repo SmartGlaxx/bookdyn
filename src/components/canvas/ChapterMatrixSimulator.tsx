@@ -1,302 +1,116 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  StoryArcCard, CharacterArcCard, WorldElementCard, CanvasChapter,
-  ChapterLink, InterChapterLink, LinkCategory,
+  CharacterArcCard, WorldElementCard, CanvasChapter,
+  ChapterLink, LinkCategory,
 } from "@/types/book";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeftRight, Trash2, X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 
 const newId = () =>
   (typeof crypto !== "undefined" && "randomUUID" in crypto)
     ? crypto.randomUUID()
     : Math.random().toString(36).slice(2) + Date.now().toString(36);
 
-const CAT_STROKE: Record<LinkCategory, string> = {
-  plot: "hsl(0 84% 60%)",        // red-500
-  character: "hsl(217 91% 60%)", // blue-500
-  world: "hsl(142 71% 45%)",     // emerald-500
+const COLORS: Record<LinkCategory, string> = {
+  plot: "#ef4444",
+  character: "#3b82f6",
+  world: "#22c55e",
 };
-const CAT_DOT_CLASS: Record<LinkCategory, string> = {
-  plot: "bg-red-500",
-  character: "bg-blue-500",
-  world: "bg-emerald-500",
-};
-const CAT_RING_CLASS: Record<LinkCategory, string> = {
-  plot: "ring-red-500/70 border-red-500/60",
-  character: "ring-blue-500/70 border-blue-500/60",
-  world: "ring-emerald-500/70 border-emerald-500/60",
+const DOT_CLASS: Record<LinkCategory, string> = {
+  plot: "bg-[#ef4444]",
+  character: "bg-[#3b82f6]",
+  world: "bg-[#22c55e]",
 };
 
 interface ElementLite { id: string; name: string; category: LinkCategory }
 
 interface Props {
-  arc: StoryArcCard[];
+  bullets: { id: string; text: string }[];
   characters: CharacterArcCard[];
   worlds: WorldElementCard[];
   chapters: CanvasChapter[];
+  onChaptersChange: (next: CanvasChapter[]) => void;
   links: ChapterLink[];
-  interLinks: InterChapterLink[];
   onLinksChange: (next: ChapterLink[]) => void;
-  onInterLinksChange: (next: InterChapterLink[]) => void;
 }
 
 export function ChapterMatrixSimulator(props: Props) {
-  const { arc, characters, worlds, chapters, links, interLinks } = props;
+  const { bullets, characters, worlds, chapters, links } = props;
 
-  // Flatten elements
-  const allElements = useMemo<ElementLite[]>(() => {
-    const plot = arc.map((a, i) => ({
-      id: a.id, category: "plot" as const,
-      name: (a.text || `Beat ${i + 1}`).slice(0, 60),
-    }));
-    const chars = characters.map((c, i) => ({
-      id: c.id, category: "character" as const,
-      name: (c.name || `Character ${i + 1}`).slice(0, 60),
-    }));
-    const wrlds = worlds.map((w, i) => ({
-      id: w.id, category: "world" as const,
-      name: (w.label || `World ${i + 1}`).slice(0, 60),
-    }));
-    return [...plot, ...chars, ...wrlds];
-  }, [arc, characters, worlds]);
+  // Flatten elements grouped by category
+  const groups = useMemo(() => {
+    const plotEls: ElementLite[] = bullets
+      .filter((b) => b.text.trim())
+      .map((b, i) => ({ id: b.id, name: short(b.text, 36) || `Plot ${i + 1}`, category: "plot" }));
+    const charEls: ElementLite[] = characters
+      .filter((c) => c.name.trim())
+      .map((c) => ({ id: c.id, name: c.name.trim(), category: "character" }));
+    const worldEls: ElementLite[] = worlds
+      .filter((w) => w.label.trim())
+      .map((w) => ({ id: w.id, name: w.label.trim(), category: "world" }));
+    return { plot: plotEls, character: charEls, world: worldEls };
+  }, [bullets, characters, worlds]);
 
-  const findEl = useCallback(
+  const allElements = useMemo<ElementLite[]>(
+    () => [...groups.plot, ...groups.character, ...groups.world],
+    [groups],
+  );
+
+  const findElement = useCallback(
     (id: string) => allElements.find((e) => e.id === id) ?? null,
     [allElements],
   );
 
-  // Selection state
-  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
-  const [interMode, setInterMode] = useState<{ fromChapterId: string } | null>(null);
-
-  // Popup state
-  type Popup =
-    | { kind: "element-to-chapter"; chapterId: string; elementId: string; category: LinkCategory; x: number; y: number }
-    | { kind: "inter-chapter"; fromChapterId: string; toChapterId: string; x: number; y: number }
-    | { kind: "detail"; linkId: string; linkKind: "element" | "inter"; x: number; y: number };
-  const [popup, setPopup] = useState<Popup | null>(null);
-  const [noteDraft, setNoteDraft] = useState("");
-
-  // Refs for measurement
+  // Refs for the matrix wrap + chapter + element nodes
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const matrixRef = useRef<HTMLDivElement | null>(null);
-  const elementNodeRefs = useRef<Map<string, HTMLElement>>(new Map());
-  const chapterNodeRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const elNodes = useRef<Map<string, HTMLDivElement | null>>(new Map());
+  const chNodes = useRef<Map<string, HTMLDivElement | null>>(new Map());
 
-  // Tick to force re-render of SVG on scroll/resize
-  const [tick, setTick] = useState(0);
-  const bump = useCallback(() => setTick((t) => t + 1), []);
+  const [selected, setSelected] = useState<{ id: string; category: LinkCategory } | null>(null);
+  const [hintError, setHintError] = useState<string | null>(null);
+  const [popup, setPopup] = useState<
+    | { chapterId: string; el: ElementLite; x: number; y: number; note: string }
+    | null
+  >(null);
+  const [detailLinkId, setDetailLinkId] = useState<string | null>(null);
+  const [, forceTick] = useState(0);
 
-  useLayoutEffect(() => { bump(); }, [bump, links, interLinks, chapters.length, allElements.length]);
+  // Trigger SVG redraw on any layout/scroll/resize/data change
+  const redraw = useCallback(() => forceTick((n) => n + 1), []);
+  useLayoutEffect(() => {
+    redraw();
+  }, [chapters, links, allElements, redraw]);
 
   useEffect(() => {
-    const onResize = () => bump();
+    const onResize = () => redraw();
     window.addEventListener("resize", onResize);
     const m = matrixRef.current;
-    m?.addEventListener("scroll", bump);
-    const wrap = wrapRef.current;
-    let ro: ResizeObserver | null = null;
-    if (wrap && "ResizeObserver" in window) {
-      ro = new ResizeObserver(bump);
-      ro.observe(wrap);
-    }
+    m?.addEventListener("scroll", onResize, { passive: true });
     return () => {
       window.removeEventListener("resize", onResize);
-      m?.removeEventListener("scroll", bump);
-      ro?.disconnect();
+      m?.removeEventListener("scroll", onResize);
     };
-  }, [bump]);
+  }, [redraw]);
 
-  // Helpers
-  const linksForChapter = useCallback(
-    (chId: string) => links.filter((l) => l.chapterId === chId),
-    [links],
-  );
-
-  // ---- click handlers ----
-  const onClickElement = (el: ElementLite) => {
-    setInterMode(null);
-    setSelectedElementId((cur) => (cur === el.id ? null : el.id));
-  };
-
-  const onClickChapter = (chId: string, evt: React.MouseEvent) => {
-    // inter-chapter mode: pick target
-    if (interMode) {
-      if (interMode.fromChapterId === chId) {
-        setInterMode(null);
-        return;
-      }
-      // cap: max 1 inter-link per chapter (either side)
-      const exists = interLinks.some(
-        (l) => l.fromChapterId === chId || l.toChapterId === chId,
-      );
-      const sourceHas = interLinks.some(
-        (l) => l.fromChapterId === interMode.fromChapterId || l.toChapterId === interMode.fromChapterId,
-      );
-      if (sourceHas) {
-        toast.error("Source chapter already has an inter-chapter link.");
-        setInterMode(null);
-        return;
-      }
-      if (exists) {
-        toast.error("Target chapter already has an inter-chapter link.");
-        setInterMode(null);
-        return;
-      }
-      const wrapRect = wrapRef.current?.getBoundingClientRect();
-      setNoteDraft("");
-      setPopup({
-        kind: "inter-chapter",
-        fromChapterId: interMode.fromChapterId,
-        toChapterId: chId,
-        x: evt.clientX - (wrapRect?.left ?? 0),
-        y: evt.clientY - (wrapRect?.top ?? 0),
-      });
-      setInterMode(null);
-      return;
-    }
-
-    if (!selectedElementId) return;
-    const el = findEl(selectedElementId);
-    if (!el) return;
-    const chLinks = linksForChapter(chId);
-    if (chLinks.length >= 3) { toast.error("Chapter cap reached (max 3 links)."); return; }
-    if (chLinks.some((l) => l.category === el.category)) { toast.error(`Only 1 ${el.category} link per chapter.`); return; }
-    if (chLinks.some((l) => l.elementId === el.id)) { toast.error("That element is already linked here."); return; }
-
-    const wrapRect = wrapRef.current?.getBoundingClientRect();
-    setNoteDraft("");
-    setPopup({
-      kind: "element-to-chapter",
-      chapterId: chId,
-      elementId: el.id,
-      category: el.category,
-      x: evt.clientX - (wrapRect?.left ?? 0),
-      y: evt.clientY - (wrapRect?.top ?? 0),
-    });
-  };
-
-  const confirmPopup = () => {
-    if (!popup) return;
-    if (popup.kind === "element-to-chapter") {
-      props.onLinksChange([
-        ...links,
-        {
-          id: newId(),
-          chapterId: popup.chapterId,
-          elementId: popup.elementId,
-          category: popup.category,
-          note: noteDraft.trim(),
-          curveOffset: { dx: 0, dy: 0 },
-        },
-      ]);
-      setSelectedElementId(null);
-    } else if (popup.kind === "inter-chapter") {
-      // Must include @reference to an existing element
-      const hasRef = /@([A-Za-z][\w ]*)/.test(noteDraft);
-      if (!hasRef) { toast.error("Inter-chapter link requires an @reference to an existing element."); return; }
-      props.onInterLinksChange([
-        ...interLinks,
-        {
-          id: newId(),
-          fromChapterId: popup.fromChapterId,
-          toChapterId: popup.toChapterId,
-          note: noteDraft.trim(),
-          curveOffset: { dx: 0, dy: 0 },
-        },
-      ]);
-    }
-    setPopup(null);
-    setNoteDraft("");
-  };
-
-  const deleteLink = (id: string, kind: "element" | "inter") => {
-    if (kind === "element") props.onLinksChange(links.filter((l) => l.id !== id));
-    else props.onInterLinksChange(interLinks.filter((l) => l.id !== id));
-    setPopup(null);
-  };
-
-  // ---- @ dropdown inside textarea ----
-  const [atQuery, setAtQuery] = useState<{ start: number; text: string } | null>(null);
-  const taRef = useRef<HTMLTextAreaElement | null>(null);
-
-  const onNoteChange = (val: string) => {
-    setNoteDraft(val);
-    const ta = taRef.current;
-    if (!ta) { setAtQuery(null); return; }
-    const pos = ta.selectionStart ?? val.length;
-    const before = val.slice(0, pos);
-    const m = before.match(/@(\w*)$/);
-    if (m) setAtQuery({ start: pos - m[0].length, text: m[1] });
-    else setAtQuery(null);
-  };
-
-  const insertRef = (el: ElementLite) => {
-    const ta = taRef.current;
-    if (!ta || !atQuery) return;
-    const before = noteDraft.slice(0, atQuery.start);
-    const after = noteDraft.slice(ta.selectionStart ?? noteDraft.length);
-    const tag = `@${el.name}`;
-    const next = `${before}${tag} ${after}`;
-    setNoteDraft(next);
-    setAtQuery(null);
-    requestAnimationFrame(() => {
-      const pos = (before + tag + " ").length;
-      ta.focus();
-      ta.setSelectionRange(pos, pos);
-    });
-  };
-
-  const atMatches = useMemo(() => {
-    if (!atQuery) return [];
-    const q = atQuery.text.toLowerCase();
-    return allElements.filter((e) => e.name.toLowerCase().includes(q)).slice(0, 8);
-  }, [atQuery, allElements]);
-
-  // ---- Render note with refs highlighted ----
-  const renderNote = (note: string) => {
-    if (!note) return <span className="text-muted-foreground italic">No note added.</span>;
-    const parts: React.ReactNode[] = [];
-    const re = /@([A-Za-z][\w ]*?)(?=\s|$|[.,!?;:])/g;
-    let last = 0;
-    let m: RegExpExecArray | null;
-    let key = 0;
-    while ((m = re.exec(note))) {
-      if (m.index > last) parts.push(note.slice(last, m.index));
-      const name = m[1].trim();
-      const el = allElements.find((e) => e.name.toLowerCase() === name.toLowerCase());
-      if (el) {
-        parts.push(
-          <span
-            key={`r${key++}`}
-            className={cn("inline-block px-1.5 py-0.5 rounded text-[11px] font-semibold text-white", CAT_DOT_CLASS[el.category])}
-          >@{el.name}</span>,
-        );
-      } else {
-        parts.push(m[0]);
-      }
-      last = m.index + m[0].length;
-    }
-    if (last < note.length) parts.push(note.slice(last));
-    return <>{parts}</>;
-  };
-
-  // ---- SVG line geometry ----
-  type Line = { kind: "element" | "inter"; id: string; x1: number; y1: number; x2: number; y2: number; mx: number; my: number; stroke: string; note: string };
-  const lines: Line[] = (() => {
-    if (!wrapRef.current) return [];
-    const wrapRect = wrapRef.current.getBoundingClientRect();
-    const out: Line[] = [];
-
-    // Element→Chapter
+  // Compute line paths
+  const linePaths = useMemo(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return [] as Array<{
+      d: string; color: string; mx: number; my: number; baseMx: number; baseMy: number; link: ChapterLink;
+    }>;
+    const wrapRect = wrap.getBoundingClientRect();
     const byCh: Record<string, ChapterLink[]> = {};
-    links.forEach((l) => { (byCh[l.chapterId] ||= []).push(l); });
-    links.forEach((l) => {
-      const elNode = elementNodeRefs.current.get(l.elementId);
-      const chNode = chapterNodeRefs.current.get(l.chapterId);
+    links.forEach((l) => { (byCh[l.chapterId] = byCh[l.chapterId] || []).push(l); });
+
+    const out: Array<{ d: string; color: string; mx: number; my: number; baseMx: number; baseMy: number; link: ChapterLink }> = [];
+    links.forEach((link) => {
+      const elNode = elNodes.current.get(link.elementId);
+      const chNode = chNodes.current.get(link.chapterId);
       if (!elNode || !chNode) return;
       const er = elNode.getBoundingClientRect();
       const cr = chNode.getBoundingClientRect();
@@ -304,385 +118,472 @@ export function ChapterMatrixSimulator(props: Props) {
       const y1 = er.top + er.height / 2 - wrapRect.top;
       const x2 = cr.left - wrapRect.left + 10;
       const y2 = cr.top + cr.height / 2 - wrapRect.top;
-      const stack = byCh[l.chapterId];
-      const idx = stack.indexOf(l);
-      const stackOffset = (idx - (stack.length - 1) / 2) * 28;
-      const mx = (x1 + x2) / 2 + (l.curveOffset?.dx ?? 0);
-      const my = (y1 + y2) / 2 + (l.curveOffset?.dy ?? 0) + stackOffset;
-      out.push({ kind: "element", id: l.id, x1, y1, x2, y2, mx, my, stroke: CAT_STROKE[l.category], note: l.note });
+      const stack = byCh[link.chapterId] || [];
+      const idx = stack.indexOf(link);
+      const stackOffset = (idx - (stack.length - 1) / 2) * 30;
+      const baseMx = (x1 + x2) / 2;
+      const baseMy = (y1 + y2) / 2 + stackOffset;
+      const mx = baseMx + (link.curveOffset?.dx ?? 0);
+      const my = baseMy + (link.curveOffset?.dy ?? 0);
+      out.push({
+        d: `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`,
+        color: COLORS[link.category],
+        mx, my, baseMx, baseMy, link,
+      });
     });
-
-    // Inter-chapter
-    interLinks.forEach((l) => {
-      const a = chapterNodeRefs.current.get(l.fromChapterId);
-      const b = chapterNodeRefs.current.get(l.toChapterId);
-      if (!a || !b) return;
-      const ar = a.getBoundingClientRect();
-      const br = b.getBoundingClientRect();
-      const x1 = ar.left + ar.width / 2 - wrapRect.left;
-      const y1 = ar.top - wrapRect.top + 6;
-      const x2 = br.left + br.width / 2 - wrapRect.left;
-      const y2 = br.top - wrapRect.top + 6;
-      const mx = (x1 + x2) / 2 + (l.curveOffset?.dx ?? 0);
-      const my = Math.min(y1, y2) - 50 + (l.curveOffset?.dy ?? 0);
-      out.push({ kind: "inter", id: l.id, x1, y1, x2, y2, mx, my, stroke: "hsl(0 0% 65%)", note: l.note });
-    });
-
     return out;
-    // re-run on tick
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  })();
-  // ref tick to satisfy lint without changing geometry result
-  void tick;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [links, chapters, allElements, popup, detailLinkId]);
 
-  // ---- Drag handles ----
-  const draggingRef = useRef<{ id: string; kind: "element" | "inter"; baseMx: number; baseMy: number } | null>(null);
+  // Drag for curve handle
+  const dragRef = useRef<{ id: string; baseMx: number; baseMy: number } | null>(null);
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
-      const d = draggingRef.current;
-      if (!d) return;
-      const wrapRect = wrapRef.current?.getBoundingClientRect();
-      if (!wrapRect) return;
+      const d = dragRef.current;
+      const wrap = wrapRef.current;
+      if (!d || !wrap) return;
+      const wrapRect = wrap.getBoundingClientRect();
       const x = e.clientX - wrapRect.left;
       const y = e.clientY - wrapRect.top;
-      if (d.kind === "element") {
-        props.onLinksChange(
-          links.map((l) => l.id === d.id ? { ...l, curveOffset: { dx: x - d.baseMx, dy: y - d.baseMy } } : l),
-        );
-      } else {
-        props.onInterLinksChange(
-          interLinks.map((l) => l.id === d.id ? { ...l, curveOffset: { dx: x - d.baseMx, dy: y - d.baseMy } } : l),
-        );
-      }
+      const next = props.links.map((l) =>
+        l.id === d.id ? { ...l, curveOffset: { dx: x - d.baseMx, dy: y - d.baseMy } } : l,
+      );
+      props.onLinksChange(next);
     };
-    const onUp = () => { draggingRef.current = null; };
+    const onUp = () => { dragRef.current = null; };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
     return () => {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
     };
-  }, [links, interLinks, props]);
+  }, [props]);
 
-  // ---- Hint text ----
-  const selectedEl = selectedElementId ? findEl(selectedElementId) : null;
-  const hint = interMode
-    ? "Inter-chapter link: click a target chapter."
-    : selectedEl
-      ? `Selected ${selectedEl.category}: ${selectedEl.name} — click a chapter to link.`
-      : "Click a story element, then a chapter to draw a curved link. Use ↔ on a chapter to link to another chapter.";
+  // ---- actions ----
+  const flashError = (msg: string) => {
+    setHintError(msg);
+    window.setTimeout(() => setHintError(null), 1800);
+  };
 
-  // ---- Panel groups ----
-  const groups: { key: LinkCategory; label: string; items: ElementLite[] }[] = [
-    { key: "plot", label: "Plot", items: allElements.filter((e) => e.category === "plot") },
-    { key: "character", label: "Characters", items: allElements.filter((e) => e.category === "character") },
-    { key: "world", label: "World", items: allElements.filter((e) => e.category === "world") },
-  ];
+  const selectElement = (el: ElementLite) => {
+    setSelected((s) => (s && s.id === el.id ? null : { id: el.id, category: el.category }));
+  };
+
+  const onChapterClick = (chId: string, e: React.MouseEvent) => {
+    if (!selected) return;
+    const el = findElement(selected.id);
+    if (!el) return;
+    const chLinks = links.filter((l) => l.chapterId === chId);
+    if (chLinks.length >= 3) return flashError("Chapter cap reached (max 3 links per chapter).");
+    if (chLinks.some((l) => l.category === selected.category)) return flashError(`Only 1 ${selected.category} link per chapter.`);
+    if (chLinks.some((l) => l.elementId === selected.id)) return flashError("That element is already linked here.");
+    setPopup({
+      chapterId: chId,
+      el,
+      x: Math.min(window.innerWidth - 320, e.clientX),
+      y: Math.min(window.innerHeight - 240, e.clientY),
+      note: "",
+    });
+  };
+
+  const confirmLink = () => {
+    if (!popup) return;
+    const link: ChapterLink = {
+      id: "L" + newId(),
+      chapterId: popup.chapterId,
+      elementId: popup.el.id,
+      category: popup.el.category,
+      note: popup.note.trim(),
+      curveOffset: { dx: 0, dy: 0 },
+    };
+    props.onLinksChange([...links, link]);
+    setPopup(null);
+    setSelected(null);
+  };
+
+  const deleteLink = (id: string) => {
+    props.onLinksChange(links.filter((l) => l.id !== id));
+    setDetailLinkId(null);
+  };
+
+  const updateChapterTitle = (id: string, title: string) =>
+    props.onChaptersChange(chapters.map((c) => (c.id === id ? { ...c, title } : c)));
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <h3 className="font-serif font-semibold text-lg">Chapter Matrix</h3>
-          <p className="text-sm text-muted-foreground max-w-3xl">{hint}</p>
-        </div>
-        <div className="text-[11px] text-muted-foreground">
-          {links.length} link{links.length === 1 ? "" : "s"} · {interLinks.length} inter-chapter
+    <div className="rounded-2xl border border-border overflow-hidden bg-[#0f1115] text-[#e8eaed]">
+      <div className="flex h-[640px]" id="cms-app">
+        {/* Sidebar */}
+        <aside className="w-[260px] min-w-[260px] h-full bg-[#161a21] border-r border-[#232833] p-4 overflow-y-auto z-[3]">
+          <h2 className="text-sm m-0 mb-1 tracking-wider">Story Elements</h2>
+          <p className="text-[11px] text-[#8a93a3] mb-3.5">Click an element, then click a chapter to link.</p>
+
+          <Group title="Plot" cat="plot" items={groups.plot}
+            selectedId={selected?.id ?? null}
+            onSelect={selectElement}
+            registerRef={(id, node) => elNodes.current.set(id, node)}
+          />
+          <Group title="Characters" cat="character" items={groups.character}
+            selectedId={selected?.id ?? null}
+            onSelect={selectElement}
+            registerRef={(id, node) => elNodes.current.set(id, node)}
+          />
+          <Group title="World" cat="world" items={groups.world}
+            selectedId={selected?.id ?? null}
+            onSelect={selectElement}
+            registerRef={(id, node) => elNodes.current.set(id, node)}
+          />
+        </aside>
+
+        {/* Matrix */}
+        <div className="flex-1 relative overflow-hidden" ref={wrapRef}>
+          {/* Hint */}
+          <div
+            className={cn(
+              "absolute top-2 left-1/2 -translate-x-1/2 z-[5]",
+              "bg-[#1d222c] border border-[#2a3140] px-3.5 py-1.5 rounded-full",
+              "text-xs max-w-[80%] truncate",
+              hintError ? "text-red-400" : "text-[#cfd4df]",
+            )}
+          >
+            {hintError
+              ? hintError
+              : selected
+                ? <>Selected: <b style={{ color: COLORS[selected.category] }}>{findElement(selected.id)?.name}</b> — now click a chapter.</>
+                : "Select a story element, then a chapter to create a curved link. Click any link row to view details."}
+          </div>
+
+          <div
+            ref={matrixRef}
+            className="h-full overflow-x-auto overflow-y-hidden p-10 whitespace-nowrap"
+            onClick={(e) => {
+              // close popup if clicking blank area
+              const t = e.target as HTMLElement;
+              if (!t.closest("[data-chapter]") && !t.closest("[data-popup]")) {
+                setPopup(null);
+              }
+            }}
+          >
+            {chapters.map((ch, i) => {
+              const chLinks = links.filter((l) => l.chapterId === ch.id);
+              const full = chLinks.length >= 3;
+              return (
+                <div
+                  key={ch.id}
+                  data-chapter={ch.id}
+                  ref={(n) => chNodes.current.set(ch.id, n)}
+                  onClick={(e) => onChapterClick(ch.id, e)}
+                  className={cn(
+                    "inline-block align-top w-[220px] h-[300px] mr-6 cursor-pointer whitespace-normal",
+                    "bg-[#1d222c] border rounded-[10px] p-3.5 relative transition-colors",
+                    "border-[#2a3140] hover:border-[#4b5468]",
+                    full && "opacity-95",
+                  )}
+                >
+                  {full && (
+                    <span className="absolute top-2 right-2.5 text-[9px] text-red-500 tracking-wider">FULL</span>
+                  )}
+                  <div className="text-[10px] text-[#8a93a3] tracking-wider">CHAPTER {i + 1}</div>
+                  <Input
+                    value={ch.title}
+                    onChange={(e) => updateChapterTitle(ch.id, e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    placeholder={`Chapter ${i + 1}`}
+                    className="mt-1 h-7 px-1 text-sm font-semibold bg-transparent border-0 border-b border-transparent hover:border-[#2a3140] focus-visible:border-[#3a4254] focus-visible:ring-0 text-[#e8eaed]"
+                  />
+                  <div className="mt-2 space-y-1.5">
+                    {chLinks.map((l) => {
+                      const el = findElement(l.elementId);
+                      if (!el) return null;
+                      return (
+                        <div
+                          key={l.id}
+                          onClick={(e) => { e.stopPropagation(); setDetailLinkId(l.id); }}
+                          className="flex items-center gap-1.5 bg-[#262c38] hover:bg-[#323a4a] px-1.5 py-1 rounded text-[11px] text-[#cfd4df] cursor-pointer"
+                        >
+                          <span className={cn("w-1.5 h-1.5 rounded-full", DOT_CLASS[l.category])} />
+                          <b className="truncate">{el.name}</b>
+                          <span className="ml-auto text-[10px] text-[#7a8294]">{l.category}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="absolute bottom-2.5 right-3 text-[10px] text-[#666]">{chLinks.length}/3</div>
+                </div>
+              );
+            })}
+            {chapters.length === 0 && (
+              <div className="text-sm text-[#8a93a3]">No chapters yet — add chapters in step 5 first.</div>
+            )}
+          </div>
+
+          {/* SVG overlay */}
+          <svg
+            ref={svgRef}
+            className="absolute top-0 left-0 w-full h-full pointer-events-none z-[2]"
+          >
+            {linePaths.map((p) => (
+              <g key={p.link.id}>
+                <path
+                  d={p.d}
+                  fill="none"
+                  stroke={p.color}
+                  strokeWidth={2.5}
+                  className="cursor-pointer hover:[stroke-width:4] pointer-events-stroke"
+                  onClick={() => setDetailLinkId(p.link.id)}
+                />
+                <circle
+                  cx={p.mx}
+                  cy={p.my}
+                  r={6}
+                  fill="#fff"
+                  stroke={p.color}
+                  strokeWidth={1}
+                  style={{ pointerEvents: "all", cursor: "grab" }}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    dragRef.current = { id: p.link.id, baseMx: p.baseMx, baseMy: p.baseMy };
+                  }}
+                />
+              </g>
+            ))}
+          </svg>
+
+          {/* Note popup */}
+          {popup && (
+            <NotePopup
+              x={popup.x - (wrapRef.current?.getBoundingClientRect().left ?? 0)}
+              y={popup.y - (wrapRef.current?.getBoundingClientRect().top ?? 0)}
+              el={popup.el}
+              note={popup.note}
+              setNote={(v) => setPopup((p) => p ? { ...p, note: v } : p)}
+              elements={allElements}
+              onCancel={() => setPopup(null)}
+              onConfirm={confirmLink}
+            />
+          )}
         </div>
       </div>
 
-      <div
-        ref={wrapRef}
-        className="relative rounded-2xl border border-border bg-card/40 overflow-hidden"
-        style={{ height: "min(70vh, 640px)" }}
-      >
-        <div className="flex h-full">
-          {/* Left panel */}
-          <aside className="w-64 shrink-0 border-r border-border bg-background/60 p-3 overflow-y-auto">
-            <h4 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Story Elements</h4>
-            {groups.map((g) => (
-              <div key={g.key} className="mb-4">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className={cn("w-2 h-2 rounded-full", CAT_DOT_CLASS[g.key])} />
-                  <span className="text-[11px] uppercase tracking-wider text-muted-foreground">{g.label}</span>
-                </div>
-                {g.items.length === 0 ? (
-                  <p className="text-[11px] text-muted-foreground/70 italic px-1">None yet.</p>
-                ) : (
-                  <ul className="space-y-1">
-                    {g.items.map((el) => {
-                      const selected = selectedElementId === el.id;
-                      return (
-                        <li key={el.id}>
-                          <button
-                            type="button"
-                            ref={(node) => {
-                              if (node) elementNodeRefs.current.set(el.id, node);
-                              else elementNodeRefs.current.delete(el.id);
-                            }}
-                            onClick={() => onClickElement(el)}
-                            className={cn(
-                              "w-full text-left text-xs px-2 py-1.5 rounded-md border bg-card/60 hover:bg-card transition",
-                              selected ? cn("ring-2", CAT_RING_CLASS[el.category]) : "border-border",
-                            )}
-                          >
-                            <span className="line-clamp-2">{el.name}</span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </aside>
-
-          {/* Matrix */}
+      {/* Link Details Modal */}
+      {detailLinkId && (() => {
+        const link = links.find((l) => l.id === detailLinkId);
+        if (!link) return null;
+        const el = findElement(link.elementId);
+        const ch = chapters.find((c) => c.id === link.chapterId);
+        if (!el || !ch) return null;
+        const chNum = chapters.findIndex((c) => c.id === ch.id) + 1;
+        return (
           <div
-            ref={matrixRef}
-            className="relative flex-1 overflow-x-auto overflow-y-hidden p-6"
+            className="fixed inset-0 z-[50] bg-black/65 flex items-center justify-center p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setDetailLinkId(null); }}
           >
-            {chapters.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center mt-12">No chapters yet — add some first.</p>
-            ) : (
-              <div className="flex gap-5 h-full items-start pt-10 pb-4 min-w-max">
-                {chapters.map((ch, i) => {
-                  const chLinks = linksForChapter(ch.id);
-                  const full = chLinks.length >= 3;
-                  const isInterSource = interMode?.fromChapterId === ch.id;
-                  return (
-                    <div
-                      key={ch.id}
-                      ref={(node) => {
-                        if (node) chapterNodeRefs.current.set(ch.id, node);
-                        else chapterNodeRefs.current.delete(ch.id);
-                      }}
-                      onClick={(e) => onClickChapter(ch.id, e)}
-                      className={cn(
-                        "relative w-56 shrink-0 rounded-xl border bg-card/70 p-3 cursor-pointer transition",
-                        "hover:border-amber-glow/60",
-                        isInterSource ? "border-amber-glow ring-2 ring-amber-glow/40" : "border-border",
-                        full && "opacity-95",
-                      )}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Ch {i + 1}</span>
-                        <span className="text-[10px] text-muted-foreground">{chLinks.length}/3</span>
-                      </div>
-                      <div className="font-serif font-semibold text-sm leading-snug line-clamp-2">
-                        {ch.title || `Chapter ${i + 1}`}
-                      </div>
-
-                      <ul className="mt-2 space-y-1">
-                        {chLinks.map((l) => {
-                          const el = findEl(l.elementId);
-                          return (
-                            <li
-                              key={l.id}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const wrapRect = wrapRef.current?.getBoundingClientRect();
-                                setPopup({
-                                  kind: "detail",
-                                  linkId: l.id,
-                                  linkKind: "element",
-                                  x: e.clientX - (wrapRect?.left ?? 0),
-                                  y: e.clientY - (wrapRect?.top ?? 0),
-                                });
-                              }}
-                              className="flex items-center gap-1.5 text-[11px] px-1.5 py-1 rounded bg-muted/40 hover:bg-muted/70"
-                            >
-                              <span className={cn("w-1.5 h-1.5 rounded-full", CAT_DOT_CLASS[l.category])} />
-                              <span className="truncate">{el?.name ?? "—"}</span>
-                            </li>
-                          );
-                        })}
-                      </ul>
-
-                      <div className="mt-3 flex items-center justify-between gap-1">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedElementId(null);
-                            setInterMode((cur) => cur?.fromChapterId === ch.id ? null : { fromChapterId: ch.id });
-                          }}
-                          className={cn(
-                            "text-[10px] inline-flex items-center gap-1 px-1.5 py-1 rounded border",
-                            isInterSource ? "border-amber-glow text-amber-glow" : "border-border text-muted-foreground hover:text-foreground",
-                          )}
-                        >
-                          <ArrowLeftRight className="w-3 h-3" /> link chapter
-                        </button>
-                        {full && <span className="text-[9px] text-red-400 tracking-wider">FULL</span>}
-                      </div>
-                    </div>
-                  );
-                })}
+            <div className="bg-[#1d222c] border border-[#3a4254] rounded-[10px] w-[460px] max-w-[92vw] p-5 relative text-[#e8eaed]">
+              <button onClick={() => setDetailLinkId(null)} className="absolute top-2.5 right-3 text-[#8a93a3] hover:text-white text-xl leading-none" aria-label="Close">×</button>
+              <h2 className="text-lg font-semibold m-0">Link Details</h2>
+              <p className="text-xs text-[#8a93a3] mt-1 mb-4">Connection between a story element and a chapter.</p>
+              <div className="flex gap-2.5 mb-3.5">
+                <Field label="Element"><div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded text-sm" style={{ borderLeft: `3px solid ${COLORS[link.category]}` }}><b>{el.name}</b></div></Field>
+                <Field label="Category"><div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded"><span className="text-[10px] px-1.5 py-0.5 rounded text-white" style={{ background: COLORS[link.category] }}>{link.category}</span></div></Field>
+                <Field label="Chapter"><div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded text-sm">#{chNum} — {ch.title || `Chapter ${chNum}`}</div></Field>
               </div>
-            )}
-
-            {/* SVG overlay — sized to scroll container */}
-            <svg
-              className="absolute inset-0 w-full h-full pointer-events-none"
-              style={{ zIndex: 5 }}
-            >
-              {lines.map((ln) => {
-                const d = `M ${ln.x1} ${ln.y1} Q ${ln.mx} ${ln.my} ${ln.x2} ${ln.y2}`;
-                return (
-                  <g key={ln.id}>
-                    <path
-                      d={d}
-                      fill="none"
-                      stroke={ln.stroke}
-                      strokeWidth={2.5}
-                      strokeDasharray={ln.kind === "inter" ? "6 4" : undefined}
-                      className="pointer-events-auto cursor-pointer"
-                      onClick={(e) => {
-                        const wrapRect = wrapRef.current?.getBoundingClientRect();
-                        setPopup({
-                          kind: "detail",
-                          linkId: ln.id,
-                          linkKind: ln.kind,
-                          x: e.clientX - (wrapRect?.left ?? 0),
-                          y: e.clientY - (wrapRect?.top ?? 0),
-                        });
-                      }}
-                    >
-                      <title>{ln.note || "(no note)"}</title>
-                    </path>
-                    <circle
-                      cx={ln.mx}
-                      cy={ln.my}
-                      r={6}
-                      fill="white"
-                      stroke={ln.stroke}
-                      strokeWidth={2}
-                      className="pointer-events-auto cursor-grab"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        draggingRef.current = {
-                          id: ln.id,
-                          kind: ln.kind,
-                          baseMx: (ln.x1 + ln.x2) / 2,
-                          baseMy: ln.kind === "inter"
-                            ? Math.min(ln.y1, ln.y2) - 50
-                            : (ln.y1 + ln.y2) / 2,
-                        };
-                      }}
-                    />
-                  </g>
-                );
-              })}
-            </svg>
+              <Field label="Note">
+                <div className="bg-[#0f1115] border border-[#2a3140] px-2.5 py-2 rounded text-sm whitespace-pre-wrap min-h-[60px] leading-relaxed">
+                  {link.note
+                    ? renderNoteWithRefs(link.note, allElements)
+                    : <i className="text-[#8a93a3]">No note added.</i>}
+                </div>
+              </Field>
+              <div className="flex justify-between gap-2 mt-4">
+                <Button variant="destructive" size="sm" onClick={() => deleteLink(link.id)}>
+                  <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Link
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setDetailLinkId(null)}>Close</Button>
+              </div>
+            </div>
           </div>
-        </div>
+        );
+      })()}
+    </div>
+  );
+}
 
-        {/* Popup */}
-        {popup && (
-          <Popover
-            x={popup.x}
-            y={popup.y}
-            onClose={() => { setPopup(null); setNoteDraft(""); setAtQuery(null); }}
-          >
-            {popup.kind === "detail" ? (
-              (() => {
-                const link = popup.linkKind === "element"
-                  ? links.find((l) => l.id === popup.linkId)
-                  : interLinks.find((l) => l.id === popup.linkId);
-                if (!link) return null;
-                return (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-semibold">Link details</h4>
-                      <button type="button" onClick={() => setPopup(null)} className="text-muted-foreground hover:text-foreground">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="text-xs leading-relaxed">{renderNote(link.note)}</div>
-                    <div className="flex justify-end">
-                      <Button
-                        size="sm" variant="outline"
-                        onClick={() => deleteLink(popup.linkId, popup.linkKind)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })()
-            ) : (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold">
-                    {popup.kind === "inter-chapter" ? "New inter-chapter link" : "New link"}
-                  </h4>
-                  <button type="button" onClick={() => { setPopup(null); setNoteDraft(""); }} className="text-muted-foreground hover:text-foreground">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-                <Textarea
-                  ref={taRef}
-                  value={noteDraft}
-                  onChange={(e) => onNoteChange(e.target.value)}
-                  rows={3}
-                  placeholder={popup.kind === "inter-chapter"
-                    ? "Describe how one chapter influences the other. Type @ to reference."
-                    : "Describe this link. Type @ to reference another element."}
-                  className="text-xs"
-                />
-                {atMatches.length > 0 && (
-                  <ul className="border border-border rounded-md bg-popover max-h-40 overflow-y-auto">
-                    {atMatches.map((el) => (
-                      <li key={el.id}>
-                        <button
-                          type="button"
-                          onClick={() => insertRef(el)}
-                          className="w-full text-left text-xs px-2 py-1.5 hover:bg-muted flex items-center gap-2"
-                        >
-                          <span className={cn("w-2 h-2 rounded-full", CAT_DOT_CLASS[el.category])} />
-                          <span className="truncate flex-1">{el.name}</span>
-                          <span className="text-[10px] text-muted-foreground">{el.category}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <div className="text-[10px] text-muted-foreground">
-                  Tip: type <b>@</b> to reference plot, character, or world items.
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button size="sm" variant="ghost" onClick={() => { setPopup(null); setNoteDraft(""); }}>Cancel</Button>
-                  <Button size="sm" variant="hero" onClick={confirmPopup}>Create link</Button>
-                </div>
-              </div>
+function Group({
+  title, cat, items, selectedId, onSelect, registerRef,
+}: {
+  title: string;
+  cat: LinkCategory;
+  items: ElementLite[];
+  selectedId: string | null;
+  onSelect: (el: ElementLite) => void;
+  registerRef: (id: string, node: HTMLDivElement | null) => void;
+}) {
+  return (
+    <div className="mb-4">
+      <h3 className="text-[11px] uppercase tracking-[1px] m-0 mb-2 text-[#aab2c0] flex items-center gap-1.5">
+        <span className={cn("w-2 h-2 rounded-full inline-block", DOT_CLASS[cat])} />
+        {title}
+      </h3>
+      {items.length === 0 && (
+        <p className="text-[11px] text-[#5d6577] italic">None added.</p>
+      )}
+      {items.map((el) => {
+        const selected = selectedId === el.id;
+        return (
+          <div
+            key={el.id}
+            ref={(n) => registerRef(el.id, n)}
+            data-id={el.id}
+            onClick={() => onSelect(el)}
+            className={cn(
+              "px-2.5 py-2 mb-1.5 rounded-md bg-[#1d222c] hover:bg-[#252b38] cursor-pointer text-[13px]",
+              "border flex justify-between items-center transition-colors",
+              selected ? "border-current" : "border-transparent",
             )}
-          </Popover>
-        )}
+            style={selected ? { borderColor: COLORS[cat], boxShadow: `inset 0 0 0 1px ${COLORS[cat]}` } : undefined}
+          >
+            <span className="truncate mr-2">{el.name}</span>
+            <span className="text-[10px] text-[#8a93a3] shrink-0">{cat}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function NotePopup({
+  x, y, el, note, setNote, elements, onCancel, onConfirm,
+}: {
+  x: number; y: number;
+  el: ElementLite;
+  note: string;
+  setNote: (v: string) => void;
+  elements: ElementLite[];
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const taRef = useRef<HTMLTextAreaElement | null>(null);
+  const [atState, setAtState] = useState<{ startPos: number; query: string } | null>(null);
+
+  useEffect(() => { taRef.current?.focus(); }, []);
+
+  const onInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNote(e.target.value);
+    const ta = e.target;
+    const pos = ta.selectionStart;
+    const before = ta.value.slice(0, pos);
+    const m = before.match(/@(\w*)$/);
+    if (m) setAtState({ startPos: pos - m[0].length, query: m[1] });
+    else setAtState(null);
+  };
+
+  const matches = atState
+    ? elements.filter((e) => e.name.toLowerCase().includes(atState.query.toLowerCase())).slice(0, 8)
+    : [];
+
+  const insertRef = (m: ElementLite) => {
+    if (!atState || !taRef.current) return;
+    const ta = taRef.current;
+    const before = ta.value.slice(0, atState.startPos);
+    const after = ta.value.slice(ta.selectionStart);
+    const tag = "@" + m.name;
+    const next = before + tag + " " + after;
+    setNote(next);
+    setAtState(null);
+    requestAnimationFrame(() => {
+      const newPos = (before + tag + " ").length;
+      ta.focus();
+      ta.setSelectionRange(newPos, newPos);
+    });
+  };
+
+  return (
+    <div
+      data-popup
+      className="absolute z-[30] w-[280px] bg-[#1d222c] border border-[#3a4254] rounded-lg p-3 shadow-[0_8px_24px_rgba(0,0,0,.5)]"
+      style={{ left: x, top: y }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <h4 className="m-0 mb-2 text-[13px] text-white">
+        Link <span className="text-[10px] px-1.5 py-0.5 rounded text-white mr-1" style={{ background: COLORS[el.category] }}>{el.category}</span>
+        {el.name}
+      </h4>
+      <Textarea
+        ref={taRef}
+        value={note}
+        onChange={onInput}
+        placeholder="Describe this link… type @ to reference another element"
+        className="min-h-[60px] bg-[#0f1115] text-[#e8eaed] border-[#2a3140] text-xs"
+      />
+      <div className="text-[10px] text-[#8a93a3] mt-1">
+        Tip: type <b>@</b> to insert a reference.
+      </div>
+      {matches.length > 0 && (
+        <div className="mt-1 max-h-[140px] overflow-y-auto bg-[#0f1115] border border-[#3a4254] rounded">
+          {matches.map((m) => (
+            <div
+              key={m.id}
+              onClick={() => insertRef(m)}
+              className="px-2.5 py-1.5 text-xs cursor-pointer flex items-center gap-1.5 hover:bg-[#1d222c]"
+            >
+              <span className={cn("w-2 h-2 rounded-full", DOT_CLASS[m.category])} />
+              {m.name}
+              <span className="ml-auto text-[10px] text-[#7a8294]">{m.category}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="flex justify-end gap-1.5 mt-2">
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          <X className="w-3.5 h-3.5 mr-1" /> Cancel
+        </Button>
+        <Button size="sm" onClick={onConfirm} style={{ background: "#3b82f6", color: "#fff" }}>
+          Create Link
+        </Button>
       </div>
     </div>
   );
 }
 
-function Popover({
-  x, y, onClose, children,
-}: { x: number; y: number; onClose: () => void; children: React.ReactNode }) {
-  // Clamp inside wrapper roughly
-  const left = Math.max(8, Math.min(x, 9999));
-  const top = Math.max(8, y);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div
-      className="absolute z-30 w-72 rounded-lg border border-border bg-popover text-popover-foreground shadow-xl p-3"
-      style={{ left, top }}
-      onClick={(e) => e.stopPropagation()}
-    >
+    <div className="flex-1 mb-3">
+      <div className="text-[10px] uppercase tracking-wider text-[#8a93a3] mb-1">{label}</div>
       {children}
     </div>
   );
+}
+
+function short(s: string, n: number): string {
+  const t = (s ?? "").trim();
+  return t.length <= n ? t : t.slice(0, n - 1) + "…";
+}
+
+function renderNoteWithRefs(note: string, elements: ElementLite[]): React.ReactNode {
+  // Tokenize @Name spans
+  const parts: React.ReactNode[] = [];
+  const re = /@([A-Za-z][\w ]*?)(?=\s|$|[.,!?;:])/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  let key = 0;
+  while ((m = re.exec(note)) !== null) {
+    if (m.index > last) parts.push(note.slice(last, m.index));
+    const name = m[1].trim();
+    const el = elements.find((e) => e.name.toLowerCase() === name.toLowerCase());
+    if (el) {
+      parts.push(
+        <span
+          key={`r${key++}`}
+          className="inline-block px-1.5 py-px rounded text-[11px] text-white font-semibold mx-0.5"
+          style={{ background: COLORS[el.category] }}
+        >
+          @{el.name}
+        </span>,
+      );
+    } else {
+      parts.push(m[0]);
+    }
+    last = re.lastIndex;
+  }
+  if (last < note.length) parts.push(note.slice(last));
+  return parts;
 }
