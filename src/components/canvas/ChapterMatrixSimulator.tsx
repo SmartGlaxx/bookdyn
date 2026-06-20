@@ -270,12 +270,12 @@ export function ChapterMatrixSimulator(props: Props) {
   const linePaths = useMemo(() => {
     const wrap = matrixRef.current;
     if (!wrap) return [] as Array<{
-      d: string; color: string; mx: number; my: number; baseMx: number; baseMy: number; link: ChapterLink;
+      d: string; color: string; hx: number; hy: number; baseHx: number; baseHy: number; link: ChapterLink;
     }>;
     const wrapRect = wrap.getBoundingClientRect();
     const byCh: Record<string, ChapterLink[]> = {};
     links.forEach((l) => { (byCh[l.chapterId] = byCh[l.chapterId] || []).push(l); });
-    const out: Array<{ d: string; color: string; mx: number; my: number; baseMx: number; baseMy: number; link: ChapterLink }> = [];
+    const out: Array<{ d: string; color: string; hx: number; hy: number; baseHx: number; baseHy: number; link: ChapterLink }> = [];
     links.forEach((link) => {
       const elNode = elNodes.current.get(link.elementId);
       const chNode = chNodes.current.get(link.chapterId);
@@ -293,14 +293,18 @@ export function ChapterMatrixSimulator(props: Props) {
       const stack = byCh[link.chapterId] || [];
       const idx = stack.indexOf(link);
       const stackOffset = (idx - (stack.length - 1) / 2) * 30;
-      const baseMx = (x1 + x2) / 2;
-      const baseMy = (y1 + y2) / 2 + stackOffset;
-      const mx = baseMx + (link.curveOffset?.dx ?? 0);
-      const my = baseMy + (link.curveOffset?.dy ?? 0);
+      // The handle sits on the *real* curve midpoint (Bezier t=0.5).
+      const baseHx = (x1 + x2) / 2;
+      const baseHy = (y1 + y2) / 2 + stackOffset;
+      const hx = baseHx + (link.curveOffset?.dx ?? 0);
+      const hy = baseHy + (link.curveOffset?.dy ?? 0);
+      // Solve for control point so curve midpoint equals (hx, hy).
+      const qx = 2 * hx - (x1 + x2) / 2;
+      const qy = 2 * hy - (y1 + y2) / 2;
       out.push({
-        d: `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`,
+        d: `M ${x1} ${y1} Q ${qx} ${qy} ${x2} ${y2}`,
         color: COLORS[link.category],
-        mx, my, baseMx, baseMy, link,
+        hx, hy, baseHx, baseHy, link,
       });
     });
     return out;
@@ -310,10 +314,10 @@ export function ChapterMatrixSimulator(props: Props) {
   const interPaths = useMemo(() => {
     const wrap = matrixRef.current;
     if (!wrap) return [] as Array<{
-      d: string; mx: number; my: number; baseMx: number; baseMy: number; link: InterChapterLink;
+      d: string; hx: number; hy: number; baseHx: number; baseHy: number; link: InterChapterLink;
     }>;
     const wrapRect = wrap.getBoundingClientRect();
-    const out: Array<{ d: string; mx: number; my: number; baseMx: number; baseMy: number; link: InterChapterLink }> = [];
+    const out: Array<{ d: string; hx: number; hy: number; baseHx: number; baseHy: number; link: InterChapterLink }> = [];
     interLinks.forEach((link, idx) => {
       const a = chNodes.current.get(link.fromChapterId);
       const b = chNodes.current.get(link.toChapterId);
@@ -324,15 +328,16 @@ export function ChapterMatrixSimulator(props: Props) {
       const y1 = ar.top - wrapRect.top; // top of source
       const x2 = br.left + br.width / 2 - wrapRect.left;
       const y2 = br.top - wrapRect.top; // top of target
-      const baseMx = (x1 + x2) / 2;
-      // auto-arc upward; offset to avoid overlap
       const arcLift = 60 + (idx % 4) * 16;
-      const baseMy = Math.min(y1, y2) - arcLift;
-      const mx = baseMx + (link.curveOffset?.dx ?? 0);
-      const my = baseMy + (link.curveOffset?.dy ?? 0);
+      const baseHx = (x1 + x2) / 2;
+      const baseHy = Math.min(y1, y2) - arcLift;
+      const hx = baseHx + (link.curveOffset?.dx ?? 0);
+      const hy = baseHy + (link.curveOffset?.dy ?? 0);
+      const qx = 2 * hx - (x1 + x2) / 2;
+      const qy = 2 * hy - (y1 + y2) / 2;
       out.push({
-        d: `M ${x1} ${y1} Q ${mx} ${my} ${x2} ${y2}`,
-        mx, my, baseMx, baseMy, link,
+        d: `M ${x1} ${y1} Q ${qx} ${qy} ${x2} ${y2}`,
+        hx, hy, baseHx, baseHy, link,
       });
     });
     return out;
