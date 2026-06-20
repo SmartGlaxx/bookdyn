@@ -632,15 +632,35 @@ export function ChapterMatrixSimulator(props: Props) {
                   onClick={() => setDetail({ kind: "link", id: p.link.id })}
                   data-curve
                 />
+                {/* Drag handle (circle) — sits ON the curve midpoint */}
                 <circle
-                  cx={p.mx} cy={p.my} r={6} fill="#fff" stroke={p.color} strokeWidth={1}
+                  cx={p.hx - 10} cy={p.hy} r={7} fill="#fff" stroke={p.color} strokeWidth={1.5}
                   style={{ pointerEvents: "all", cursor: "grab" }}
                   data-curve
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    curveDragRef.current = { kind: "link", id: p.link.id, baseMx: p.baseMx, baseMy: p.baseMy };
+                    curveDragRef.current = { kind: "link", id: p.link.id, baseHx: p.baseHx, baseHy: p.baseHy };
                   }}
-                />
+                >
+                  <title>Drag to reshape</title>
+                </circle>
+                {/* Details button (square) — sits next to the handle */}
+                <g
+                  data-curve
+                  style={{ pointerEvents: "all", cursor: "pointer" }}
+                  onClick={(e) => { e.stopPropagation(); setDetail({ kind: "link", id: p.link.id }); }}
+                >
+                  <rect
+                    x={p.hx + 4} y={p.hy - 7} width={14} height={14} rx={3}
+                    fill={p.color} stroke="#fff" strokeWidth={1.25}
+                  />
+                  <text
+                    x={p.hx + 11} y={p.hy + 1}
+                    textAnchor="middle" dominantBaseline="middle"
+                    fontSize="10" fontWeight="700" fill="#fff" style={{ pointerEvents: "none" }}
+                  >i</text>
+                  <title>Link details</title>
+                </g>
               </g>
             ))}
             {/* chapter→chapter grey links */}
@@ -654,14 +674,32 @@ export function ChapterMatrixSimulator(props: Props) {
                   data-curve
                 />
                 <circle
-                  cx={p.mx} cy={p.my} r={6} fill="#1d222c" stroke={INTER_COLOR} strokeWidth={1.5}
+                  cx={p.hx - 10} cy={p.hy} r={7} fill="#fff" stroke={INTER_COLOR} strokeWidth={1.5}
                   style={{ pointerEvents: "all", cursor: "grab" }}
                   data-curve
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    curveDragRef.current = { kind: "inter", id: p.link.id, baseMx: p.baseMx, baseMy: p.baseMy };
+                    curveDragRef.current = { kind: "inter", id: p.link.id, baseHx: p.baseHx, baseHy: p.baseHy };
                   }}
-                />
+                >
+                  <title>Drag to reshape</title>
+                </circle>
+                <g
+                  data-curve
+                  style={{ pointerEvents: "all", cursor: "pointer" }}
+                  onClick={(e) => { e.stopPropagation(); setDetail({ kind: "inter", id: p.link.id }); }}
+                >
+                  <rect
+                    x={p.hx + 4} y={p.hy - 7} width={14} height={14} rx={3}
+                    fill={INTER_COLOR} stroke="#fff" strokeWidth={1.25}
+                  />
+                  <text
+                    x={p.hx + 11} y={p.hy + 1}
+                    textAnchor="middle" dominantBaseline="middle"
+                    fontSize="10" fontWeight="700" fill="#fff" style={{ pointerEvents: "none" }}
+                  >i</text>
+                  <title>Link details</title>
+                </g>
               </g>
             ))}
           </svg>
