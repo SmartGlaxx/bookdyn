@@ -554,6 +554,10 @@ export interface StoryCanvas {
   characterArcs: CharacterArcCard[];
   worldElements: WorldElementCard[];
   chapters: CanvasChapter[];
+  /** Element→chapter links produced by the Chapter-Matrix simulator. */
+  chapterLinks?: ChapterLink[];
+  /** Chapter→chapter (grey) links from the simulator. */
+  interChapterLinks?: InterChapterLink[];
   /** Number of AI guiding-question requests used (cap of 3 per book). */
   aiAssistUsed?: number;
   updatedAt?: string;
@@ -566,8 +570,33 @@ export const EMPTY_CANVAS: StoryCanvas = {
   characterArcs: [],
   worldElements: [],
   chapters: [],
+  chapterLinks: [],
+  interChapterLinks: [],
   aiAssistUsed: 0,
 };
+
+// ============= CHAPTER-MATRIX LINKING =============
+export type LinkCategory = "plot" | "character" | "world";
+
+export interface ChapterLink {
+  id: string;
+  chapterId: string;
+  /** ID of the linked storyArc / characterArc / worldElement. */
+  elementId: string;
+  category: LinkCategory;
+  /** Author's note. May contain @Name references. */
+  note: string;
+  curveOffset: { dx: number; dy: number };
+}
+
+export interface InterChapterLink {
+  id: string;
+  fromChapterId: string;
+  toChapterId: string;
+  /** Must contain at least one @reference to an existing element. */
+  note: string;
+  curveOffset: { dx: number; dy: number };
+}
 
 export interface Book {
   id: string;
