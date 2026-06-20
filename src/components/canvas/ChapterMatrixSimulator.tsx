@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Trash2, X, Plus, Minus, BookOpen, Link2, GitBranch, MousePointer2,
   Maximize2, Minimize2, GripVertical, ArrowRightLeft, AtSign,
-  ChevronDown, Info,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
