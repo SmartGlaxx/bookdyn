@@ -184,6 +184,9 @@ export function ChapterMatrixSimulator(props: Props) {
     | { kind: "inter"; id: string }
     | null
   >(null);
+  const [cardDetail, setCardDetail] = useState<{ chapterId: string; mode: "view" | "edit" } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
   const [tick, forceTick] = useState(0);
   const redraw = useCallback(() => forceTick((n) => n + 1), []);
 
