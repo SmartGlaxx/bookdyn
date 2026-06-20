@@ -137,6 +137,7 @@ export function ChapterMatrixSimulator(props: Props) {
   // ---- Refs ----
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const matrixRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const elNodes = useRef<Map<string, HTMLDivElement | null>>(new Map());
   const chNodes = useRef<Map<string, HTMLDivElement | null>>(new Map());
@@ -155,10 +156,13 @@ export function ChapterMatrixSimulator(props: Props) {
     | { kind: "inter"; id: string }
     | null
   >(null);
-  const [, forceTick] = useState(0);
+  const [tick, forceTick] = useState(0);
   const redraw = useCallback(() => forceTick((n) => n + 1), []);
 
-  useLayoutEffect(() => { redraw(); }, [chapters, links, interLinks, allElements, zoom, redraw]);
+  // Which category is visible in the sidebar (dropdown switches them)
+  const [activeCat, setActiveCat] = useState<LinkCategory>("plot");
+
+  useLayoutEffect(() => { redraw(); }, [chapters, links, interLinks, allElements, zoom, fullscreen, redraw]);
   useEffect(() => {
     const onResize = () => redraw();
     window.addEventListener("resize", onResize);
@@ -258,7 +262,7 @@ export function ChapterMatrixSimulator(props: Props) {
 
   // ---- Compute paths ----
   const linePaths = useMemo(() => {
-    const wrap = wrapRef.current;
+    const wrap = matrixRef.current;
     if (!wrap) return [] as Array<{
       d: string; color: string; mx: number; my: number; baseMx: number; baseMy: number; link: ChapterLink;
     }>;
@@ -291,10 +295,10 @@ export function ChapterMatrixSimulator(props: Props) {
     });
     return out;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [links, chapters, allElements, popup, detail, zoom]);
+  }, [links, chapters, allElements, popup, detail, zoom, tick, fullscreen]);
 
   const interPaths = useMemo(() => {
-    const wrap = wrapRef.current;
+    const wrap = matrixRef.current;
     if (!wrap) return [] as Array<{
       d: string; mx: number; my: number; baseMx: number; baseMy: number; link: InterChapterLink;
     }>;
@@ -323,7 +327,7 @@ export function ChapterMatrixSimulator(props: Props) {
     });
     return out;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interLinks, chapters, popup, detail, zoom]);
+  }, [interLinks, chapters, popup, detail, zoom, tick, fullscreen]);
 
   // ---- Actions ----
   const flashError = (msg: string) => {
