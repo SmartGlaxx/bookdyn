@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Trash2, X, Plus, Minus, BookOpen, Link2, GitBranch, Move, MousePointer2,
-  Maximize2, GripVertical, ArrowRightLeft, AtSign,
+  Maximize2, Minimize2, GripVertical, ArrowRightLeft, AtSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +59,20 @@ export function ChapterMatrixSimulator(props: Props) {
   const zoomIn = () => setZoom((z) => Math.min(1.5, +(z + 0.1).toFixed(2)));
   const zoomOut = () => setZoom((z) => Math.max(0.5, +(z - 0.1).toFixed(2)));
   const zoomReset = () => setZoom(1);
+
+  // ---- Fullscreen ----
+  const [fullscreen, setFullscreen] = useState(false);
+  useEffect(() => {
+    if (!fullscreen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setFullscreen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [fullscreen]);
 
   // ---- Initial positions (auto-grid when missing) ----
   useEffect(() => {
@@ -157,21 +171,32 @@ export function ChapterMatrixSimulator(props: Props) {
   }, [redraw]);
 
   // ---- Card drag (free 2D) ----
-  const cardDragRef = useRef<{ id: string; offX: number; offY: number } | null>(null);
+  const cardDragRef = useRef<{ id: string; offX: number; offY: number; startX: number; startY: number; moved: boolean } | null>(null);
+  const suppressNextClick = useRef(false);
   const beginCardDrag = (chId: string, ev: React.MouseEvent) => {
+    // Ignore drags that begin on interactive controls
+    const t = ev.target as HTMLElement;
+    if (t.closest("input,textarea,button,[data-no-drag]")) return;
     const ch = chapters.find((c) => c.id === chId);
     if (!ch?.position || !canvasRef.current) return;
     const canvasRect = canvasRef.current.getBoundingClientRect();
     const px = (ev.clientX - canvasRect.left) / zoom;
     const py = (ev.clientY - canvasRect.top) / zoom;
-    cardDragRef.current = { id: chId, offX: px - ch.position.x, offY: py - ch.position.y };
-    ev.preventDefault();
-    ev.stopPropagation();
+    cardDragRef.current = {
+      id: chId,
+      offX: px - ch.position.x,
+      offY: py - ch.position.y,
+      startX: ev.clientX,
+      startY: ev.clientY,
+      moved: false,
+    };
   };
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       const d = cardDragRef.current;
       if (!d || !canvasRef.current) return;
+      if (!d.moved && Math.hypot(e.clientX - d.startX, e.clientY - d.startY) < 4) return;
+      d.moved = true;
       const canvasRect = canvasRef.current.getBoundingClientRect();
       const px = (e.clientX - canvasRect.left) / zoom;
       const py = (e.clientY - canvasRect.top) / zoom;
@@ -182,7 +207,10 @@ export function ChapterMatrixSimulator(props: Props) {
       );
       props.onChaptersChange(next);
     };
-    const onUp = () => { cardDragRef.current = null; };
+    const onUp = () => {
+      if (cardDragRef.current?.moved) suppressNextClick.current = true;
+      cardDragRef.current = null;
+    };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
     return () => {
@@ -309,6 +337,7 @@ export function ChapterMatrixSimulator(props: Props) {
   };
 
   const onChapterClick = (chId: string, e: React.MouseEvent) => {
+    if (suppressNextClick.current) { suppressNextClick.current = false; return; }
     // Inter-chapter linking mode takes priority
     if (linkSource) {
       if (linkSource === chId) { setLinkSource(null); return; }
@@ -396,7 +425,12 @@ export function ChapterMatrixSimulator(props: Props) {
     props.onChaptersChange(chapters.map((c) => (c.id === id ? { ...c, title } : c)));
 
   return (
-    <div className="rounded-2xl border border-border overflow-hidden bg-[#0f1115] text-[#e8eaed]">
+    <div
+      className={cn(
+        "rounded-2xl border border-border overflow-hidden bg-[#0f1115] text-[#e8eaed]",
+        fullscreen && "fixed inset-0 z-[100] rounded-none border-0 flex flex-col",
+      )}
+    >
       {/* Header toolbar */}
       <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-[#232833] flex-wrap">
         <div className="flex items-center gap-2.5">
@@ -418,15 +452,37 @@ export function ChapterMatrixSimulator(props: Props) {
             <button onClick={zoomOut} className="p-1 rounded hover:bg-[#232833] text-[#cfd4df]" aria-label="Zoom out"><Minus className="w-3.5 h-3.5" /></button>
             <button onClick={zoomReset} className="text-[10px] px-1.5 text-[#8a93a3] tabular-nums hover:text-white" aria-label="Reset zoom">{Math.round(zoom * 100)}%</button>
             <button onClick={zoomIn} className="p-1 rounded hover:bg-[#232833] text-[#cfd4df]" aria-label="Zoom in"><Plus className="w-3.5 h-3.5" /></button>
-            <button onClick={zoomReset} className="p-1 rounded hover:bg-[#232833] text-[#cfd4df]" aria-label="Fit"><Maximize2 className="w-3.5 h-3.5" /></button>
           </div>
+          <button
+            onClick={() => setFullscreen((v) => !v)}
+            className="inline-flex items-center gap-1 h-7 px-2 rounded-md border border-[#232833] bg-[#161a21] text-[#cfd4df] hover:bg-[#232833] text-xs"
+            aria-label={fullscreen ? "Exit full screen" : "Enter full screen"}
+            title={fullscreen ? "Exit full screen (Esc)" : "Full screen"}
+          >
+            {fullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{fullscreen ? "Exit" : "Full screen"}</span>
+          </button>
           <Button variant="outline" size="sm" onClick={addChapter} className="h-7 text-xs">
             <Plus className="w-3.5 h-3.5 mr-1" /> Add chapter
           </Button>
+          {fullscreen && (
+            <button
+              onClick={() => setFullscreen(false)}
+              className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-[#232833] bg-[#161a21] text-[#cfd4df] hover:bg-[#232833]"
+              aria-label="Close full screen"
+              title="Close (Esc)"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="flex h-[640px]" id="cms-app" ref={wrapRef}>
+      <div
+        className={cn("flex", fullscreen ? "flex-1 min-h-0" : "h-[640px]")}
+        id="cms-app"
+        ref={wrapRef}
+      >
         {/* Sidebar */}
         <aside className="w-[260px] min-w-[260px] h-full bg-[#161a21] border-r border-[#232833] p-4 overflow-y-auto z-[3]">
           <div className="flex items-center gap-1.5 mb-1">
