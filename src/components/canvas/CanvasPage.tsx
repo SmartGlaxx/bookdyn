@@ -66,8 +66,9 @@ export function CanvasPage({ book }: Props) {
         onAdd={c.addCharacterArc}
         onUpdate={c.updateCharacterArc}
         onRemove={c.removeCharacterArc}
-        aiAssistUsed={aiUsed}
-        onAiAssistUsed={c.incrementAiAssist}
+        onAddTrait={c.addCharacterTrait}
+        onUpdateTrait={c.updateCharacterTrait}
+        onRemoveTrait={c.removeCharacterTrait}
       />
 
       <WorldbuildingPanel
@@ -78,8 +79,6 @@ export function CanvasPage({ book }: Props) {
         onAdd={c.addWorldElement}
         onUpdate={c.updateWorldElement}
         onRemove={c.removeWorldElement}
-        aiAssistUsed={aiUsed}
-        onAiAssistUsed={c.incrementAiAssist}
       />
 
       <ChapterMatrix
